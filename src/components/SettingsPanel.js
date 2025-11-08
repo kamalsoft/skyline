@@ -27,7 +27,7 @@ import {
 } from '@chakra-ui/react';
 import { DeleteIcon, WarningTwoIcon } from '@chakra-ui/icons';
 
-function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChange, timeFormat, onTimeFormatChange, setPrimaryLocation, onClose }) {
+function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChange, timeFormat, onTimeFormatChange, background, onBackgroundChange, setPrimaryLocation, onClose }) {
     const [formData, setFormData] = useState({
         location: '',
         timeZone: '',
@@ -40,6 +40,7 @@ function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChang
     const { isOpen: isAlertOpen, onOpen: onAlertOpen, onClose: onAlertClose } = useDisclosure();
     const { isOpen: isDuplicateAlertOpen, onOpen: onDuplicateAlertOpen, onClose: onDuplicateAlertClose } = useDisclosure();
     const [clockToDelete, setClockToDelete] = useState(null);
+    const [bgUrl, setBgUrl] = useState(background.type === 'image' ? background.value : '');
     const toast = useToast();
 
     const handleInputChange = (e) => {
@@ -167,6 +168,25 @@ function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChang
                 {/* <Button colorScheme="blue" mt={4} onClick={handleAddClock}>Add Clock</Button> */}
             </Box>
             <Box>
+                <Heading as="h3" size="md" mb={4}>Background</Heading>
+                <RadioGroup onChange={(type) => onBackgroundChange({ type, value: type === 'image' ? bgUrl : '' })} value={background.type}>
+                    <VStack align="start">
+                        <Radio value="dynamic">Dynamic Gradient</Radio>
+                        <Radio value="image">Custom Image (URL)</Radio>
+                    </VStack>
+                </RadioGroup>
+                {background.type === 'image' && (
+                    <HStack mt={2}>
+                        <Input
+                            placeholder="https://example.com/image.jpg"
+                            value={bgUrl}
+                            onChange={(e) => setBgUrl(e.target.value)}
+                        />
+                        <Button onClick={() => onBackgroundChange({ type: 'image', value: bgUrl })}>Apply</Button>
+                    </HStack>
+                )}
+            </Box>
+            <Box>
                 <Heading as="h3" size="md" mb={4}>Appearance</Heading>
                 <FormControl>
                     <FormLabel>Analog Clock Style</FormLabel>
@@ -174,6 +194,7 @@ function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChang
                         <HStack spacing={5}>
                             <Radio value="metallic">Copper</Radio>
                             <Radio value="minimalist">Minimalist</Radio>
+                            <Radio value="ocean">Ocean</Radio>
                         </HStack>
                     </RadioGroup>
                 </FormControl>

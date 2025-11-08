@@ -23,6 +23,7 @@ import {
 import { getWeatherDescription } from '../utils/weatherUtils';
 import { RepeatIcon } from '@chakra-ui/icons';
 import AnimatedWeatherIcon from './AnimatedWeatherIcon';
+import { validateWeatherData } from '../utils/weatherValidation';
 import { getAqiColor } from '../utils/aqiUtils';
 import ForecastItem from './ForecastItem';
 import DetailedWeatherModal from './DetailedWeatherModal';
@@ -44,9 +45,10 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
             const response = await axios.get(
                 `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_direction_10m,wind_speed_10m,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,wind_direction_10m_dominant&forecast_days=14&timezone=auto&current_weather=true&air_quality_index=us_aqi`
             );
-            // Basic validation of the response structure
-            if (!response.data || !response.data.current_weather || !response.data.daily) {
-                throw new Error("Incomplete weather data received from the API.");
+            // Validate the detailed structure of the API response
+            const { isValid, error } = validateWeatherData(response.data);
+            if (!isValid) {
+                throw new Error(error);
             }
             setWeatherData(response.data);
             if (onForecastFetch) {
@@ -203,7 +205,7 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
                             aria-label="Refresh weather" />
                     </Tooltip>
                 </HStack>
-                <Text>{getWeatherDescription(current.weather_code)}</Text>
+                <Text>{getWeatherDescription(current.weathercode)}</Text>
             </VStack>
             <VStack spacing={6} align="stretch">
                 {/* Current Weather */}

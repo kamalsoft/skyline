@@ -32,7 +32,7 @@ const Cloud = ({ left, top, duration, size }) => (
 const starArray = Array.from({ length: 70 });
 
 
-function AnimatedBackground({ sunrise, sunset, weatherCode }) {
+function AnimatedBackground({ sunrise, sunset, weatherCode, background }) {
     const timeOfDay = useMotionValue(0); // 0 = midnight, 0.5 = noon, 1 = midnight
 
     const backgroundGradient = useTransform(
@@ -101,37 +101,52 @@ function AnimatedBackground({ sunrise, sunset, weatherCode }) {
 
     const { icon: MoonIcon, name: moonPhaseName } = getMoonPhaseInfo();
 
+    if (background.type === 'image' && background.value) {
+        return (
+            <Box
+                position="fixed" top="0" left="0" right="0" bottom="0" zIndex="-1"
+                bgImage={`url(${background.value})`}
+                bgSize="cover"
+                bgPosition="center"
+                bgRepeat="no-repeat"
+            />
+        );
+    }
+
     return (
         <motion.div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: -1, background: backgroundGradient, overflow: 'hidden' }}>
-            {isCloudy && <>
-                <Cloud left={10} top={5} duration={60} size={200} />
-                <Cloud left={50} top={15} duration={80} size={150} />
-            </>}
-            {isRainy && Array.from({ length: 50 }).map((_, i) => (
-                <RainDrop key={i} left={Math.random() * 100} duration={0.5 + Math.random() * 0.5} />
-            ))}
-            {!isDay && starArray.map((_, i) => (
-                <TwinklingStar key={i} />
-            ))}
-            {!isDay && <>
-                <ShootingStar />
-                <ShootingStar />
-                <ShootingStar />
-            </>}
-            <svg width="100%" height="300px" viewBox="0 0 1000 200" preserveAspectRatio="xMidYMax slice">
-                <path d={path} fill="none" stroke="none" id="sun-moon-path" />
-            </svg>
-            <motion.div
-                style={{ position: 'absolute', top: 0, left: 0, color: sunMoonColor }}
-                animate={{
-                    offsetDistance: `${timeOfDay.get() * 100}%`,
-                }}
-                transition={{ duration: 1, ease: 'linear' }}
-            >
-                <Tooltip label={moonPhaseName} placement="top" isDisabled={isDay}>
-                    <Icon as={isDay ? WiDaySunny : MoonIcon} w={20} h={20} style={{ motionPath: `path("${path}")` }} />
-                </Tooltip>
-            </motion.div>
+            {/* Only render dynamic elements if not using a custom background */}
+            <>
+                {isCloudy && <>
+                    <Cloud left={10} top={5} duration={60} size={200} />
+                    <Cloud left={50} top={15} duration={80} size={150} />
+                </>}
+                {isRainy && Array.from({ length: 50 }).map((_, i) => (
+                    <RainDrop key={i} left={Math.random() * 100} duration={0.5 + Math.random() * 0.5} />
+                ))}
+                {!isDay && starArray.map((_, i) => (
+                    <TwinklingStar key={i} />
+                ))}
+                {!isDay && <>
+                    <ShootingStar />
+                    <ShootingStar />
+                    <ShootingStar />
+                </>}
+                <svg width="100%" height="300px" viewBox="0 0 1000 200" preserveAspectRatio="xMidYMax slice">
+                    <path d={path} fill="none" stroke="none" id="sun-moon-path" />
+                </svg>
+                <motion.div
+                    style={{ position: 'absolute', top: 0, left: 0, color: sunMoonColor }}
+                    animate={{
+                        offsetDistance: `${timeOfDay.get() * 100}%`,
+                    }}
+                    transition={{ duration: 1, ease: 'linear' }}
+                >
+                    <Tooltip label={moonPhaseName} placement="top" isDisabled={isDay}>
+                        <Icon as={isDay ? WiDaySunny : MoonIcon} w={20} h={20} style={{ motionPath: `path("${path}")` }} />
+                    </Tooltip>
+                </motion.div>
+            </>
         </motion.div>
     );
 }

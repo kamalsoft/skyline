@@ -340,6 +340,16 @@ function AppContent() {
     localStorage.setItem('timeFormat', newFormat);
   };
 
+  const [background, setBackground] = useState(() => {
+    const savedBg = localStorage.getItem('background');
+    return savedBg ? JSON.parse(savedBg) : { type: 'dynamic', value: '' };
+  });
+
+  const handleBackgroundChange = (newBackground) => {
+    setBackground(newBackground);
+    localStorage.setItem('background', JSON.stringify(newBackground));
+  };
+
   function handleDragEnd(event) {
     const { active, over } = event;
     setActiveDragItem(null);
@@ -371,6 +381,7 @@ function AppContent() {
   return (
     <Box p={5}>
       <AnimatedBackground
+        background={background}
         sunrise={dailyForecast?.sunrise?.[0]}
         sunset={dailyForecast?.sunset?.[0]}
         weatherCode={primaryLocation ? clocks.find(c => c.id === primaryLocation.id)?.weatherCode : null}
@@ -430,7 +441,8 @@ function AppContent() {
               addClock={addClock}
               removeClock={removeClock}
               clockTheme={clockTheme} onThemeChange={handleThemeChange}
-              timeFormat={timeFormat} onTimeFormatChange={handleTimeFormatChange} setPrimaryLocation={setPrimaryLocationAndUpdateClocks}
+              timeFormat={timeFormat} onTimeFormatChange={handleTimeFormatChange}
+              background={background} onBackgroundChange={handleBackgroundChange} setPrimaryLocation={setPrimaryLocationAndUpdateClocks}
               onClose={onClose}
             />
           </DrawerBody>
