@@ -22,9 +22,10 @@ import {
   Alert,
   AlertIcon,
   AlertTitle,
+  AlertDescription,
   extendTheme,
 } from '@chakra-ui/react';
-import { MoonIcon, SunIcon, InfoIcon, SettingsIcon, ViewIcon } from '@chakra-ui/icons';
+import { MoonIcon, SunIcon, SettingsIcon, ViewIcon } from '@chakra-ui/icons';
 import {
   DndContext,
   closestCenter,
@@ -226,22 +227,23 @@ function AppContent() {
       setCurrentLocationStatus('loading');
       setCurrentLocationError('High-accuracy location failed. Trying network-based location...');
       try {
-        const response = await axios.get('http://ip-api.com/json');
+        const response = await axios.get('https://ipinfo.io/json');
         const result = response.data;
-        if (result.status === 'success') {
+        if (result && result.loc) {
           console.log('[App.js] IP-based geolocation successful:', result);
+          const [lat, lon] = result.loc.split(',');
           const newClock = {
             id: 'current-location',
-            location: `${result.city}, ${result.regionName || result.country}`,
+            location: `${result.city}, ${result.region || result.country}`,
             timeZone: result.timezone,
-            latitude: result.lat,
-            longitude: result.lon,
-            countryCode: result.countryCode.toLowerCase(),
+            latitude: parseFloat(lat),
+            longitude: parseFloat(lon),
+            countryCode: result.country.toLowerCase(),
           };
           setPrimaryLocationAndUpdateClocks(newClock);
           setCurrentLocationStatus('success');
         } else {
-          throw new Error('IP-based geolocation failed.');
+          throw new Error('IP-based geolocation failed or returned incomplete data.');
         }
       } catch (error) {
         console.error('[App.js] IP-based geolocation error:', error);
@@ -390,13 +392,16 @@ function AppContent() {
         </HStack>
       )}
       {currentLocationStatus === 'error' && (
-        <HStack justify="center" mb={4} color="red.500">
-          <InfoIcon />
-          <Text>{currentLocationError}</Text>
-          <Button colorScheme="yellow" size="sm" onClick={onOpen}>
+        <Alert status="error" borderRadius="md" className="glass" my={4}>
+          <AlertIcon />
+          <Box flex="1">
+            <AlertTitle>Location Error</AlertTitle>
+            <AlertDescription display="block">{currentLocationError}</AlertDescription>
+          </Box>
+          <Button colorScheme="yellow" size="sm" onClick={onOpen} ml={4}>
             Set Manually
           </Button>
-        </HStack>
+        </Alert>
       )}
 
       {activeAlerts.length > 0 && (
