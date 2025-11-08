@@ -2,12 +2,12 @@
 import React from 'react';
 import { Text, VStack } from '@chakra-ui/react';
 
-function DigitalClock({ time, compact }) {
+function DigitalClock({ time, compact, timeFormat }) {
     const timeOptions = {
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
-        hour12: true,
+        hour12: timeFormat === '12h',
     };
 
     if (compact) {

@@ -25,7 +25,7 @@ import ForecastItem from './ForecastItem';
 import DetailedWeatherModal from './DetailedWeatherModal';
 import WeatherCardSkeleton from './WeatherCardSkeleton';
 
-function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, locationName }) {
+function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, locationName, timeFormat }) {
     const [weatherData, setWeatherData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -88,7 +88,7 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
         if (type === 'hourly') {
             const hourData = weatherData.hourly;
             details = {
-                time: new Date(hourData.time[index]).toLocaleTimeString(),
+                time: new Date(hourData.time[index]).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: timeFormat === '12h' }),
                 temperature: displayTemp(hourData.temperature_2m[index], true),
                 weather_code: hourData.weather_code[index],
                 apparent_temperature: hourData.apparent_temperature[index],
@@ -101,7 +101,7 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
         } else { // daily
             const dayData = weatherData.daily;
             details = {
-                time: new Date(dayData.time[index]).toLocaleDateString(),
+                time: new Date(dayData.time[index]).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
                 temperature: `${displayTemp(dayData.temperature_2m_min[index], true)} / ${displayTemp(dayData.temperature_2m_max[index], true)}`,
                 // Manually map properties to avoid circular references
                 weather_code: dayData.weather_code[index],
@@ -267,6 +267,7 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
                 onClose={onClose}
                 data={selectedForecast}
                 displayTemp={displayTemp}
+                timeFormat={timeFormat}
             />
         </Box>
     );

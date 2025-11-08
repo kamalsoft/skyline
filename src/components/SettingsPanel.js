@@ -12,7 +12,6 @@ import {
     Heading,
     Text,
     Spinner,
-    Tooltip,
     IconButton,
     useToast,
     List,
@@ -28,7 +27,7 @@ import {
 } from '@chakra-ui/react';
 import { DeleteIcon, WarningTwoIcon } from '@chakra-ui/icons';
 
-function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChange }) {
+function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChange, timeFormat, onTimeFormatChange, setPrimaryLocation, onClose }) {
     const [formData, setFormData] = useState({
         location: '',
         timeZone: '',
@@ -90,26 +89,6 @@ function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChang
         onDuplicateAlertClose(); // Close duplicate alert if it was open
     };
 
-    const handleAddClock = () => {
-        const { location, timeZone, latitude, longitude } = formData;
-        if (!location || !timeZone || !latitude || !longitude) {
-            toast({
-                title: 'Missing Information',
-                description: 'Please search for a location and select one from the list.',
-                status: 'error',
-                duration: 3000,
-                isClosable: true,
-            });
-            return;
-        }
-
-        if (clocks.some(clock => clock.location === location)) {
-            onDuplicateAlertOpen();
-        } else {
-            addClockAndClear();
-        }
-    };
-
     const confirmDelete = (id) => {
         setClockToDelete(id);
         onAlertOpen();
@@ -122,16 +101,34 @@ function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChang
 
 
     const selectLocation = (result) => {
-        const formattedLocation = `${result.name}, ${result.admin1 || ''} ${result.country_code}`.replace(/, {2}/g, ', ');
-        setFormData({
-            location: formattedLocation,
+        const newClock = {
+            location: `${result.name}, ${result.admin1 || ''} ${result.country_code}`.replace(/, {2}/g, ', '),
             timeZone: result.timezone,
-            latitude: result.latitude.toFixed(4),
-            longitude: result.longitude.toFixed(4),
+            latitude: parseFloat(result.latitude.toFixed(4)),
+            longitude: parseFloat(result.longitude.toFixed(4)),
+            countryCode: result.country_code.toLowerCase(),
+        };
+
+        if (clocks.some(clock => clock.location === newClock.location)) {
+            onDuplicateAlertOpen();
+        } else {
+            addClock(newClock);
+            resetForm();
+        }
+    };
+
+    const handleSetPrimary = (result) => {
+        setPrimaryLocation({
+            id: 'manual-primary',
+            location: `${result.name}, ${result.admin1 || ''} ${result.country_code}`.replace(/, {2}/g, ', '),
+            timeZone: result.timezone,
+            latitude: result.latitude,
+            longitude: result.longitude,
             countryCode: result.country_code.toLowerCase(),
         });
-        setSearchResults([]);
-    }
+        resetForm();
+        onClose(); // Close the drawer after setting the primary location
+    };
 
     return (
         <VStack spacing={8} align="stretch" className="glass" p={5} borderRadius="lg">
@@ -147,23 +144,27 @@ function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChang
                 {searchResults.length > 0 && !isLoading && (
                     <List spacing={2} mt={4} borderWidth="1px" borderRadius="md" p={2}>
                         {searchResults.map((result) => (
-                            <Tooltip key={result.id} label="Click to select this location" aria-label="Select location tooltip">
-                                <Box
-                                    p={3}
-                                    borderWidth="1px"
-                                    borderRadius="md"
-                                    boxShadow="sm"
-                                    _hover={{ bg: 'blue.50', borderColor: 'blue.200', boxShadow: 'md', cursor: 'pointer' }}
-                                    onClick={() => selectLocation(result)}
-                                >
+                            <Box
+                                key={result.id}
+                                p={3}
+                                borderWidth="1px"
+                                borderRadius="md"
+                                boxShadow="sm"
+                            >
+                                <VStack align="stretch">
                                     <Text fontWeight="semibold">{result.name}, {result.admin1 ? `${result.admin1}, ` : ''}{result.country}</Text>
                                     <Text fontSize="sm" color="gray.600">Timezone: {result.timezone} | Lat: {result.latitude.toFixed(2)}, Lon: {result.longitude.toFixed(2)}</Text>
-                                </Box>
-                            </Tooltip>
+                                    <HStack mt={2}>
+                                        <Button size="xs" colorScheme="blue" onClick={() => handleSetPrimary(result)}>Set as Primary</Button>
+                                        <Button size="xs" onClick={() => selectLocation(result)}>Add to Clocks</Button>
+                                    </HStack>
+                                </VStack>
+                            </Box>
                         ))}
                     </List>
                 )}
-                <Button colorScheme="blue" mt={4} onClick={handleAddClock}>Add Clock</Button>
+                {/* This button is less useful now that actions are on each item */}
+                {/* <Button colorScheme="blue" mt={4} onClick={handleAddClock}>Add Clock</Button> */}
             </Box>
             <Box>
                 <Heading as="h3" size="md" mb={4}>Appearance</Heading>
@@ -173,6 +174,15 @@ function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChang
                         <HStack spacing={5}>
                             <Radio value="metallic">Copper</Radio>
                             <Radio value="minimalist">Minimalist</Radio>
+                        </HStack>
+                    </RadioGroup>
+                </FormControl>
+                <FormControl mt={4}>
+                    <FormLabel>Time Format</FormLabel>
+                    <RadioGroup onChange={onTimeFormatChange} value={timeFormat}>
+                        <HStack spacing={5}>
+                            <Radio value="12h">12-Hour</Radio>
+                            <Radio value="24h">24-Hour</Radio>
                         </HStack>
                     </RadioGroup>
                 </FormControl>

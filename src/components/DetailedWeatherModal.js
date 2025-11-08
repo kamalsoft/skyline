@@ -15,7 +15,7 @@ import {
 } from '@chakra-ui/react';
 import { getWeatherDescription } from '../utils/weatherUtils';
 
-function DetailedWeatherModal({ isOpen, onClose, data, displayTemp }) {
+function DetailedWeatherModal({ isOpen, onClose, data, displayTemp, timeFormat }) {
     if (!data) return null;
 
     const { type, details } = data;
@@ -34,8 +34,8 @@ function DetailedWeatherModal({ isOpen, onClose, data, displayTemp }) {
     const renderDailyDetails = () => (
         <VStack spacing={3} align="stretch">
             <Text><strong>Condition:</strong> {getWeatherDescription(details.weather_code)}</Text>
-            <Text><strong>Sunrise:</strong> {new Date(details.sunrise).toLocaleTimeString()}</Text>
-            <Text><strong>Sunset:</strong> {new Date(details.sunset).toLocaleTimeString()}</Text>
+            <Text><strong>Sunrise:</strong> {new Date(details.sunrise).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: timeFormat === '12h' })}</Text>
+            <Text><strong>Sunset:</strong> {new Date(details.sunset).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: timeFormat === '12h' })}</Text>
             <Text><strong>Max UV Index:</strong> {details.uv_index_max}</Text>
             <Text><strong>Total Precipitation:</strong> {details.precipitation_sum} mm</Text>
             <Text><strong>Dominant Wind Direction:</strong> {details.wind_direction_10m_dominant}°</Text>

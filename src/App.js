@@ -23,7 +23,7 @@ import {
   AlertTitle,
   extendTheme,
 } from '@chakra-ui/react';
-import { MoonIcon, SunIcon, InfoIcon, SettingsIcon } from '@chakra-ui/icons';
+import { MoonIcon, SunIcon, InfoIcon, SettingsIcon, ViewIcon } from '@chakra-ui/icons';
 import {
   DndContext,
   closestCenter,
@@ -45,6 +45,8 @@ import WeatherCard from './components/WeatherCard';
 import SettingsPanel from './components/SettingsPanel';
 import WorldClockCard from './components/WorldClockCard';
 import SortableWorldClock from './components/SortableWorldClock'; // This should now wrap WorldClockCard
+import { LogProvider } from './contexts/LogContext';
+import LogTerminal from './components/LogTerminal';
 import { generateWeatherAlerts } from './utils/alertUtils';
 import './App.css';
 import axios from 'axios'; // For reverse geocoding
@@ -122,11 +124,17 @@ function AppContent() {
   const { colorMode, toggleColorMode } = useColorMode();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const btnRef = useRef();
+  const [showLogTerminal, setShowLogTerminal] = useState(false);
 
   const [currentLocationStatus, setCurrentLocationStatus] = useState('idle'); // 'idle', 'loading', 'success', 'error'
   const [currentLocationError, setCurrentLocationError] = useState(null);
-  const [currentLocation, setCurrentLocation] = useState(null);
+  const [primaryLocation, setPrimaryLocation] = useState(null);
   const [dailyForecast, setDailyForecast] = useState(null);
+
+  useEffect(() => {
+    console.log('[App.js] Primary location state changed:', primaryLocation);
+  }, [primaryLocation]);
+
   const [weatherAlerts, setWeatherAlerts] = useState([]);
   const [dismissedAlerts, setDismissedAlerts] = useState([]);
   const sensors = useSensors(
@@ -164,10 +172,12 @@ function AppContent() {
   }, [dailyForecast]);
 
   useEffect(() => {
+    console.log('[App.js] Attempting to get current location...');
     setCurrentLocationStatus('loading');
 
     const handleLocationSuccess = async (position) => {
       const { latitude, longitude } = position.coords;
+      console.log(`[App.js] Geolocation success. Lat: ${latitude}, Lon: ${longitude}`);
       try {
         const response = await axios.get(
           `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
@@ -175,6 +185,7 @@ function AppContent() {
         const result = response.data;
 
         if (result) {
+          console.log('[App.js] Reverse geocoding successful:', result);
           const newClock = {
             id: 'current-location',
             location: `${result.locality}, ${result.principalSubdivision || result.countryName}`,
@@ -183,7 +194,7 @@ function AppContent() {
             longitude: longitude,
             countryCode: result.countryCode,
           };
-          setCurrentLocation(newClock);
+          setPrimaryLocation(newClock);
 
           setClocks((prevClocks) => {
             const existing = prevClocks.find(c => c.id === 'current-location');
@@ -204,11 +215,13 @@ function AppContent() {
     };
 
     const handleLocationError = (error, fallback) => {
+      console.error('[App.js] Geolocation error:', error);
       if (error.code === error.TIMEOUT && fallback) {
         // If high accuracy timed out, try with low accuracy
         fallback();
       } else {
         let message = 'An error occurred while fetching your location.';
+        console.warn(`[App.js] Geolocation failed with code: ${error.code}`);
         switch (error.code) {
           case error.PERMISSION_DENIED:
             message = 'Location access denied. Please enable it in your browser settings to see local weather.';
@@ -229,6 +242,7 @@ function AppContent() {
 
     const getLocation = () => {
       if (!navigator.geolocation) {
+        console.error('[App.js] Geolocation is not supported by this browser.');
         setCurrentLocationStatus('error');
         setCurrentLocationError('Geolocation is not supported by your browser.');
         return;
@@ -278,6 +292,15 @@ function AppContent() {
     localStorage.setItem('clockTheme', newTheme);
   };
 
+  const [timeFormat, setTimeFormat] = useState(() => {
+    return localStorage.getItem('timeFormat') || '12h'; // '12h' or '24h'
+  });
+
+  const handleTimeFormatChange = (newFormat) => {
+    setTimeFormat(newFormat);
+    localStorage.setItem('timeFormat', newFormat);
+  };
+
   function handleDragEnd(event) {
     const { active, over } = event;
     setActiveDragItem(null);
@@ -300,21 +323,24 @@ function AppContent() {
   }, []);
 
   const handleWeatherFetch = useCallback((weather) => {
-    setClocks(clocks => clocks.map(c => c.id === 'current-location' ? { ...c, weatherCode: weather.weathercode } : c));
-  }, []);
+    console.log('[App.js] Weather fetched for primary location, updating weather code.');
+    setClocks(prevClocks => prevClocks.map(c => c.id === 'current-location' ? { ...c, weatherCode: weather.weathercode } : c));
+  }, []); // This dependency array is intentionally kept minimal to avoid re-renders.
 
   const activeAlerts = weatherAlerts.filter(alert => !dismissedAlerts.includes(alert.id));
 
+  console.log('[App.js] Rendering with primaryLocation:', primaryLocation);
   return (
     <Box p={5}>
       <AnimatedBackground
         sunrise={dailyForecast?.sunrise?.[0]}
         sunset={dailyForecast?.sunset?.[0]}
-        weatherCode={currentLocation ? clocks.find(c => c.id === 'current-location')?.weatherCode : null}
+        weatherCode={primaryLocation ? clocks.find(c => c.id === primaryLocation.id)?.weatherCode : null}
       />
       <HStack justify="flex-end" mb={4} position="relative" zIndex="10">
         <HStack className="glass" p={2} borderRadius="md">
           <IconButton onClick={toggleColorMode} icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />} aria-label="Toggle theme" />
+          <IconButton onClick={() => setShowLogTerminal(!showLogTerminal)} icon={<ViewIcon />} aria-label="Toggle Log Terminal" variant={showLogTerminal ? 'solid' : 'ghost'} />
           <Button ref={btnRef} leftIcon={<SettingsIcon />} colorScheme="teal" variant="ghost" onClick={onOpen}>
             Settings
           </Button>
@@ -358,20 +384,29 @@ function AppContent() {
           <DrawerCloseButton />
           <DrawerHeader>Customize Your Dashboard</DrawerHeader>
           <DrawerBody>
-            <SettingsPanel clocks={clocks} addClock={addClock} removeClock={removeClock} clockTheme={clockTheme} onThemeChange={handleThemeChange} />
+            <SettingsPanel
+              clocks={clocks}
+              addClock={addClock}
+              removeClock={removeClock}
+              clockTheme={clockTheme} onThemeChange={handleThemeChange}
+              timeFormat={timeFormat} onTimeFormatChange={handleTimeFormatChange}
+              setPrimaryLocation={setPrimaryLocation}
+              onClose={onClose}
+            />
           </DrawerBody>
         </DrawerContent>
       </Drawer>
 
       <Grid templateColumns={{ base: '1fr', lg: 'minmax(0, 2fr) minmax(0, 1fr)' }} gap={6} h="calc(100vh - 80px)" overflow="hidden">
         <Box overflowY="auto" p={2} sx={{ '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { bg: 'gray.600', borderRadius: '24px' }, 'scrollbarWidth': 'thin' }}>
-          {currentLocation && (
+          {primaryLocation && (
             <WeatherCard
-              latitude={currentLocation.latitude}
-              longitude={currentLocation.longitude}
+              latitude={primaryLocation.latitude}
+              longitude={primaryLocation.longitude}
               onForecastFetch={handleForecastFetch}
-              locationName={currentLocation.location}
+              locationName={primaryLocation.location}
               onWeatherFetch={handleWeatherFetch}
+              timeFormat={timeFormat}
             />
           )}
         </Box>
@@ -388,29 +423,32 @@ function AppContent() {
                 <AnimatePresence>
                   {clocks.map((clock) => (
                     <motion.div key={clock.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}>
-                      <SortableWorldClock clock={clock} clockTheme={clockTheme} />
+                      <SortableWorldClock clock={clock} clockTheme={clockTheme} timeFormat={timeFormat} />
                     </motion.div>
                   ))}
                 </AnimatePresence>
               </VStack>
               <DragOverlay>
                 {activeDragItem ? (
-                  <WorldClockCard clock={activeDragItem} isDragging clockTheme={clockTheme} />
+                  <WorldClockCard clock={activeDragItem} isDragging clockTheme={clockTheme} timeFormat={timeFormat} />
                 ) : null}
               </DragOverlay>
             </SortableContext>
           </DndContext>
         </Box>
       </Grid>
+      {showLogTerminal && <LogTerminal />}
     </Box>
   );
 }
 
 function App() {
   return (
-    <ChakraProvider theme={theme}>
-      <AppContent />
-    </ChakraProvider>
+    <LogProvider>
+      <ChakraProvider theme={theme}>
+        <AppContent />
+      </ChakraProvider>
+    </LogProvider>
   );
 }
 

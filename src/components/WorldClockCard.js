@@ -9,7 +9,7 @@ import { useWorldClock } from '../hooks/useWorldClock';
 import { getWeatherDescription } from '../utils/weatherUtils';
 import AnimatedWeatherIcon from './AnimatedWeatherIcon';
 
-function WorldClockCard({ clock, isDragging, clockTheme }) {
+function WorldClockCard({ clock, isDragging, clockTheme, timeFormat }) {
     const time = useWorldClock(clock.timeZone);
     const [isAnalog, setIsAnalog] = useState(false);
     const [weather, setWeather] = useState(null);
@@ -66,7 +66,7 @@ function WorldClockCard({ clock, isDragging, clockTheme }) {
             <HStack justify="space-between" align="center">
                 <VStack align="flex-start">
                     <Text fontWeight="bold" fontSize="lg">{clock.location.split(',')[0]}</Text>
-                    {!isAnalog && <DigitalClock time={time} compact />}
+                    {!isAnalog && <DigitalClock time={time} compact timeFormat={timeFormat} />}
                 </VStack>
                 {isAnalog ? (
                     <AnalogClock time={time} clockTheme={clockTheme} />

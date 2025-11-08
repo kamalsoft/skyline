@@ -6,7 +6,7 @@ import { Box } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import WorldClockCard from './WorldClockCard';
 
-function SortableWorldClock({ clock, clockTheme }) {
+function SortableWorldClock({ clock, clockTheme, timeFormat }) {
     const {
         attributes,
         listeners,
@@ -26,8 +26,7 @@ function SortableWorldClock({ clock, clockTheme }) {
     return (
         <motion.div layout>
             <Box ref={setNodeRef} style={style} {...attributes} {...listeners}>
-                {/* We pass props to the underlying card */}
-                <WorldClockCard clock={clock} clockTheme={clockTheme} />
+                <WorldClockCard clock={clock} clockTheme={clockTheme} timeFormat={timeFormat} />
             </Box>
         </motion.div>
     );
