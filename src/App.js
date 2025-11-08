@@ -12,6 +12,7 @@ import {
   DrawerHeader,
   DrawerOverlay,
   DrawerContent,
+  CloseButton,
   DrawerCloseButton,
   Text,
   Spinner,
@@ -131,6 +132,20 @@ function AppContent() {
   const [primaryLocation, setPrimaryLocation] = useState(null);
   const [dailyForecast, setDailyForecast] = useState(null);
 
+  // Centralized function to set the primary location and update the clocks list
+  const setPrimaryLocationAndUpdateClocks = useCallback((locationData) => {
+    console.log('[App.js] Setting primary location:', locationData);
+    setPrimaryLocation(locationData);
+
+    setClocks((prevClocks) => {
+      const existing = prevClocks.find(c => c.id === locationData.id);
+      if (existing) {
+        return prevClocks.map(c => c.id === locationData.id ? locationData : c);
+      }
+      return [locationData, ...prevClocks.filter(c => c.id !== 'current-location')];
+    });
+  }, []);
+
   useEffect(() => {
     console.log('[App.js] Primary location state changed:', primaryLocation);
   }, [primaryLocation]);
@@ -194,15 +209,7 @@ function AppContent() {
             longitude: longitude,
             countryCode: result.countryCode,
           };
-          setPrimaryLocation(newClock);
-
-          setClocks((prevClocks) => {
-            const existing = prevClocks.find(c => c.id === 'current-location');
-            if (existing) {
-              return prevClocks.map(c => c.id === 'current-location' ? newClock : c);
-            }
-            return [newClock, ...prevClocks];
-          });
+          setPrimaryLocationAndUpdateClocks(newClock);
           setCurrentLocationStatus('success');
         } else {
           throw new Error('Could not find location details.');
@@ -264,7 +271,7 @@ function AppContent() {
     };
 
     getLocation();
-  }, []); // Run once on mount
+  }, [setPrimaryLocationAndUpdateClocks]); // Run once on mount
 
   const addClock = (clock) => {
     setClocks((prevClocks) => [
@@ -329,7 +336,6 @@ function AppContent() {
 
   const activeAlerts = weatherAlerts.filter(alert => !dismissedAlerts.includes(alert.id));
 
-  console.log('[App.js] Rendering with primaryLocation:', primaryLocation);
   return (
     <Box p={5}>
       <AnimatedBackground
@@ -372,7 +378,7 @@ function AppContent() {
                 <AlertTitle>{alert.title}</AlertTitle>
                 <Text fontSize="sm">{alert.description}</Text>
               </Box>
-              <DrawerCloseButton position="relative" top="0" right="0" onClick={() => setDismissedAlerts([...dismissedAlerts, alert.id])} />
+              <CloseButton position="relative" top="0" right="0" onClick={() => setDismissedAlerts([...dismissedAlerts, alert.id])} />
             </Alert>
           ))}
         </VStack>
@@ -389,8 +395,7 @@ function AppContent() {
               addClock={addClock}
               removeClock={removeClock}
               clockTheme={clockTheme} onThemeChange={handleThemeChange}
-              timeFormat={timeFormat} onTimeFormatChange={handleTimeFormatChange}
-              setPrimaryLocation={setPrimaryLocation}
+              timeFormat={timeFormat} onTimeFormatChange={handleTimeFormatChange} setPrimaryLocation={setPrimaryLocationAndUpdateClocks}
               onClose={onClose}
             />
           </DrawerBody>

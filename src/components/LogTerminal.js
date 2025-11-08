@@ -2,8 +2,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import {
     Box, Text, HStack, useColorModeValue, IconButton, Tooltip,
-    AlertDialog, AlertDialogBody, AlertDialogFooter, AlertDialogHeader,
-    AlertDialogContent, AlertDialogOverlay, useDisclosure, Button
+    AlertDialog, AlertDialogBody, AlertDialogFooter, AlertDialogHeader, AlertDialogContent,
+    AlertDialogOverlay, useDisclosure, Button, VStack, ButtonGroup
 } from '@chakra-ui/react';
 import { motion, useDragControls } from 'framer-motion';
 import { DeleteIcon, WarningTwoIcon } from '@chakra-ui/icons';
@@ -21,8 +21,9 @@ function LogEntry({ log }) {
 
     return (
         <HStack align="flex-start">
-            <Text color="gray.500" whiteSpace="nowrap">{log.timestamp}</Text>
-            <Text color={textColor} whiteSpace="pre-wrap" wordBreak="break-word">{log.message}</Text>
+            <Text color="gray.500" whiteSpace="nowrap" minW="80px">{log.timestamp}</Text>
+            <Text color="purple.400" whiteSpace="nowrap" fontWeight="bold" minW="120px" maxW="120px" isTruncated title={log.source}>[{log.source}]</Text>
+            <Text color={textColor} whiteSpace="pre-wrap" wordBreak="break-word" flex="1">{log.message}</Text>
         </HStack>
     );
 }
@@ -37,13 +38,21 @@ function LogTerminal() {
     const dragControls = useDragControls();
 
     const [size, setSize] = useState({ width: 500, height: 300 });
+    const [filterLevel, setFilterLevel] = useState('all'); // 'all', 'info', 'warn', 'error'
+
     // Auto-scroll to the bottom when new logs are added
     useEffect(() => {
         if (terminalRef.current) {
             terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
         }
-    }, [logs]);
+    }, [logs, filterLevel]);
 
+    const filteredLogs = logs.filter(log => {
+        if (filterLevel === 'all') {
+            return true;
+        }
+        return log.level === filterLevel;
+    });
     return (
         <motion.div
             dragListener={false}
@@ -71,22 +80,30 @@ function LogTerminal() {
                 flexDirection="column"
                 overflow="hidden"
             >
-                <Box p={2} cursor="move" borderBottom="1px solid" borderColor={borderColor} as={HStack} justify="space-between" onPointerDown={(e) => dragControls.start(e)}>
-                    <Text fontWeight="bold" pl={2}>Log Terminal</Text>
-                    <HStack>
-                        <Tooltip label="Clear logs" placement="top">
-                            <IconButton icon={<DeleteIcon />} size="xs" variant="ghost" onClick={clearLogs} aria-label="Clear logs" />
-                        </Tooltip>
-                        <Tooltip label="Clear Cache & Reload" placement="top">
-                            <IconButton
-                                icon={<WarningTwoIcon />}
-                                colorScheme="red"
-                                size="xs"
-                                variant="ghost"
-                                onClick={onOpen}
-                                aria-label="Clear cache and reload" />
-                        </Tooltip>
+                <Box p={2} cursor="move" borderBottom="1px solid" borderColor={borderColor} as={VStack} align="stretch" onPointerDown={(e) => dragControls.start(e)}>
+                    <HStack justify="space-between">
+                        <Text fontWeight="bold" pl={2}>Log Terminal</Text>
+                        <HStack>
+                            <Tooltip label="Clear logs" placement="top">
+                                <IconButton icon={<DeleteIcon />} size="xs" variant="ghost" onClick={clearLogs} aria-label="Clear logs" />
+                            </Tooltip>
+                            <Tooltip label="Clear Cache & Reload" placement="top">
+                                <IconButton
+                                    icon={<WarningTwoIcon />}
+                                    colorScheme="red"
+                                    size="xs"
+                                    variant="ghost"
+                                    onClick={onOpen}
+                                    aria-label="Clear cache and reload" />
+                            </Tooltip>
+                        </HStack>
                     </HStack>
+                    <ButtonGroup size="xs" isAttached variant="outline" pt={1} onClick={(e) => e.stopPropagation()}>
+                        <Button onClick={() => setFilterLevel('all')} isActive={filterLevel === 'all'}>All</Button>
+                        <Button onClick={() => setFilterLevel('info')} isActive={filterLevel === 'info'}>Info</Button>
+                        <Button onClick={() => setFilterLevel('warn')} isActive={filterLevel === 'warn'}>Warn</Button>
+                        <Button onClick={() => setFilterLevel('error')} isActive={filterLevel === 'error'}>Error</Button>
+                    </ButtonGroup>
                 </Box>
                 <Box
                     ref={terminalRef}
@@ -96,7 +113,7 @@ function LogTerminal() {
                     overflowY="auto"
                     flex="1"
                 >
-                    {logs.map((log, index) => <LogEntry key={index} log={log} />)}
+                    {filteredLogs.map((log, index) => <LogEntry key={index} log={log} />)}
                 </Box>
                 <motion.div
                     drag="x, y"

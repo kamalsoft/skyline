@@ -9,10 +9,11 @@ export const useLogs = () => useContext(LogContext);
 export const LogProvider = ({ children }) => {
     const [logs, setLogs] = useState([]);
 
-    const addLog = useCallback((message, level = 'info') => {
+    const addLog = useCallback((message, level = 'info', source = 'system') => {
         const newLog = {
             message: message,
             level,
+            source,
             timestamp: new Date().toLocaleTimeString(),
         };
         // Add new log and keep only the last 100 entries
@@ -59,16 +60,39 @@ export const LogProvider = ({ children }) => {
             error: console.error,
         };
 
+        const getLogSource = () => {
+            try {
+                throw new Error();
+            } catch (e) {
+                // The stack gives us the call trace. We want the caller of the console function.
+                // The stack format varies by browser, but generally the third or fourth line is what we want.
+                const stackLines = e.stack.split('\n');
+                if (stackLines.length > 3) {
+                    const callerLine = stackLines[3]; // e.g., " at AppContent (http://.../App.js:123:4)"
+                    const match = callerLine.match(/at\s+(?:.*\s+)?\((?:.*\/)?(.*?):\d+:\d+\)/);
+                    if (match && match[1]) {
+                        return match[1]; // Extracts "App.js"
+                    }
+                    // Fallback for anonymous functions or different stack formats
+                    const simpleMatch = callerLine.match(/(?:.*\/)?(.*?):\d+:\d+/);
+                    if (simpleMatch && simpleMatch[1]) {
+                        return simpleMatch[1];
+                    }
+                }
+                return 'unknown';
+            }
+        };
+
         console.log = (...args) => {
             originalConsole.log(...args);
             const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)).join(' ');
-            addLog(message, 'info');
+            addLog(message, 'info', getLogSource());
         };
 
         console.warn = (...args) => {
             originalConsole.warn(...args);
             const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)).join(' ');
-            addLog(message, 'warn');
+            addLog(message, 'warn', getLogSource());
         };
 
         console.error = (...args) => {
@@ -78,7 +102,7 @@ export const LogProvider = ({ children }) => {
                 if (arg instanceof Error) return arg.stack || arg.message;
                 return typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg);
             }).join(' ');
-            addLog(message, 'error');
+            addLog(message, 'error', getLogSource());
         };
 
         addLog('Log terminal initialized.', 'info');
