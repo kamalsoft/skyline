@@ -60,9 +60,9 @@ export const SoundProvider = ({ children }) => {
         Howler.mute(!settings.masterEnabled);
 
         // Update volumes of currently playing sounds
-        if (sounds.rain && sounds.rain.playing()) sounds.rain.volume(settings.weatherVolume);
-        if (sounds.day && sounds.day.playing()) sounds.day.volume(settings.ambientVolume);
-        if (sounds.night && sounds.night.playing()) sounds.night.volume(settings.ambientVolume);
+        if (sounds['weather-rain'] && sounds['weather-rain'].playing()) sounds['weather-rain'].volume(settings.weatherVolume);
+        if (sounds['ambient-day'] && sounds['ambient-day'].playing()) sounds['ambient-day'].volume(settings.ambientVolume);
+        if (sounds['ambient-night'] && sounds['ambient-night'].playing()) sounds['ambient-night'].volume(settings.ambientVolume);
 
     }, [settings, sounds]);
 

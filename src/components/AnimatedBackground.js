@@ -120,7 +120,7 @@ const MemoizedTwinklingStars = React.memo(({ count, isAnimationPaused }) => {
     return <>{stars}</>;
 });
 
-function AnimatedBackground({ sunrise, sunset, weatherCode, background, isAnimationPaused, onLightningFlash }) {
+function AnimatedBackground({ sunrise, sunset, weatherCode, background, isAnimationPaused, animationSettings, onLightningFlash }) {
     const timeOfDay = useMotionValue(0); // 0 = midnight, 0.5 = noon, 1 = midnight
     const { playSound, stopSound } = useSound();
 
@@ -304,37 +304,40 @@ function AnimatedBackground({ sunrise, sunset, weatherCode, background, isAnimat
 
             {/* Only render dynamic elements if not using a custom background */}
             <>
-                {isThunderstorm && (
-                    <Lightning isAnimationPaused={isAnimationPaused} isDay={isDay} onFlash={onLightningFlash} />
-                )}
-                {isPartlyCloudy && partlyCloudyLayers.map(cloud => (
-                    <Cloud key={cloud.id} {...cloud} color={cloudColor.get()} />
-                ))}
-                {isOvercast && overcastLayers.map(cloud => (
-                    <Cloud key={cloud.id} {...cloud} color={cloudColor.get()} />
-                ))}
-                {isFoggy && (
+                {animationSettings.showWeatherEffects && (
                     <>
-                        <Fog top={60} duration={120} opacity={0.8} />
-                        <Fog top={50} duration={150} opacity={0.7} />
-                        <Fog top={55} duration={180} opacity={0.6} />
+                        {isThunderstorm && <Lightning isAnimationPaused={isAnimationPaused} isDay={isDay} onFlash={onLightningFlash} />}
+                        {isPartlyCloudy && partlyCloudyLayers.map(cloud => (
+                            <Cloud key={cloud.id} {...cloud} color={cloudColor.get()} />
+                        ))}
+                        {isOvercast && overcastLayers.map(cloud => (
+                            <Cloud key={cloud.id} {...cloud} color={cloudColor.get()} />
+                        ))}
+                        {isFoggy && (
+                            <>
+                                <Fog top={60} duration={120} opacity={0.8} />
+                                <Fog top={50} duration={150} opacity={0.7} />
+                                <Fog top={55} duration={180} opacity={0.6} />
+                            </>
+                        )}
+                        {isRainy && Array.from({ length: 30 }).map((_, i) => (
+                            <RainDrop key={i} left={Math.random() * 100} duration={0.5 + Math.random() * 0.5} isAnimationPaused={isAnimationPaused} />
+                        ))}
                     </>
                 )}
-                {isRainy && Array.from({ length: 30 }).map((_, i) => ( // --- Optimization 4: Reduce element count ---
-                    <RainDrop key={i} left={Math.random() * 100} duration={0.5 + Math.random() * 0.5} isAnimationPaused={isAnimationPaused} />
-                ))}
-                {!isDay && <>
-                    <Aurora top={5} left={10} duration={15} colors={['rgba(0, 255, 150, 0.2)', 'rgba(0, 255, 150, 0)']} initial={{ x: 0, scale: 1 }} animate={{ x: 50, scale: 1.2 }} />
-                    <Aurora top={10} left={50} duration={20} colors={['rgba(173, 216, 230, 0.2)', 'rgba(173, 216, 230, 0)']} initial={{ x: 0, scale: 1.1 }} animate={{ x: -50, scale: 1 }} />
-                    <Aurora top={0} left={30} duration={25} colors={['rgba(221, 160, 221, 0.15)', 'rgba(221, 160, 221, 0)']} initial={{ y: 0, scale: 1 }} animate={{ y: 20, scale: 1.3 }} />
-                </>}
-                {/* --- Performance Optimization 3: Memoize stars to prevent re-rendering --- */}
-                {!isDay && <MemoizedTwinklingStars count={50} isAnimationPaused={isAnimationPaused} />}
-                {!isDay && <>
-                    <ShootingStar isAnimationPaused={isAnimationPaused} />
-                    <ShootingStar isAnimationPaused={isAnimationPaused} />
-                    <ShootingStar isAnimationPaused={isAnimationPaused} />
-                </>}
+                {animationSettings.showAmbientEffects && !isDay && (
+                    <>
+                        <Aurora top={5} left={10} duration={15} colors={['rgba(0, 255, 150, 0.2)', 'rgba(0, 255, 150, 0)']} initial={{ x: 0, scale: 1 }} animate={{ x: 50, scale: 1.2 }} />
+                        <Aurora top={10} left={50} duration={20} colors={['rgba(173, 216, 230, 0.2)', 'rgba(173, 216, 230, 0)']} initial={{ x: 0, scale: 1.1 }} animate={{ x: -50, scale: 1 }} />
+                        <Aurora top={0} left={30} duration={25} colors={['rgba(221, 160, 221, 0.15)', 'rgba(221, 160, 221, 0)']} initial={{ y: 0, scale: 1 }} animate={{ y: 20, scale: 1.3 }} />
+                        <MemoizedTwinklingStars count={50} isAnimationPaused={isAnimationPaused} />
+                        <>
+                            <ShootingStar isAnimationPaused={isAnimationPaused} />
+                            <ShootingStar isAnimationPaused={isAnimationPaused} />
+                            <ShootingStar isAnimationPaused={isAnimationPaused} />
+                        </>
+                    </>
+                )}
                 <svg width="100%" height="300px" viewBox="0 0 1000 200" preserveAspectRatio="xMidYMax slice">
                     <path d={path} fill="none" stroke="none" id="sun-moon-path" />
                 </svg>

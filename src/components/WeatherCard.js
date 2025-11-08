@@ -77,7 +77,7 @@ const ForecastCarousel = React.memo(({ children, itemCount }) => {
     );
 });
 
-function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, locationName, timeFormat }) {
+function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, locationName, timeFormat, displaySettings }) {
     const [weatherData, setWeatherData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -296,35 +296,9 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
 
     return (
         <Box className="glass" p={4} borderRadius="xl">
-            <VStack justify="center" mb={2}>
-                <HStack>
-                    <Heading as="h3" size="lg" noOfLines={1} title={locationName}>{locationName}</Heading>
-                    <HStack>
-                        <Tooltip label="Refresh weather" placement="top">
-                            <IconButton
-                                icon={<RepeatIcon />}
-                                isRound size="sm" variant="ghost"
-                                onClick={fetchWeather}
-                                isLoading={isLoading}
-                                aria-label="Refresh weather" />
-                        </Tooltip>
-                        <Tooltip label="Open Sunrise/Sunset Calendar" placement="top">
-                            <IconButton
-                                icon={<CalendarIcon />}
-                                isRound size="sm" variant="ghost"
-                                onClick={onCalendarOpen}
-                                aria-label="Open sunrise/sunset calendar" />
-                        </Tooltip>
-                        <Tooltip label="Open Weather Map" placement="top">
-                            <IconButton
-                                icon={<ViewIcon />}
-                                isRound size="sm" variant="ghost"
-                                onClick={onMapOpen}
-                                aria-label="Open weather map" />
-                        </Tooltip>
-                        {lastUpdated && <Text fontSize="xs" color="gray.500">Updated: {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>}
-                    </HStack>
-                </HStack>
+            <VStack justify="center" mb={4}>
+                <Heading as="h3" size="lg" noOfLines={1} title={locationName}>{locationName}</Heading>
+                {lastUpdated && <Text fontSize="xs" color="gray.500">Updated: {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>}
                 <Text>{getWeatherDescription(current.weathercode)}</Text>
                 {isGeneratingSummary ? (
                     <HStack className="glass" p={3} borderRadius="md" w="full" justify="center">
@@ -386,18 +360,22 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
                 </Box>
 
                 {/* Hourly Forecast */}
-                <Box>
-                    <Heading as="h4" size="sm" mb={2}>Hourly</Heading>
-                    <ForecastCarousel itemCount={24}>
-                        {hourlyForecastItems}
-                    </ForecastCarousel>
-                </Box>
+                {displaySettings.showHourlyForecast && (
+                    <Box>
+                        <Heading as="h4" size="sm" mb={2}>Hourly</Heading>
+                        <ForecastCarousel itemCount={24}>
+                            {hourlyForecastItems}
+                        </ForecastCarousel>
+                    </Box>
+                )}
 
                 {/* Daily Forecast */}
-                <Box>
-                    <Heading as="h4" size="sm" mb={2}>Weekly</Heading>
-                    <ForecastCarousel itemCount={7}>{dailyForecastItems}</ForecastCarousel>
-                </Box>
+                {displaySettings.showWeeklyForecast && (
+                    <Box>
+                        <Heading as="h4" size="sm" mb={2}>Weekly</Heading>
+                        <ForecastCarousel itemCount={7}>{dailyForecastItems}</ForecastCarousel>
+                    </Box>
+                )}
             </VStack>
             <DetailedWeatherModal
                 isOpen={isOpen}

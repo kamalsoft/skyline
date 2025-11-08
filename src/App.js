@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   ChakraProvider,
   Box,
+  Grid,
   VStack,
   HStack,
   Button,
@@ -403,6 +404,22 @@ function AppContent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isAnimationPaused, setIsAnimationPaused] = useState(false);
 
+  const [animationSettings, setAnimationSettings] = useState(() => {
+    const saved = localStorage.getItem('animationSettings');
+    return saved ? JSON.parse(saved) : {
+      showWeatherEffects: true, // clouds, rain, fog, etc.
+      showAmbientEffects: true, // stars, aurora
+    };
+  });
+
+  const [displaySettings, setDisplaySettings] = useState(() => {
+    const saved = localStorage.getItem('displaySettings');
+    return saved ? JSON.parse(saved) : {
+      showWorldClock: true,
+      showHourlyForecast: true,
+      showWeeklyForecast: true,
+    };
+  });
   const shakeControls = useAnimation();
   const handleLightningFlash = useCallback(() => {
     const getRandomInt = (max) => Math.floor(Math.random() * (max * 2 + 1)) - max;
@@ -427,6 +444,16 @@ function AppContent() {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  const handleAnimationSettingsChange = (newSettings) => {
+    setAnimationSettings(newSettings);
+    localStorage.setItem('animationSettings', JSON.stringify(newSettings));
+  };
+
+  const handleDisplaySettingsChange = (newSettings) => {
+    setDisplaySettings(newSettings);
+    localStorage.setItem('displaySettings', JSON.stringify(newSettings));
+  };
+
   return (
     <Box p={5}>
       <AnimatedBackground
@@ -435,6 +462,7 @@ function AppContent() {
         sunset={dailyForecast?.sunset?.[0]}
         weatherCode={primaryLocation ? clocks.find(c => c.id === primaryLocation.id)?.weatherCode : null}
         isAnimationPaused={isAnimationPaused}
+        animationSettings={animationSettings}
         onLightningFlash={handleLightningFlash}
       />
       <HStack justify="flex-end" mb={4} position="relative" zIndex="10">
@@ -501,74 +529,75 @@ function AppContent() {
 
       <motion.div
         animate={shakeControls}
-        style={{
-          height: "calc(100vh - 120px)",
-          overflow: "hidden",
-          display: 'grid',
-          gridTemplateColumns: isSidebarOpen ? '380px 1fr' : '80px 1fr',
-          gap: '24px',
-        }}
       >
-        {/* Sidebar Column */}
-        <Box className="glass" borderRadius="xl" p={4} display="flex" flexDirection="column">
-          <HStack justify="space-between" mb={4} flexShrink={0}>
-            {isSidebarOpen && <Heading size="md">World Clocks</Heading>}
-            <Tooltip label={isSidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"} placement="right">
-              <IconButton
-                icon={isSidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-                onClick={toggleSidebar}
-                aria-label="Toggle sidebar"
-                variant="ghost"
-              />
-            </Tooltip>
-          </HStack>
-          <Box overflowY="auto" flex="1" sx={{ '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { bg: 'gray.600', borderRadius: '24px' } }}>
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragStart={(event) => {
-                playSound('ui-drag');
-                handleDragStart(event);
-                handleHapticFeedback();
-              }}
-              onDragEnd={(event) => { playSound('ui-drop'); handleDragEnd(event); }}
-              onDragOver={() => playSound('ui-click')}
-              onDragCancel={handleDragCancel}
-              announcements={customAnnouncements}
-              accessibility={{
-                screenReaderInstructions: defaultScreenReaderInstructions,
-              }}
-            >
-              <SortableContext items={clocks.map(c => String(c.id))} strategy={rectSortingStrategy}>
-                <VStack spacing={4} align="stretch">
-                  <AnimatePresence>
-                    {clocks.map((clock) => (
-                      <motion.div key={clock.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}>
-                        <SortableWorldClock clock={clock} clockTheme={clockTheme} timeFormat={timeFormat} isSidebarOpen={isSidebarOpen} />
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </VStack>
-                <DragOverlay>
-                  {activeDragItem ? (
-                    <WorldClockCard clock={activeDragItem} isDragging clockTheme={clockTheme} timeFormat={timeFormat} isSidebarOpen={isSidebarOpen} />
-                  ) : null}
-                </DragOverlay>
-              </SortableContext>
-            </DndContext>
-          </Box>
-        </Box>
+        <Grid
+          templateColumns={displaySettings.showWorldClock ? (isSidebarOpen ? '380px 1fr' : '80px 1fr') : '1fr'}
+          gap={6}
+          transition="template-columns 0.3s ease-in-out"
+        >
+          {/* Sidebar Column */}
+          {displaySettings.showWorldClock && (
+            <Box className="glass" borderRadius="xl" p={4} display="flex" flexDirection="column" h="calc(100vh - 120px)">
+              <HStack justify="space-between" mb={4} flexShrink={0}>
+                {isSidebarOpen && <Heading size="md">World Clocks</Heading>}
+                <Tooltip label={isSidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"} placement="right">
+                  <IconButton
+                    icon={isSidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+                    onClick={toggleSidebar}
+                    aria-label="Toggle sidebar"
+                    variant="ghost"
+                  />
+                </Tooltip>
+              </HStack>
+              <Box overflowY="auto" flex="1" sx={{ '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { bg: 'gray.600', borderRadius: '24px' } }}>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragStart={(event) => {
+                    playSound('ui-drag');
+                    handleDragStart(event);
+                    handleHapticFeedback();
+                  }}
+                  onDragEnd={(event) => { playSound('ui-drop'); handleDragEnd(event); }}
+                  onDragOver={() => playSound('ui-click')}
+                  onDragCancel={handleDragCancel}
+                  announcements={customAnnouncements}
+                  accessibility={{
+                    screenReaderInstructions: defaultScreenReaderInstructions,
+                  }}
+                >
+                  <SortableContext items={clocks.map(c => String(c.id))} strategy={rectSortingStrategy}>
+                    <VStack spacing={4} align="stretch">
+                      <AnimatePresence>
+                        {clocks.map((clock) => (
+                          <motion.div key={clock.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}>
+                            <SortableWorldClock clock={clock} clockTheme={clockTheme} timeFormat={timeFormat} isSidebarOpen={isSidebarOpen} />
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    </VStack>
+                    <DragOverlay>
+                      {activeDragItem ? (
+                        <WorldClockCard clock={activeDragItem} isDragging clockTheme={clockTheme} timeFormat={timeFormat} isSidebarOpen={isSidebarOpen} />
+                      ) : null}
+                    </DragOverlay>
+                  </SortableContext>
+                </DndContext>
+              </Box>
+            </Box>
+          )}
 
-        {/* Main Content Column */}
-        <Box overflowY="auto" p={2} sx={{ '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { bg: 'gray.600', borderRadius: '24px' }, 'scrollbarWidth': 'thin' }}>
-          <AnimatePresence>
-            {primaryLocation && (
-              <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-                <WeatherCard latitude={primaryLocation.latitude} longitude={primaryLocation.longitude} onForecastFetch={handleForecastFetch} locationName={primaryLocation.location} onWeatherFetch={handleWeatherFetch} timeFormat={timeFormat} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </Box>
+          {/* Main Content Column */}
+          <Box overflowY="auto" p={2} h="calc(100vh - 120px)" sx={{ '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { bg: 'gray.600', borderRadius: '24px' }, 'scrollbarWidth': 'thin' }}>
+            <AnimatePresence>
+              {primaryLocation && (
+                <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+                  <WeatherCard latitude={primaryLocation.latitude} longitude={primaryLocation.longitude} onForecastFetch={handleForecastFetch} locationName={primaryLocation.location} onWeatherFetch={handleWeatherFetch} timeFormat={timeFormat} displaySettings={displaySettings} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </Box>
+        </Grid>
       </motion.div>
       <AnimatePresence>
         {showLogTerminal && (
@@ -588,6 +617,10 @@ function AppContent() {
             setPrimaryLocation={setPrimaryLocationAndUpdateClocks}
             themePreference={themePreference}
             onThemePreferenceChange={handleThemePreferenceChange}
+            animationSettings={animationSettings}
+            onAnimationSettingsChange={handleAnimationSettingsChange}
+            displaySettings={displaySettings}
+            onDisplaySettingsChange={handleDisplaySettingsChange}
             onClose={() => setShowSettingsPanel(false)}
           />
         )}

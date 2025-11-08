@@ -36,13 +36,14 @@ import {
     SliderFilledTrack,
     SliderThumb,
     Icon,
+    Tooltip,
 } from '@chakra-ui/react';
 import { DeleteIcon, WarningTwoIcon, CloseIcon } from '@chakra-ui/icons';
 import { motion, useDragControls } from 'framer-motion';
 import { useSound } from '../contexts/SoundContext';
-import { FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
+import { FaPalette, FaMagic, FaVolumeUp, FaVolumeMute, FaMapMarkerAlt } from 'react-icons/fa';
 
-function SettingsPanel({ clocks, addClock, removeClock, removeAllClocks, clockTheme, onThemeChange, timeFormat, onTimeFormatChange, background, onBackgroundChange, setPrimaryLocation, themePreference, onThemePreferenceChange, onClose }) {
+function SettingsPanel({ clocks, addClock, removeClock, removeAllClocks, clockTheme, onThemeChange, timeFormat, onTimeFormatChange, background, onBackgroundChange, setPrimaryLocation, themePreference, onThemePreferenceChange, animationSettings, onAnimationSettingsChange, displaySettings, onDisplaySettingsChange, onClose }) {
     const [size, setSize] = useState({ width: 550, height: 700 });
     const dragControls = useDragControls();
     const [formData, setFormData] = useState({
@@ -66,6 +67,14 @@ function SettingsPanel({ clocks, addClock, removeClock, removeAllClocks, clockTh
 
     const handleSoundSettingChange = (key, value) => {
         updateSoundSettings(prev => ({ ...prev, [key]: value }));
+    };
+
+    const handleAnimationSettingChange = (key, value) => {
+        onAnimationSettingsChange({ ...animationSettings, [key]: value });
+    };
+
+    const handleDisplaySettingChange = (key, value) => {
+        onDisplaySettingsChange({ ...displaySettings, [key]: value });
     };
 
     const handleInputChange = (e) => {
@@ -218,12 +227,23 @@ function SettingsPanel({ clocks, addClock, removeClock, removeAllClocks, clockTh
                 </Box>
                 <Tabs isFitted variant="enclosed" index={activeTab} onChange={(index) => setActiveTab(index)} flex="1" display="flex" flexDirection="column" overflow="hidden">
                     <TabList>
-                        <Tab>General</Tab>
-                        <Tab>Audio</Tab>
+                        <Tooltip label="General Settings" placement="top">
+                            <Tab><Icon as={FaMapMarkerAlt} mr={2} /> General</Tab>
+                        </Tooltip>
+                        <Tooltip label="Appearance Settings" placement="top">
+                            <Tab><Icon as={FaPalette} mr={2} /> Appearance</Tab>
+                        </Tooltip>
+                        <Tooltip label="Animation & Effects Settings" placement="top">
+                            <Tab><Icon as={FaMagic} mr={2} /> Effects</Tab>
+                        </Tooltip>
+                        <Tooltip label="Audio Settings" placement="top">
+                            <Tab><Icon as={FaVolumeUp} mr={2} /> Audio</Tab>
+                        </Tooltip>
                     </TabList>
                     <TabPanels overflowY="auto" sx={{ '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { bg: 'gray.600', borderRadius: '24px' } }}>
                         <TabPanel>
                             <VStack spacing={6} align="stretch">
+                                <Heading as="h3" size="md">Primary Location</Heading>
                                 <FormControl>
                                     <FormLabel>Location Name</FormLabel>
                                     <HStack>
@@ -247,7 +267,34 @@ function SettingsPanel({ clocks, addClock, removeClock, removeAllClocks, clockTh
                                         ))}
                                     </List>
                                 )}
-                                <Heading as="h3" size="md" mb={4}>Background</Heading>
+                                <HStack justify="space-between" mb={4}>
+                                    <Heading as="h3" size="md">Manage Clocks</Heading>
+                                    <Button size="xs" colorScheme="red" variant="outline" onClick={onDeleteAllAlertOpen} isDisabled={clocks.length === 0} isLoading={isDeletingAll}>Delete All</Button>
+                                </HStack>
+                                <Grid templateColumns="repeat(auto-fill, minmax(150px, 1fr))" gap={4}>
+                                    {clocks.map((clock) => (
+                                        <VStack key={clock.id} p={3} className="glass" borderRadius="lg" justify="space-between" spacing={3} tabIndex={0} _focus={{ boxShadow: 'outline', outline: 'none' }} onKeyDown={(e) => { if (e.key === 'Delete') { confirmDelete(clock.id); } }}>
+                                            <Text textAlign="center" noOfLines={2}>{clock.location}</Text>
+                                            <IconButton icon={<DeleteIcon />} size="xs" colorScheme="red" variant="outline" onClick={() => confirmDelete(clock.id)} aria-label={`Delete ${clock.location}`} />
+                                        </VStack>
+                                    ))}
+                                </Grid>
+                            </VStack>
+                        </TabPanel>
+                        <TabPanel>
+                            <VStack spacing={6} align="stretch">
+                                <Heading as="h3" size="md">Theme</Heading>
+                                <FormControl>
+                                    <FormLabel>Color Mode</FormLabel>
+                                    <RadioGroup onChange={(val) => { playSound('ui-click'); onThemePreferenceChange(val); }} value={themePreference}>
+                                        <HStack spacing={5}>
+                                            <Radio value="light">Light</Radio>
+                                            <Radio value="dark">Dark</Radio>
+                                            <Radio value="auto">Auto (Day/Night)</Radio>
+                                        </HStack>
+                                    </RadioGroup>
+                                </FormControl>
+                                <Heading as="h3" size="md">Background</Heading>
                                 <RadioGroup onChange={(type) => { playSound('ui-click'); onBackgroundChange({ type, value: type === 'image' ? bgUrl : '' }); }} value={background.type}>
                                     <VStack align="start">
                                         <Radio value="dynamic">Dynamic Gradient</Radio>
@@ -260,17 +307,7 @@ function SettingsPanel({ clocks, addClock, removeClock, removeAllClocks, clockTh
                                         <Button onClick={() => { playSound('ui-click'); onBackgroundChange({ type: 'image', value: bgUrl }); }}>Apply</Button>
                                     </HStack>
                                 )}
-                                <Heading as="h3" size="md" mb={4}>Appearance</Heading>
-                                <FormControl>
-                                    <FormLabel>Theme</FormLabel>
-                                    <RadioGroup onChange={(val) => { playSound('ui-click'); onThemePreferenceChange(val); }} value={themePreference}>
-                                        <HStack spacing={5}>
-                                            <Radio value="light">Light</Radio>
-                                            <Radio value="dark">Dark</Radio>
-                                            <Radio value="auto">Auto</Radio>
-                                        </HStack>
-                                    </RadioGroup>
-                                </FormControl>
+                                <Heading as="h3" size="md">Clocks</Heading>
                                 <FormControl>
                                     <FormLabel>Analog Clock Style</FormLabel>
                                     <RadioGroup onChange={(val) => { playSound('ui-click'); onThemeChange(val); }} value={clockTheme}>
@@ -291,18 +328,34 @@ function SettingsPanel({ clocks, addClock, removeClock, removeAllClocks, clockTh
                                         </HStack>
                                     </RadioGroup>
                                 </FormControl>
-                                <HStack justify="space-between" mb={4}>
-                                    <Heading as="h3" size="md">Manage Clocks</Heading>
-                                    <Button size="xs" colorScheme="red" variant="outline" onClick={onDeleteAllAlertOpen} isDisabled={clocks.length === 0} isLoading={isDeletingAll}>Delete All</Button>
+                                <Heading as="h3" size="md">Layout</Heading>
+                                <VStack spacing={4} align="stretch">
+                                    <HStack justify="space-between">
+                                        <Text fontWeight="bold">Show World Clock Sidebar</Text>
+                                        <Switch isChecked={displaySettings.showWorldClock} onChange={(e) => handleDisplaySettingChange('showWorldClock', e.target.checked)} />
+                                    </HStack>
+                                    <HStack justify="space-between">
+                                        <Text fontWeight="bold">Show Hourly Forecast</Text>
+                                        <Switch isChecked={displaySettings.showHourlyForecast} onChange={(e) => handleDisplaySettingChange('showHourlyForecast', e.target.checked)} />
+                                    </HStack>
+                                    <HStack justify="space-between">
+                                        <Text fontWeight="bold">Show Weekly Forecast</Text>
+                                        <Switch isChecked={displaySettings.showWeeklyForecast} onChange={(e) => handleDisplaySettingChange('showWeeklyForecast', e.target.checked)} />
+                                    </HStack>
+                                </VStack>
+                            </VStack>
+                        </TabPanel>
+                        <TabPanel>
+                            <Heading size="md" mb={4}>Animation & Effects</Heading>
+                            <VStack spacing={6} align="stretch">
+                                <HStack justify="space-between">
+                                    <Text fontWeight="bold">Weather Effects</Text>
+                                    <Switch isChecked={animationSettings.showWeatherEffects} onChange={(e) => handleAnimationSettingChange('showWeatherEffects', e.target.checked)} />
                                 </HStack>
-                                <Grid templateColumns="repeat(auto-fill, minmax(150px, 1fr))" gap={4}>
-                                    {clocks.map((clock) => (
-                                        <VStack key={clock.id} p={3} className="glass" borderRadius="lg" justify="space-between" spacing={3} tabIndex={0} _focus={{ boxShadow: 'outline', outline: 'none' }} onKeyDown={(e) => { if (e.key === 'Delete') { confirmDelete(clock.id); } }}>
-                                            <Text textAlign="center" noOfLines={2}>{clock.location}</Text>
-                                            <IconButton icon={<DeleteIcon />} size="xs" colorScheme="red" variant="outline" onClick={() => confirmDelete(clock.id)} aria-label={`Delete ${clock.location}`} />
-                                        </VStack>
-                                    ))}
-                                </Grid>
+                                <HStack justify="space-between">
+                                    <Text fontWeight="bold">Ambient Effects (Stars, Aurora)</Text>
+                                    <Switch isChecked={animationSettings.showAmbientEffects} onChange={(e) => handleAnimationSettingChange('showAmbientEffects', e.target.checked)} />
+                                </HStack>
                             </VStack>
                         </TabPanel>
                         <TabPanel>
@@ -346,10 +399,7 @@ function SettingsPanel({ clocks, addClock, removeClock, removeAllClocks, clockTh
                 <motion.div
                     drag="x"
                     onDrag={(event, info) => {
-                        setSize(prevSize => ({
-                            width: Math.max(400, prevSize.width + info.delta.x),
-                            height: Math.max(500, prevSize.height + info.delta.y),
-                        }));
+                        setSize(prevSize => ({ ...prevSize, width: Math.max(400, prevSize.width + info.delta.x) }));
                     }}
                     dragMomentum={false}
                     style={{ position: 'absolute', bottom: '0px', right: '0px', width: '20px', height: '20px', cursor: 'nwse-resize' }}
