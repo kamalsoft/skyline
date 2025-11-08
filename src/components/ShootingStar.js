@@ -2,43 +2,54 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-function ShootingStar() {
-    // Randomize properties for each star to make them unique
-    const randomTop = Math.random() * 60; // Start position from top (0% to 60%)
+// Define different animation paths for the shooting stars
+const scenarios = [
+    // Left to Right
+    {
+        initial: { x: '-10vw', y: '10vh', opacity: 0, rotate: -20 },
+        animate: { x: '110vw', y: '40vh', opacity: [0, 1, 0] },
+    },
+    // Top-Left to Bottom-Right
+    {
+        initial: { x: '10vw', y: '-10vh', opacity: 0, rotate: 45 },
+        animate: { x: '90vw', y: '90vh', opacity: [0, 1, 0] },
+    },
+    // Top-Right to Bottom-Left
+    {
+        initial: { x: '90vw', y: '-10vh', opacity: 0, rotate: 135 },
+        animate: { x: '-10vw', y: '90vh', opacity: [0, 1, 0] },
+    },
+    // High Arc Left to Right
+    {
+        initial: { x: '-10vw', y: '30vh', opacity: 0, rotate: -10 },
+        animate: { x: '110vw', y: '50vh', opacity: [0, 1, 0] },
+    },
+];
+
+function ShootingStar({ isAnimationPaused }) {
+    // Randomly select a scenario
+    const scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+
+    // Randomize timing properties
     const randomDelay = 2 + Math.random() * 8; // Animation delay (2s to 10s)
-    const randomDuration = 0.5 + Math.random() * 1; // Animation duration (0.5s to 1.5s)
+    const randomDuration = 1 + Math.random() * 1.5; // Animation duration (1s to 2.5s)
 
     return (
         <motion.div
             style={{
                 position: 'absolute',
-                top: `${randomTop}%`,
-                left: '-100px', // Start off-screen to the left
                 width: '150px',
                 height: '2px',
                 background: 'linear-gradient(to right, white, transparent)',
-                transform: 'rotate(-20deg)', // Angle of the streak
-                opacity: 0,
             }}
-            animate={{
-                x: '120vw', // Animate across the full viewport width
-                opacity: [0, 1, 0], // Fade in, then fade out
-            }}
+            initial={scenario.initial}
+            animate={scenario.animate}
             transition={{
-                x: {
-                    duration: randomDuration,
-                    repeat: Infinity,
-                    repeatType: 'loop',
-                    repeatDelay: randomDelay,
-                    ease: 'linear',
-                },
-                opacity: {
-                    duration: randomDuration,
-                    repeat: Infinity,
-                    repeatType: 'loop',
-                    repeatDelay: randomDelay,
-                    ease: [0.5, 0, 1, 1], // Custom ease for a quick fade in and slow fade out
-                },
+                duration: randomDuration,
+                repeat: isAnimationPaused ? 0 : Infinity,
+                repeatType: 'loop',
+                repeatDelay: randomDelay,
+                ease: 'easeIn',
             }}
         />
     );

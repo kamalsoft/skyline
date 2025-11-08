@@ -1,6 +1,6 @@
 
 // src/components/WeatherCard.js
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import axios from 'axios';
 import {
     Box,
@@ -18,54 +18,64 @@ import {
     ButtonGroup,
     Badge,
     IconButton,
+    Modal,
+    ModalOverlay,
+    ModalContent,
+    ModalHeader,
+    ModalCloseButton,
+    ModalBody,
+    Spinner,
     Tooltip,
 } from '@chakra-ui/react';
 import { getWeatherDescription } from '../utils/weatherUtils';
-import { RepeatIcon } from '@chakra-ui/icons';
+import { RepeatIcon, CalendarIcon } from '@chakra-ui/icons';
 import AnimatedWeatherIcon from './AnimatedWeatherIcon';
 import { motion } from 'framer-motion';
 import { validateWeatherData } from '../utils/weatherValidation';
 import { getAqiColor } from '../utils/aqiUtils';
 import ForecastItem from './ForecastItem';
+import { generateWeatherSummary, generateActivitySuggestion } from '../utils/aiSummaryUtils';
 import DetailedWeatherModal from './DetailedWeatherModal';
+import SunCalendar from './SunCalendar';
 import WeatherCardSkeleton from './WeatherCardSkeleton';
 
+// Extracted and memoized ForecastCarousel to prevent re-creation on every render
+const ForecastCarousel = React.memo(({ children, itemCount }) => {
+    const contentRef = useRef(null);
+    const [contentWidth, setContentWidth] = useState(0);
+
+    useEffect(() => {
+        if (contentRef.current) {
+            // Calculate the total width of all children
+            const totalWidth = Array.from(contentRef.current.children).reduce((acc, child) => acc + child.offsetWidth, 0);
+            // Add spacing (itemCount - 1) * 16px (for spacing={4})
+            const totalSpacing = (itemCount - 1) * 16;
+            setContentWidth(totalWidth + totalSpacing);
+        }
+    }, [itemCount, children]);
+
+    const duration = itemCount * 3; // Adjust speed by changing the multiplier
+
+    return (
+        <Box overflowX="hidden" ref={contentRef}>
+            <motion.div
+                animate={{
+                    x: [0, -contentWidth / 2], // Animate to half the content width for a seamless loop
+                }}
+                whileHover={{ paused: true }}
+                transition={{
+                    x: { repeat: Infinity, repeatType: 'loop', duration: duration, ease: 'linear' },
+                }}
+                style={{ x: 0, display: 'flex', width: `${contentWidth * 2}px` }} // Double the width for duplicated content
+            >
+                <HStack spacing={4}>{children}</HStack>
+                <HStack spacing={4} ml={4}>{children}</HStack> {/* Duplicate children for seamless loop */}
+            </motion.div>
+        </Box>
+    );
+});
+
 function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, locationName, timeFormat }) {
-    // New component for the auto-scrolling carousel
-    const ForecastCarousel = ({ children, itemCount }) => {
-        const contentRef = useRef(null);
-        const [contentWidth, setContentWidth] = useState(0);
-
-        useEffect(() => {
-            if (contentRef.current) {
-                // Calculate the total width of all children
-                const totalWidth = Array.from(contentRef.current.children).reduce((acc, child) => acc + child.offsetWidth, 0);
-                // Add spacing (itemCount - 1) * 16px (for spacing={4})
-                const totalSpacing = (itemCount - 1) * 16;
-                setContentWidth(totalWidth + totalSpacing);
-            }
-        }, [itemCount, children]);
-
-        const duration = itemCount * 3; // Adjust speed by changing the multiplier
-
-        return (
-            <Box overflowX="hidden" ref={contentRef}>
-                <motion.div
-                    animate={{
-                        x: [0, -contentWidth / 2], // Animate to half the content width for a seamless loop
-                    }}
-                    whileHover={{ paused: true }}
-                    transition={{
-                        x: { repeat: Infinity, repeatType: 'loop', duration: duration, ease: 'linear' },
-                    }}
-                    style={{ x: 0, display: 'flex', width: `${contentWidth * 2}px` }} // Double the width for duplicated content
-                >
-                    <HStack spacing={4}>{children}</HStack>
-                    <HStack spacing={4} ml={4}>{children}</HStack> {/* Duplicate children for seamless loop */}
-                </motion.div>
-            </Box>
-        );
-    };
     const [weatherData, setWeatherData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -73,6 +83,10 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [selectedForecast, setSelectedForecast] = useState(null);
     const [lastUpdated, setLastUpdated] = useState(null);
+    const [aiSummary, setAiSummary] = useState('');
+    const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+    const [activitySuggestion, setActivitySuggestion] = useState(null);
+    const { isOpen: isCalendarOpen, onOpen: onCalendarOpen, onClose: onCalendarClose } = useDisclosure();
 
     const fetchWeather = useCallback(async () => {
         setIsLoading(true);
@@ -87,6 +101,16 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
                 throw new Error(error);
             }
             setWeatherData(response.data);
+            setIsGeneratingSummary(true);
+            // Simulate AI generation delay
+            setTimeout(() => {
+                const summary = generateWeatherSummary(response.data);
+                const suggestion = generateActivitySuggestion(response.data);
+                setAiSummary(summary);
+                setActivitySuggestion(suggestion);
+                setIsGeneratingSummary(false);
+            }, 1000);
+
             setLastUpdated(new Date()); // Set the last updated time
             if (onForecastFetch) {
                 onForecastFetch(response.data.daily);
@@ -118,16 +142,16 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
         return Math.round((celsius * 9) / 5 + 32);
     };
 
-    const displayTemp = (celsius, withUnit = true) => {
+    const displayTemp = useCallback((celsius, withUnit = true) => {
         if (unit === 'F') {
             return `${convertToFahrenheit(celsius)}°${withUnit ? 'F' : ''}`;
         }
         return `${Math.round(celsius)}°${withUnit ? 'C' : ''}`;
-    };
+    }, [unit]);
 
-    const handleForecastClick = (type, index) => {
+    const handleForecastClick = useCallback((type, index) => {
         let details;
-        if (type === 'hourly') {
+        if (type === 'hourly' && weatherData) {
             const hourData = weatherData.hourly;
             details = {
                 time: new Date(hourData.time[index]).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: timeFormat === '12h' }),
@@ -140,7 +164,7 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
                 wind_direction_10m: hourData.wind_direction_10m[index],
                 wind_speed_10m: hourData.wind_speed_10m[index],
             };
-        } else { // daily
+        } else if (weatherData) { // daily
             const dayData = weatherData.daily;
             details = {
                 time: new Date(dayData.time[index]).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
@@ -156,7 +180,61 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
         }
         setSelectedForecast({ type, details });
         onOpen();
-    };
+    }, [weatherData, displayTemp, timeFormat, onOpen]);
+
+    // Memoize derived data to avoid re-calculating on every render
+    const { currentHourIndex, currentApparentTemperature, currentHumidity } = useMemo(() => {
+        if (!weatherData?.hourly) return { currentHourIndex: -1 };
+        const now = new Date();
+        const index = weatherData.hourly.time.findIndex(time => new Date(time) >= now);
+        return {
+            currentHourIndex: index,
+            currentApparentTemperature: index !== -1 ? weatherData.hourly.apparent_temperature[index] : undefined,
+            currentHumidity: index !== -1 ? weatherData.hourly.relative_humidity_2m[index] : undefined,
+        };
+    }, [weatherData]);
+
+    // Memoize forecast items to prevent re-mapping on every render
+    const hourlyForecastItems = useMemo(() => {
+        if (!weatherData?.hourly || currentHourIndex === -1) return null;
+        return weatherData.hourly.time.slice(currentHourIndex, currentHourIndex + 24).map((time, index) => {
+            const actualIndex = currentHourIndex + index;
+            return (
+                <ForecastItem
+                    onClick={() => handleForecastClick('hourly', actualIndex)}
+                    key={time}
+                    index={index}
+                    label={`${new Date(time).getHours()}:00`}
+                    weatherCode={weatherData.hourly.weather_code[actualIndex]}
+                    description={getWeatherDescription(weatherData.hourly.weather_code[actualIndex])}
+                    temp={displayTemp(weatherData.hourly.temperature_2m[actualIndex], true)}
+                />
+            );
+        });
+    }, [weatherData, currentHourIndex, handleForecastClick, displayTemp]);
+
+    const dailyForecastItems = useMemo(() => {
+        if (!weatherData?.daily) return null;
+        return weatherData.daily.time.slice(0, 7).map((time, index) => {
+            const date = new Date(time);
+            const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
+            const dateString = `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`;
+            const combinedLabel = `${dateString} - ${weekday}`;
+
+            return (
+                <ForecastItem
+                    onClick={() => handleForecastClick('daily', index)}
+                    key={time}
+                    index={index}
+                    label={index === 0 ? 'Today' : combinedLabel}
+                    dateLabel={index === 0 ? dateString : undefined}
+                    weatherCode={weatherData.daily.weather_code[index]}
+                    description={getWeatherDescription(weatherData.daily.weather_code[index])}
+                    temp={`${displayTemp(weatherData.daily.temperature_2m_min[index], false)} / ${displayTemp(weatherData.daily.temperature_2m_max[index], false)}`}
+                />
+            );
+        });
+    }, [weatherData, handleForecastClick, displayTemp]);
 
     if (isLoading) {
         return <WeatherCardSkeleton />;
@@ -196,20 +274,7 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
         );
     }
 
-    const { current_weather: current, hourly, daily, air_quality: airQuality } = weatherData;
-
-    // Find the index of the current hour to start the hourly forecast from now
-    const currentHourIndex = hourly
-        ? hourly.time.findIndex(time => new Date(time) >= new Date())
-        : -1;
-
-    // Get current humidity and feels-like temp from the hourly forecast, as it's not in current_weather
-    const currentApparentTemperature = (hourly && currentHourIndex !== -1)
-        ? hourly.apparent_temperature[currentHourIndex]
-        : undefined;
-    const currentHumidity = (hourly && currentHourIndex !== -1)
-        ? hourly.relative_humidity_2m[currentHourIndex]
-        : undefined;
+    const { current_weather: current, air_quality: airQuality } = weatherData;
 
     return (
         <Box className="glass" p={4} borderRadius="xl">
@@ -225,10 +290,35 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
                                 isLoading={isLoading}
                                 aria-label="Refresh weather" />
                         </Tooltip>
+                        <Tooltip label="Open Sunrise/Sunset Calendar" placement="top">
+                            <IconButton
+                                icon={<CalendarIcon />}
+                                isRound size="sm" variant="ghost"
+                                onClick={onCalendarOpen}
+                                aria-label="Open sunrise/sunset calendar" />
+                        </Tooltip>
                         {lastUpdated && <Text fontSize="xs" color="gray.500">Updated: {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>}
                     </HStack>
                 </HStack>
                 <Text>{getWeatherDescription(current.weathercode)}</Text>
+                {isGeneratingSummary ? (
+                    <HStack className="glass" p={3} borderRadius="md" w="full" justify="center">
+                        <Spinner size="xs" />
+                        <Text fontSize="sm" fontStyle="italic">Generating AI weather brief...</Text>
+                    </HStack>
+                ) : (
+                    <Box className="glass" p={3} borderRadius="md" w="full">
+                        <Text fontSize="sm" fontStyle="italic">"{aiSummary}"</Text>
+                    </Box>
+                )}
+                {activitySuggestion && !isGeneratingSummary && (
+                    <Box className="glass" p={3} borderRadius="md" w="full" >
+                        <HStack>
+                            <Box as={activitySuggestion.icon} size="20px" color="accentPink" />
+                            <Text fontSize="sm" fontWeight="bold">Suggestion: <Text as="span" fontWeight="normal">{activitySuggestion.text}</Text></Text>
+                        </HStack>
+                    </Box>
+                )}
             </VStack>
             <VStack spacing={6} align="stretch">
                 {/* Current Weather */}
@@ -263,47 +353,14 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
                 <Box>
                     <Heading as="h4" size="sm" mb={2}>Hourly</Heading>
                     <ForecastCarousel itemCount={24}>
-                        {hourly && currentHourIndex !== -1 && hourly.time.slice(currentHourIndex, currentHourIndex + 24).map((time, index) => {
-                            const actualIndex = currentHourIndex + index;
-                            return (
-                                <ForecastItem
-                                    onClick={() => handleForecastClick('hourly', actualIndex)}
-                                    key={time}
-                                    index={index}
-                                    label={`${new Date(time).getHours()}:00`}
-                                    weatherCode={hourly.weather_code[actualIndex]}
-                                    description={getWeatherDescription(hourly.weather_code[actualIndex])}
-                                    temp={displayTemp(hourly.temperature_2m[actualIndex], true)}
-                                />
-                            );
-                        })}
+                        {hourlyForecastItems}
                     </ForecastCarousel>
                 </Box>
 
                 {/* Daily Forecast */}
                 <Box>
                     <Heading as="h4" size="sm" mb={2}>Weekly</Heading>
-                    <ForecastCarousel itemCount={7}>
-                        {daily && daily.time.slice(0, 7).map((time, index) => {
-                            const date = new Date(time);
-                            const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
-                            const dateString = `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`;
-                            const combinedLabel = `${dateString} - ${weekday}`;
-
-                            return (
-                                <ForecastItem
-                                    onClick={() => handleForecastClick('daily', index)}
-                                    key={time}
-                                    index={index}
-                                    label={index === 0 ? 'Today' : combinedLabel}
-                                    dateLabel={index === 0 ? dateString : undefined}
-                                    weatherCode={daily.weather_code[index]}
-                                    description={getWeatherDescription(daily.weather_code[index])}
-                                    temp={`${displayTemp(daily.temperature_2m_min[index], false)} / ${displayTemp(daily.temperature_2m_max[index], false)}`}
-                                />
-                            );
-                        })}
-                    </ForecastCarousel>
+                    <ForecastCarousel itemCount={7}>{dailyForecastItems}</ForecastCarousel>
                 </Box>
             </VStack>
             <DetailedWeatherModal
@@ -313,8 +370,18 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
                 displayTemp={displayTemp}
                 timeFormat={timeFormat}
             />
+            <Modal isOpen={isCalendarOpen} onClose={onCalendarClose} size="2xl">
+                <ModalOverlay />
+                <ModalContent className="glass">
+                    <ModalHeader>Sunrise & Sunset Calendar</ModalHeader>
+                    <ModalCloseButton />
+                    <ModalBody>
+                        <SunCalendar latitude={latitude} longitude={longitude} />
+                    </ModalBody>
+                </ModalContent>
+            </Modal>
         </Box >
     );
 }
 
-export default WeatherCard;
+export default React.memo(WeatherCard);

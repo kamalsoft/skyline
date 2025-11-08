@@ -30,4 +30,4 @@ function ForecastItem({ label, dateLabel, weatherCode, description, temp, index,
     );
 }
 
-export default ForecastItem;
+export default React.memo(ForecastItem);

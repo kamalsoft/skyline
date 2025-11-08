@@ -76,10 +76,11 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOp
                     <Box
                         className="glass"
                         p={4} borderRadius="xl"
-                        h="100%"
                         position="relative"
-                        boxShadow={isDragging ? 'xl' : 'none'}
+                        boxShadow={isDragging ? '0 0 20px rgba(0,0,0,0.3)' : 'none'}
                         overflow="hidden"
+                        transform={isDragging ? 'scale(1.05)' : 'scale(1)'}
+                        transition="transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out"
                     >
                         <Tooltip label={`Switch to ${isAnalog ? 'Digital' : 'Analog'} Clock`} placement="top">
                             <IconButton

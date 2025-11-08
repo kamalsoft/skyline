@@ -1,6 +1,7 @@
 // src/components/SortableWorldClock.js
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
+import { motion } from 'framer-motion';
 import { CSS } from '@dnd-kit/utilities';
 import { Box } from '@chakra-ui/react';
 import WorldClockCard from './WorldClockCard';
@@ -21,19 +22,25 @@ function SortableWorldClock({ clock, clockTheme, timeFormat, isSidebarOpen }) {
 
     const style = {
         transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0 : 1, // Hide the original item while dragging
+        transition: transition || 'transform 0.2s ease', // Fallback transition
+        opacity: isDragging ? 0.5 : 1,
+        zIndex: isDragging ? 10 : 1,
     };
 
     return (
-        <Box
+        <motion.div
             ref={setNodeRef}
             style={style}
             {...attributes}
             {...listeners}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            layout // This enables the smooth re-ordering animation
+            whileTap={{ scale: 1.05, boxShadow: '0px 10px 20px rgba(0,0,0,0.2)' }}
         >
             <WorldClockCard clock={clock} isDragging={isDragging} clockTheme={clockTheme} timeFormat={timeFormat} isSidebarOpen={isSidebarOpen} />
-        </Box>
+        </motion.div>
     );
 }
 

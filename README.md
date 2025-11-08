@@ -43,11 +43,13 @@ You don't have to ever use `eject`. The curated feature set is suitable for smal
 
 Here are some ideas for future enhancements:
 
-- [ ] **User Accounts**: Allow users to sync their clocks and settings across multiple devices.
-- [ ] **Advanced Theming**: Introduce more themes and allow users to set custom background images or gradients.
-- [ ] **Weather Alerts**: Provide notifications for severe weather alerts for the user's current location.
-- [x] **Internationalization (i18n)**: Add support for multiple languages in the user interface.
-- [x] **Accessibility Improvements**: Continue to enhance the application to meet WCAG standards.
+- [ ] **Live Radar and Satellite Maps**: Integrate animated precipitation and cloud coverage maps.
+- [ ] **Severe Weather Alerts**: Push notifications or banners for storms, snow, heatwaves, or floods.
+- [ ] **Accessibility Features**: High-contrast mode, screen reader support, and keyboard navigation improvements.
+- [x] **Widget Support**: Provide embeddable widgets for desktop or mobile home screens.
+- [x] **AI-Powered Weather Summaries**: Generate daily or weekly weather briefs in natural language. (Enhanced)
+- [ ] **Event-based suggestions**: Recommend indoor/outdoor activities based on weather (e.g., “Great day for hiking!”).
+- [x] **Sunrise/sunset calendar**: Expand current data into a monthly view for photographers and travelers.
 
 See the open issues for a full list of proposed features (and known issues).
 
