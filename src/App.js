@@ -18,6 +18,9 @@ import {
   IconButton,
   useDisclosure,
   useColorMode,
+  Alert,
+  AlertIcon,
+  AlertTitle,
   extendTheme,
 } from '@chakra-ui/react';
 import { MoonIcon, SunIcon, InfoIcon, SettingsIcon } from '@chakra-ui/icons';
@@ -29,6 +32,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
+import { DragOverlay } from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
@@ -39,7 +43,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedBackground from './components/AnimatedBackground';
 import WeatherCard from './components/WeatherCard';
 import SettingsPanel from './components/SettingsPanel';
+import WorldClockCard from './components/WorldClockCard';
 import SortableWorldClock from './components/SortableWorldClock'; // This should now wrap WorldClockCard
+import { generateWeatherAlerts } from './utils/alertUtils';
 import './App.css';
 import axios from 'axios'; // For reverse geocoding
 
@@ -73,13 +79,21 @@ const theme = extendTheme({
         secondHand: '#FF4500',
       },
     },
+    minimalist: {
+      light: {
+        bg: '#ffffff',
+        hands: '#333333',
+        secondHand: '#E53E3E', // red.500
+      },
+      dark: {
+        bg: '#1A202C', // gray.800
+        hands: '#E2E8F0', // gray.200
+        secondHand: '#FC8181', // red.300
+      },
+    },
   },
   styles: {
     global: (props) => ({
-      'body': {
-        bg: props.colorMode === 'dark' ? 'linear-gradient(to bottom right, #1a202c, #2d3748)' : 'linear-gradient(to bottom right, #edf2f7, #e2e8f0)',
-        color: props.colorMode === 'dark' ? 'whiteAlpha.900' : 'gray.800',
-      },
       '.glass': {
         bg: props.colorMode === 'dark' ? 'rgba(26, 32, 44, 0.6)' : 'rgba(255, 255, 255, 0.6)',
         backdropFilter: 'blur(10px)',
@@ -113,10 +127,20 @@ function AppContent() {
   const [currentLocationError, setCurrentLocationError] = useState(null);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [dailyForecast, setDailyForecast] = useState(null);
+  const [weatherAlerts, setWeatherAlerts] = useState([]);
+  const [dismissedAlerts, setDismissedAlerts] = useState([]);
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      // Require the mouse to move by 10 pixels before activating
+      // Improves click handling on the cards
+      activationConstraint: {
+        distance: 10,
+      },
+    }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
+
+  const [activeDragItem, setActiveDragItem] = useState(null);
 
   const [clocks, setClocks] = useState(() => {
     try {
@@ -131,6 +155,13 @@ function AppContent() {
   useEffect(() => {
     localStorage.setItem('clocks', JSON.stringify(clocks));
   }, [clocks]);
+
+  useEffect(() => {
+    if (dailyForecast) {
+      const newAlerts = generateWeatherAlerts(dailyForecast);
+      setWeatherAlerts(newAlerts);
+    }
+  }, [dailyForecast]);
 
   useEffect(() => {
     setCurrentLocationStatus('loading');
@@ -232,10 +263,26 @@ function AppContent() {
     setClocks((prevClocks) => prevClocks.filter((clock) => clock.id !== id));
   };
 
+  function handleDragStart(event) {
+    const { active } = event;
+    const item = clocks.find(clock => clock.id === active.id);
+    setActiveDragItem(item);
+  }
+
+  const [clockTheme, setClockTheme] = useState(() => {
+    return localStorage.getItem('clockTheme') || 'metallic';
+  });
+
+  const handleThemeChange = (newTheme) => {
+    setClockTheme(newTheme);
+    localStorage.setItem('clockTheme', newTheme);
+  };
+
   function handleDragEnd(event) {
     const { active, over } = event;
+    setActiveDragItem(null);
 
-    if (active.id !== over.id) {
+    if (over && active.id !== over.id) {
       setClocks((items) => {
         const oldIndex = items.findIndex((item) => item.id === active.id);
         const newIndex = items.findIndex((item) => item.id === over.id);
@@ -244,13 +291,19 @@ function AppContent() {
     }
   }
 
+  function handleDragCancel() {
+    setActiveDragItem(null);
+  }
+
   const handleForecastFetch = useCallback((daily) => {
     setDailyForecast(daily);
   }, []);
 
   const handleWeatherFetch = useCallback((weather) => {
-    setClocks(clocks => clocks.map(c => c.id === 'current-location' ? { ...c, weatherCode: weather.weather_code } : c));
+    setClocks(clocks => clocks.map(c => c.id === 'current-location' ? { ...c, weatherCode: weather.weathercode } : c));
   }, []);
+
+  const activeAlerts = weatherAlerts.filter(alert => !dismissedAlerts.includes(alert.id));
 
   return (
     <Box p={5}>
@@ -284,6 +337,20 @@ function AppContent() {
         </HStack>
       )}
 
+      {activeAlerts.length > 0 && (
+        <VStack spacing={4} my={4}>
+          {activeAlerts.map(alert => (
+            <Alert status={alert.status} key={alert.id} borderRadius="md" className="glass">
+              <AlertIcon />
+              <Box flex="1">
+                <AlertTitle>{alert.title}</AlertTitle>
+                <Text fontSize="sm">{alert.description}</Text>
+              </Box>
+              <DrawerCloseButton position="relative" top="0" right="0" onClick={() => setDismissedAlerts([...dismissedAlerts, alert.id])} />
+            </Alert>
+          ))}
+        </VStack>
+      )}
 
       <Drawer isOpen={isOpen} placement="right" onClose={onClose} finalFocusRef={btnRef} size="md">
         <DrawerOverlay />
@@ -291,7 +358,7 @@ function AppContent() {
           <DrawerCloseButton />
           <DrawerHeader>Customize Your Dashboard</DrawerHeader>
           <DrawerBody>
-            <SettingsPanel clocks={clocks} addClock={addClock} removeClock={removeClock} />
+            <SettingsPanel clocks={clocks} addClock={addClock} removeClock={removeClock} clockTheme={clockTheme} onThemeChange={handleThemeChange} />
           </DrawerBody>
         </DrawerContent>
       </Drawer>
@@ -309,17 +376,28 @@ function AppContent() {
           )}
         </Box>
         <Box overflowY="auto" p={2} sx={{ '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { bg: 'gray.600', borderRadius: '24px' } }}>
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+          >
             <SortableContext items={clocks.map(c => String(c.id))} strategy={rectSortingStrategy}>
               <VStack spacing={4} align="stretch">
                 <AnimatePresence>
                   {clocks.map((clock) => (
                     <motion.div key={clock.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}>
-                      <SortableWorldClock clock={clock} />
+                      <SortableWorldClock clock={clock} clockTheme={clockTheme} />
                     </motion.div>
                   ))}
                 </AnimatePresence>
               </VStack>
+              <DragOverlay>
+                {activeDragItem ? (
+                  <WorldClockCard clock={activeDragItem} isDragging clockTheme={clockTheme} />
+                ) : null}
+              </DragOverlay>
             </SortableContext>
           </DndContext>
         </Box>

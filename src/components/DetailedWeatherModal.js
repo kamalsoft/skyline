@@ -16,7 +16,7 @@ import {
 } from '@chakra-ui/react';
 import { getWeatherDescription } from '../utils/weatherUtils';
 
-function DetailedWeatherModal({ isOpen, onClose, data }) {
+function DetailedWeatherModal({ isOpen, onClose, data, displayTemp }) {
     if (!data) return null;
 
     const { type, details } = data;
@@ -24,7 +24,7 @@ function DetailedWeatherModal({ isOpen, onClose, data }) {
     const renderHourlyDetails = () => (
         <VStack spacing={3} align="stretch">
             <Text><strong>Condition:</strong> {getWeatherDescription(details.weather_code)}</Text>
-            <Text><strong>Feels Like:</strong> {Math.round(details.apparent_temperature)}°C / {Math.round(details.apparent_temperature * 9 / 5 + 32)}°F</Text>
+            <Text><strong>Feels Like:</strong> {displayTemp(details.apparent_temperature, true)}</Text>
             <Text><strong>Precipitation:</strong> {details.precipitation} mm</Text>
             <Text><strong>Humidity:</strong> {details.relative_humidity_2m}%</Text>
             <Text><strong>UV Index:</strong> {details.uv_index}</Text>

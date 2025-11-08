@@ -23,20 +23,29 @@ import {
     AlertDialogContent,
     AlertDialogOverlay,
     useDisclosure,
+    Radio,
+    RadioGroup,
 } from '@chakra-ui/react';
 import { DeleteIcon, WarningTwoIcon } from '@chakra-ui/icons';
 
-function SettingsPanel({ clocks, addClock, removeClock }) {
-    const [location, setLocation] = useState('');
-    const [timeZone, setTimeZone] = useState('');
-    const [latitude, setLatitude] = useState('');
-    const [longitude, setLongitude] = useState('');
-    const [countryCode, setCountryCode] = useState('');
+function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChange }) {
+    const [formData, setFormData] = useState({
+        location: '',
+        timeZone: '',
+        latitude: '',
+        longitude: '',
+        countryCode: '',
+    });
     const [searchResults, setSearchResults] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const { isOpen: isAlertOpen, onOpen: onAlertOpen, onClose: onAlertClose } = useDisclosure();
+    const { isOpen: isDuplicateAlertOpen, onOpen: onDuplicateAlertOpen, onClose: onDuplicateAlertClose } = useDisclosure();
     const [clockToDelete, setClockToDelete] = useState(null);
     const toast = useToast();
+
+    const handleInputChange = (e) => {
+        setFormData({ ...formData, location: e.target.value });
+    };
 
     const handleSearch = useCallback(async (searchQuery) => {
         if (!searchQuery) {
@@ -62,13 +71,27 @@ function SettingsPanel({ clocks, addClock, removeClock }) {
 
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
-            handleSearch(location);
+            handleSearch(formData.location);
         }, 500);
 
         return () => clearTimeout(delayDebounceFn);
-    }, [location, handleSearch]);
+    }, [formData.location, handleSearch]);
+
+    const resetForm = () => {
+        setFormData({
+            location: '', timeZone: '', latitude: '', longitude: '', countryCode: ''
+        });
+        setSearchResults([]);
+    };
+
+    const addClockAndClear = () => {
+        addClock({ ...formData, latitude: parseFloat(formData.latitude), longitude: parseFloat(formData.longitude) });
+        resetForm();
+        onDuplicateAlertClose(); // Close duplicate alert if it was open
+    };
 
     const handleAddClock = () => {
+        const { location, timeZone, latitude, longitude } = formData;
         if (!location || !timeZone || !latitude || !longitude) {
             toast({
                 title: 'Missing Information',
@@ -79,18 +102,12 @@ function SettingsPanel({ clocks, addClock, removeClock }) {
             });
             return;
         }
-        addClock({
-            location,
-            timeZone,
-            latitude: parseFloat(latitude),
-            longitude: parseFloat(longitude),
-            countryCode,
-        });
-        setLocation('');
-        setTimeZone('');
-        setLatitude('');
-        setLongitude('');
-        setSearchResults([]);
+
+        if (clocks.some(clock => clock.location === location)) {
+            onDuplicateAlertOpen();
+        } else {
+            addClockAndClear();
+        }
     };
 
     const confirmDelete = (id) => {
@@ -105,11 +122,14 @@ function SettingsPanel({ clocks, addClock, removeClock }) {
 
 
     const selectLocation = (result) => {
-        setLocation(`${result.name}, ${result.admin1 || ''} ${result.country_code}`);
-        setTimeZone(result.timezone);
-        setLatitude(result.latitude.toFixed(4));
-        setLongitude(result.longitude.toFixed(4));
-        setCountryCode(result.country_code.toLowerCase());
+        const formattedLocation = `${result.name}, ${result.admin1 || ''} ${result.country_code}`.replace(/,  /g, ', ');
+        setFormData({
+            location: formattedLocation,
+            timeZone: result.timezone,
+            latitude: result.latitude.toFixed(4),
+            longitude: result.longitude.toFixed(4),
+            countryCode: result.country_code.toLowerCase(),
+        });
         setSearchResults([]);
     }
 
@@ -120,7 +140,7 @@ function SettingsPanel({ clocks, addClock, removeClock }) {
                 <FormControl>
                     <FormLabel>Location Name</FormLabel>
                     <HStack>
-                        <Input placeholder="e.g., Tokyo" value={location} onChange={(e) => setLocation(e.target.value)} />
+                        <Input placeholder="e.g., Tokyo" value={formData.location} onChange={handleInputChange} />
                         {isLoading && <Spinner size="md" />}
                     </HStack>
                 </FormControl>
@@ -144,6 +164,18 @@ function SettingsPanel({ clocks, addClock, removeClock }) {
                     </List>
                 )}
                 <Button colorScheme="blue" mt={4} onClick={handleAddClock}>Add Clock</Button>
+            </Box>
+            <Box>
+                <Heading as="h3" size="md" mb={4}>Appearance</Heading>
+                <FormControl>
+                    <FormLabel>Analog Clock Style</FormLabel>
+                    <RadioGroup onChange={onThemeChange} value={clockTheme}>
+                        <HStack spacing={5}>
+                            <Radio value="metallic">Copper</Radio>
+                            <Radio value="minimalist">Minimalist</Radio>
+                        </HStack>
+                    </RadioGroup>
+                </FormControl>
             </Box>
             <Box>
                 <Heading as="h3" size="md" mb={4}>Manage Clocks</Heading>
@@ -187,6 +219,29 @@ function SettingsPanel({ clocks, addClock, removeClock }) {
                         <AlertDialogFooter>
                             <Button onClick={onAlertClose}>Cancel</Button>
                             <Button colorScheme="red" onClick={executeDelete} ml={3}>Delete</Button>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialogOverlay>
+            </AlertDialog>
+
+            <AlertDialog
+                isOpen={isDuplicateAlertOpen}
+                leastDestructiveRef={undefined}
+                onClose={onDuplicateAlertClose}
+            >
+                <AlertDialogOverlay>
+                    <AlertDialogContent>
+                        <AlertDialogHeader fontSize="lg" fontWeight="bold">
+                            <HStack><WarningTwoIcon color="orange.500" /> <Text>Duplicate Location</Text></HStack>
+                        </AlertDialogHeader>
+
+                        <AlertDialogBody>
+                            This location is already in your clock list. Do you want to add it again?
+                        </AlertDialogBody>
+
+                        <AlertDialogFooter>
+                            <Button onClick={onDuplicateAlertClose}>Cancel</Button>
+                            <Button colorScheme="blue" onClick={addClockAndClear} ml={3}>Add Anyway</Button>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialogOverlay>

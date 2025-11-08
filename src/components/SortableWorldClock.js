@@ -3,9 +3,10 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Box } from '@chakra-ui/react';
+import { motion } from 'framer-motion';
 import WorldClockCard from './WorldClockCard';
 
-function SortableWorldClock({ clock }) {
+function SortableWorldClock({ clock, clockTheme }) {
     const {
         attributes,
         listeners,
@@ -18,14 +19,17 @@ function SortableWorldClock({ clock }) {
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
-        boxShadow: isDragging ? 'xl' : 'md',
+        opacity: isDragging ? 0 : 1, // Hide the original item while dragging
         transformOrigin: '50% 50%',
     };
 
     return (
-        <Box ref={setNodeRef} style={style} {...attributes} {...listeners}>
-            <WorldClockCard clock={clock} />
-        </Box>
+        <motion.div layout>
+            <Box ref={setNodeRef} style={style} {...attributes} {...listeners}>
+                {/* We pass props to the underlying card */}
+                <WorldClockCard clock={clock} clockTheme={clockTheme} />
+            </Box>
+        </motion.div>
     );
 }
 
