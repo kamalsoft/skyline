@@ -41,15 +41,22 @@ You don't have to ever use `eject`. The curated feature set is suitable for smal
 
 ## Roadmap
 
-Here are some ideas for future enhancements:
+Here is the current roadmap for the Skyline weather application.
 
-- [ ] **Live Radar and Satellite Maps**: Integrate animated precipitation and cloud coverage maps.
-- [ ] **Severe Weather Alerts**: Push notifications or banners for storms, snow, heatwaves, or floods.
-- [ ] **Accessibility Features**: High-contrast mode, screen reader support, and keyboard navigation improvements.
-- [x] **Widget Support**: Provide embeddable widgets for desktop or mobile home screens.
-- [x] **AI-Powered Weather Summaries**: Generate daily or weekly weather briefs in natural language. (Enhanced)
-- [ ] **Event-based suggestions**: Recommend indoor/outdoor activities based on weather (e.g., “Great day for hiking!”).
-- [x] **Sunrise/sunset calendar**: Expand current data into a monthly view for photographers and travelers.
+### Implemented
+
+- [x] **AI-Powered Weather Summaries**: Generates daily weather briefs in natural language.
+- [x] **Event-Based Suggestions**: Recommends indoor/outdoor activities based on current weather.
+- [x] **Sunrise/Sunset Calendar**: A monthly view for sunrise and sunset times.
+- [x] **In-App Weather Alerts**: Banners for significant upcoming weather events.
+- [x] **Live Radar & Satellite Maps**: Integrated animated precipitation and cloud coverage maps.
+- [x] **Location Search**: Add a search bar to find and add new locations.
+- [x] **Push Notifications**: Send notifications for severe weather alerts (client-side setup).
+
+### Next Up
+
+- [ ] **Unit & Integration Testing**: Build a robust test suite with Jest and React Testing Library.
+- [ ] **Advanced Accessibility**: Full keyboard navigation for all features and enhanced screen reader support.
 
 See the open issues for a full list of proposed features (and known issues).
 

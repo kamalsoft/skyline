@@ -28,7 +28,7 @@ import {
     Tooltip,
 } from '@chakra-ui/react';
 import { getWeatherDescription } from '../utils/weatherUtils';
-import { RepeatIcon, CalendarIcon } from '@chakra-ui/icons';
+import { RepeatIcon, CalendarIcon, ViewIcon } from '@chakra-ui/icons';
 import AnimatedWeatherIcon from './AnimatedWeatherIcon';
 import { motion } from 'framer-motion';
 import { validateWeatherData } from '../utils/weatherValidation';
@@ -37,6 +37,7 @@ import ForecastItem from './ForecastItem';
 import { generateWeatherSummary, generateActivitySuggestion } from '../utils/aiSummaryUtils';
 import DetailedWeatherModal from './DetailedWeatherModal';
 import SunCalendar from './SunCalendar';
+import WeatherMapModal from './WeatherMapModal';
 import WeatherCardSkeleton from './WeatherCardSkeleton';
 
 // Extracted and memoized ForecastCarousel to prevent re-creation on every render
@@ -87,6 +88,8 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
     const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
     const [activitySuggestion, setActivitySuggestion] = useState(null);
     const { isOpen: isCalendarOpen, onOpen: onCalendarOpen, onClose: onCalendarClose } = useDisclosure();
+    const { isOpen: isMapOpen, onOpen: onMapOpen, onClose: onMapClose } = useDisclosure();
+    const [currentTime, setCurrentTime] = useState(new Date());
 
     const fetchWeather = useCallback(async () => {
         setIsLoading(true);
@@ -136,7 +139,21 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
 
     useEffect(() => {
         fetchWeather();
-    }, [fetchWeather]);
+
+        // Set up a timer to refresh the weather data every 10 minutes
+        const refreshInterval = setInterval(fetchWeather, 600000); // 10 minutes in milliseconds
+
+        return () => clearInterval(refreshInterval); // Cleanup the interval on component unmount
+    }, [fetchWeather]); // Rerun this effect if the fetchWeather function changes (e.g., location changes)
+
+    // Effect to update the current time every minute to keep the forecast in sync
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 60000); // Update every minute
+
+        return () => clearInterval(timer);
+    }, []);
 
     const convertToFahrenheit = (celsius) => {
         return Math.round((celsius * 9) / 5 + 32);
@@ -184,15 +201,14 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
 
     // Memoize derived data to avoid re-calculating on every render
     const { currentHourIndex, currentApparentTemperature, currentHumidity } = useMemo(() => {
-        if (!weatherData?.hourly) return { currentHourIndex: -1 };
-        const now = new Date();
-        const index = weatherData.hourly.time.findIndex(time => new Date(time) >= now);
+        if (!weatherData?.hourly) return { currentHourIndex: -1, currentApparentTemperature: undefined, currentHumidity: undefined };
+        const index = weatherData.hourly.time.findIndex(time => new Date(time) >= currentTime);
         return {
             currentHourIndex: index,
             currentApparentTemperature: index !== -1 ? weatherData.hourly.apparent_temperature[index] : undefined,
             currentHumidity: index !== -1 ? weatherData.hourly.relative_humidity_2m[index] : undefined,
         };
-    }, [weatherData]);
+    }, [weatherData, currentTime]);
 
     // Memoize forecast items to prevent re-mapping on every render
     const hourlyForecastItems = useMemo(() => {
@@ -297,6 +313,13 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
                                 onClick={onCalendarOpen}
                                 aria-label="Open sunrise/sunset calendar" />
                         </Tooltip>
+                        <Tooltip label="Open Weather Map" placement="top">
+                            <IconButton
+                                icon={<ViewIcon />}
+                                isRound size="sm" variant="ghost"
+                                onClick={onMapOpen}
+                                aria-label="Open weather map" />
+                        </Tooltip>
                         {lastUpdated && <Text fontSize="xs" color="gray.500">Updated: {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>}
                     </HStack>
                 </HStack>
@@ -323,30 +346,41 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
             <VStack spacing={6} align="stretch">
                 {/* Current Weather */}
                 <Box className="glass" p={4} borderRadius="xl">
-                    <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap={6} alignItems="center">
+                    <Grid templateColumns={{ base: '1fr', md: 'auto 1fr' }} gap={6} alignItems="center">
                         <HStack spacing={4} justify="center">
                             <AnimatedWeatherIcon weatherCode={current.weathercode} w={24} h={24} />
                             <Text fontSize="6xl" fontWeight="bold">{displayTemp(current.temperature, false)}</Text>
+                            <VStack align="stretch" justify="center" spacing={1}>
+                                {currentApparentTemperature !== undefined && (
+                                    <Text>Feels like: {displayTemp(currentApparentTemperature, false)}</Text>
+                                )}
+                                {currentHumidity !== undefined && (
+                                    <Text>Humidity: {currentHumidity}%</Text>
+                                )}
+                                <Text>Wind: {current.windspeed} km/h</Text>
+                                {airQuality?.us_aqi && (
+                                    <Text>AQI: <Badge colorScheme={getAqiColor(airQuality.us_aqi)}>{airQuality.us_aqi}</Badge></Text>
+                                )}
+                            </VStack>
                         </HStack>
-                        <VStack align="stretch" justify="center" spacing={1}>
-                            {currentApparentTemperature !== undefined && (
-                                <Text>Feels like: {displayTemp(currentApparentTemperature, false)}</Text>
-                            )}
-                            {currentHumidity !== undefined && (
-                                <Text>Humidity: {currentHumidity}%</Text>
-                            )}
-                            <Text>Wind: {current.windspeed} km/h</Text>
-                            {airQuality?.us_aqi && (
-                                <Text>AQI: <Badge colorScheme={getAqiColor(airQuality.us_aqi)}>{airQuality.us_aqi}</Badge></Text>
-                            )}
+                        <VStack align="flex-end" justify="space-between" h="100%">
+                            <ButtonGroup isAttached size="sm" variant="outline">
+                                <Tooltip label="Refresh weather" placement="top">
+                                    <IconButton icon={<RepeatIcon />} onClick={fetchWeather} isLoading={isLoading} aria-label="Refresh weather" />
+                                </Tooltip>
+                                <Tooltip label="Open Sunrise/Sunset Calendar" placement="top">
+                                    <IconButton icon={<CalendarIcon />} onClick={onCalendarOpen} aria-label="Open sunrise/sunset calendar" />
+                                </Tooltip>
+                                <Tooltip label="Open Weather Map" placement="top">
+                                    <IconButton icon={<ViewIcon />} onClick={onMapOpen} aria-label="Open weather map" />
+                                </Tooltip>
+                            </ButtonGroup>
+                            <ButtonGroup isAttached size="sm">
+                                <Button onClick={() => setUnit('C')} isActive={unit === 'C'}>°C</Button>
+                                <Button onClick={() => setUnit('F')} isActive={unit === 'F'}>°F</Button>
+                            </ButtonGroup>
                         </VStack>
                     </Grid>
-                    <VStack align="stretch" mt={4}>
-                        <ButtonGroup isAttached size="sm" mt={2}>
-                            <Button onClick={() => setUnit('C')} isActive={unit === 'C'}>°C</Button>
-                            <Button onClick={() => setUnit('F')} isActive={unit === 'F'}>°F</Button>
-                        </ButtonGroup>
-                    </VStack>
                 </Box>
 
                 {/* Hourly Forecast */}
@@ -380,6 +414,13 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
                     </ModalBody>
                 </ModalContent>
             </Modal>
+            <WeatherMapModal
+                isOpen={isMapOpen}
+                onClose={onMapClose}
+                latitude={latitude}
+                longitude={longitude}
+                locationName={locationName}
+            />
         </Box >
     );
 }

@@ -32,6 +32,7 @@ function SortableWorldClock({ clock, clockTheme, timeFormat, isSidebarOpen }) {
             style={style}
             {...attributes}
             {...listeners}
+            aria-label={`Draggable clock for ${clock.location}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}

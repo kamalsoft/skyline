@@ -3,7 +3,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   ChakraProvider,
   Box,
-  Grid,
   VStack,
   HStack,
   Button,
@@ -26,6 +25,7 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  defaultAnnouncements, defaultScreenReaderInstructions,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -36,18 +36,19 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { FaPlay, FaPause } from 'react-icons/fa';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import AnimatedBackground from './components/AnimatedBackground';
 import WeatherCard from './components/WeatherCard';
 import SettingsPanel from './components/SettingsPanel';
 import WorldClockCard from './components/WorldClockCard';
-import SortableWorldClock from './components/SortableWorldClock'; // This should now wrap WorldClockCard
+import SortableWorldClock from './components/SortableWorldClock';
 import { LogProvider } from './contexts/LogContext';
 import { useClockManager } from './useClockManager';
 import LogTerminal from './components/LogTerminal';
 import { generateWeatherAlerts } from './utils/alertUtils';
 import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
+import 'leaflet/dist/leaflet.css';
 import axios from 'axios'; // For reverse geocoding
 
 const theme = extendTheme({
@@ -203,6 +204,31 @@ function AppContent() {
   }, [themePreference, dailyForecast, setColorMode]);
 
   const [weatherAlerts, setWeatherAlerts] = useState([]);
+
+  // Custom announcements for screen readers to improve accessibility
+  const customAnnouncements = {
+    ...defaultAnnouncements,
+    onDragStart({ active }) {
+      return `Picked up ${active.data.current?.clock.location || 'clock'}.`;
+    },
+    onDragOver({ active, over }) {
+      if (over) {
+        return `Moving ${active.data.current?.clock.location || 'clock'} over ${over.data.current?.clock.location || 'clock'}.`;
+      }
+      return `Moving ${active.data.current?.clock.location || 'clock'}.`;
+    },
+    onDragEnd({ active, over }) {
+      if (over) {
+        const newIndex = clocks.findIndex(c => c.id === over.id);
+        return `Dropped ${active.data.current?.clock.location || 'clock'} at position ${newIndex + 1}.`;
+      }
+      return `Dropped ${active.data.current?.clock.location || 'clock'}.`;
+    },
+    onDragCancel({ active }) {
+      return `Drag cancelled. ${active.data.current?.clock.location || 'clock'} returned to its original position.`;
+    },
+  };
+
   const [dismissedAlerts, setDismissedAlerts] = useState([]);
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -375,6 +401,26 @@ function AppContent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isAnimationPaused, setIsAnimationPaused] = useState(false);
 
+  const shakeControls = useAnimation();
+  const handleLightningFlash = useCallback(() => {
+    const getRandomInt = (max) => Math.floor(Math.random() * (max * 2 + 1)) - max;
+
+    if (!isAnimationPaused) {
+      const maxShakeX = 5; // Max horizontal shake in pixels
+      const maxShakeY = 3; // Max vertical shake in pixels
+
+      // Generate a random sequence of movements for a more natural shake
+      const xKeyframes = [0, getRandomInt(maxShakeX), -getRandomInt(maxShakeX), getRandomInt(maxShakeX / 2), 0];
+      const yKeyframes = [0, getRandomInt(maxShakeY), -getRandomInt(maxShakeY), getRandomInt(maxShakeY / 2), 0];
+
+      shakeControls.start({
+        x: xKeyframes,
+        y: yKeyframes,
+        transition: { duration: 0.3, ease: 'easeInOut' }
+      });
+    }
+  }, [shakeControls, isAnimationPaused]);
+
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -387,6 +433,7 @@ function AppContent() {
         sunset={dailyForecast?.sunset?.[0]}
         weatherCode={primaryLocation ? clocks.find(c => c.id === primaryLocation.id)?.weatherCode : null}
         isAnimationPaused={isAnimationPaused}
+        onLightningFlash={handleLightningFlash}
       />
       <HStack justify="flex-end" mb={4} position="relative" zIndex="10">
         <motion.div>
@@ -450,12 +497,15 @@ function AppContent() {
         </VStack>
       )}
 
-      <Grid
-        templateColumns={{ base: '1fr', lg: isSidebarOpen ? '380px 1fr' : '80px 1fr' }}
-        gap={6}
-        h="calc(100vh - 120px)"
-        overflow="hidden"
-        transition="template-columns 0.3s ease-in-out"
+      <motion.div
+        animate={shakeControls}
+        style={{
+          height: "calc(100vh - 120px)",
+          overflow: "hidden",
+          display: 'grid',
+          gridTemplateColumns: isSidebarOpen ? '380px 1fr' : '80px 1fr',
+          gap: '24px',
+        }}
       >
         {/* Sidebar Column */}
         <Box className="glass" borderRadius="xl" p={4} display="flex" flexDirection="column">
@@ -480,6 +530,10 @@ function AppContent() {
               }}
               onDragEnd={handleDragEnd}
               onDragCancel={handleDragCancel}
+              announcements={customAnnouncements}
+              accessibility={{
+                screenReaderInstructions: defaultScreenReaderInstructions,
+              }}
             >
               <SortableContext items={clocks.map(c => String(c.id))} strategy={rectSortingStrategy}>
                 <VStack spacing={4} align="stretch">
@@ -511,7 +565,7 @@ function AppContent() {
             )}
           </AnimatePresence>
         </Box>
-      </Grid>
+      </motion.div>
       <AnimatePresence>
         {showLogTerminal && (
           <LogTerminal />

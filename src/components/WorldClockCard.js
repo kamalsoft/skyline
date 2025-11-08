@@ -54,15 +54,15 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOp
 
     useEffect(() => {
         if (sunTimes.sunrise && sunTimes.sunset) {
-            const isCurrentlyDay = time.valueOf() >= sunTimes.sunrise.getTime() && time.valueOf() <= sunTimes.sunset.getTime();
+            const isCurrentlyDay = time.isAfter(sunTimes.sunrise) && time.isBefore(sunTimes.sunset);
             setIsDay(isCurrentlyDay);
         }
     }, [time, sunTimes]);
 
     const timeOptions = {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: timeFormat === '12h',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: timeFormat === '12h'
     };
 
     const sunriseStr = sunTimes.sunrise ? sunTimes.sunrise.toLocaleTimeString('en-US', timeOptions) : 'N/A';
@@ -77,8 +77,8 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOp
                         className="glass"
                         p={4} borderRadius="xl"
                         position="relative"
-                        boxShadow={isDragging ? '0 0 20px rgba(0,0,0,0.3)' : 'none'}
                         overflow="hidden"
+                        boxShadow={isDragging ? '0 10px 25px rgba(0, 0, 0, 0.3)' : 'none'}
                         transform={isDragging ? 'scale(1.05)' : 'scale(1)'}
                         transition="transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out"
                     >
