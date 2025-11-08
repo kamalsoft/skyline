@@ -17,8 +17,11 @@ import {
     Button,
     ButtonGroup,
     Badge,
+    IconButton,
+    Tooltip,
 } from '@chakra-ui/react';
 import { getWeatherDescription } from '../utils/weatherUtils';
+import { RepeatIcon } from '@chakra-ui/icons';
 import AnimatedWeatherIcon from './AnimatedWeatherIcon';
 import { getAqiColor } from '../utils/aqiUtils';
 import ForecastItem from './ForecastItem';
@@ -188,8 +191,18 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
 
     return (
         <Box className="glass" p={4} borderRadius="lg">
-            <VStack justify="center" mb={4}>
-                <Heading as="h3" size="lg">{locationName}</Heading>
+            <VStack justify="center" mb={2}>
+                <HStack>
+                    <Heading as="h3" size="lg">{locationName}</Heading>
+                    <Tooltip label="Refresh weather" placement="top">
+                        <IconButton
+                            icon={<RepeatIcon />}
+                            isRound size="sm" variant="ghost"
+                            onClick={fetchWeather}
+                            isLoading={isLoading}
+                            aria-label="Refresh weather" />
+                    </Tooltip>
+                </HStack>
                 <Text>{getWeatherDescription(current.weather_code)}</Text>
             </VStack>
             <VStack spacing={6} align="stretch">

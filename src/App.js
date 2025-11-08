@@ -194,9 +194,9 @@ function AppContent() {
       const { latitude, longitude } = position.coords;
       console.log(`[App.js] Geolocation success. Lat: ${latitude}, Lon: ${longitude}`);
       try {
-        const response = await axios.get(
-          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
-        );
+        const apiUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`;
+        console.log('[App.js] Fetching reverse geocoding data from URL:', apiUrl);
+        const response = await axios.get(apiUrl);
         const result = response.data;
 
         if (result) {
@@ -221,11 +221,39 @@ function AppContent() {
       }
     };
 
+    const fetchLocationByIp = async () => {
+      console.log('[App.js] Falling back to IP-based geolocation...');
+      setCurrentLocationStatus('loading');
+      setCurrentLocationError('High-accuracy location failed. Trying network-based location...');
+      try {
+        const response = await axios.get('http://ip-api.com/json');
+        const result = response.data;
+        if (result.status === 'success') {
+          console.log('[App.js] IP-based geolocation successful:', result);
+          const newClock = {
+            id: 'current-location',
+            location: `${result.city}, ${result.regionName || result.country}`,
+            timeZone: result.timezone,
+            latitude: result.lat,
+            longitude: result.lon,
+            countryCode: result.countryCode.toLowerCase(),
+          };
+          setPrimaryLocationAndUpdateClocks(newClock);
+          setCurrentLocationStatus('success');
+        } else {
+          throw new Error('IP-based geolocation failed.');
+        }
+      } catch (error) {
+        console.error('[App.js] IP-based geolocation error:', error);
+        setCurrentLocationError('Could not determine location from network. Please set it manually.');
+        setCurrentLocationStatus('error');
+      }
+    };
+
     const handleLocationError = (error, fallback) => {
       console.error('[App.js] Geolocation error:', error);
-      if (error.code === error.TIMEOUT && fallback) {
-        // If high accuracy timed out, try with low accuracy
-        fallback();
+      if (error.code === error.POSITION_UNAVAILABLE) {
+        fetchLocationByIp();
       } else {
         let message = 'An error occurred while fetching your location.';
         console.warn(`[App.js] Geolocation failed with code: ${error.code}`);
@@ -255,10 +283,12 @@ function AppContent() {
         return;
       }
 
+      console.log('[App.js] Attempting to get location with high accuracy...');
       // 1. Try with high accuracy
       navigator.geolocation.getCurrentPosition(
         handleLocationSuccess,
         (err) => handleLocationError(err, () => {
+          console.log('[App.js] Attempting to get location with low accuracy (fallback)...');
           // 2. Fallback to low accuracy
           navigator.geolocation.getCurrentPosition(
             handleLocationSuccess,
