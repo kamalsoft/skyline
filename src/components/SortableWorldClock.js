@@ -3,7 +3,6 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { motion } from 'framer-motion';
 import { CSS } from '@dnd-kit/utilities';
-import { Box } from '@chakra-ui/react';
 import WorldClockCard from './WorldClockCard';
 
 /**
