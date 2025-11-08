@@ -1,6 +1,7 @@
 // src/components/WorldClockCard.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Box, HStack, VStack, Text, Spinner, IconButton, Tooltip } from '@chakra-ui/react';
 import { WiDaySunny, WiNightClear } from 'react-icons/wi';
 import { FaClock, FaDigitalTachograph } from 'react-icons/fa';
@@ -68,75 +69,80 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOp
     const sunsetStr = sunTimes.sunset ? sunTimes.sunset.toLocaleTimeString('en-US', timeOptions) : 'N/A';
     const tooltipLabel = `Sunrise: ${sunriseStr} | Sunset: ${sunsetStr}`;
 
-    // Collapsed view
-    if (!isSidebarOpen) {
-        return (
-            <Tooltip label={`${clock.location} - ${time.format(timeFormat === '12h' ? 'h:mm A' : 'HH:mm')}`} placement="right">
-                <HStack
-                    className="glass"
-                    p={3} borderRadius="xl"
-                    justify="center"
-                    spacing={4}
-                >
-                    <Box as={isDay ? WiDaySunny : WiNightClear} size="24px" color={isDay ? "yellow.400" : "gray.300"} />
-                </HStack>
-            </Tooltip>
-        );
-    }
-
     return (
-        <Box
-            className="glass"
-            p={4} borderRadius="xl"
-            h="100%"
-            position="relative"
-            boxShadow={isDragging ? 'xl' : 'none'}
-            overflow="hidden"
-        >
-            <Tooltip label={`Switch to ${isAnalog ? 'Digital' : 'Analog'} Clock`} placement="top">
-                <IconButton
-                    icon={isAnalog ? <FaDigitalTachograph /> : <FaClock />}
-                    size="xs"
-                    variant="ghost"
-                    position="absolute"
-                    top="8px"
-                    right="8px"
-                    onClick={() => setIsAnalog(!isAnalog)}
-                    aria-label="Toggle clock type"
-                />
-            </Tooltip>
-            <HStack justify="space-between" align="center">
-                <VStack align="flex-start">
-                    <HStack>
-                        <Text fontWeight="bold" fontSize="lg">{clock.location.split(',')[0]}</Text>
-                        <Tooltip label={tooltipLabel} placement="top">
-                            <Box as={isDay ? WiDaySunny : WiNightClear} size="24px" color={isDay ? "yellow.400" : "gray.300"} />
+        <AnimatePresence mode="wait">
+            {isSidebarOpen ? (
+                <motion.div key="expanded" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                    <Box
+                        className="glass"
+                        p={4} borderRadius="xl"
+                        h="100%"
+                        position="relative"
+                        boxShadow={isDragging ? 'xl' : 'none'}
+                        overflow="hidden"
+                    >
+                        <Tooltip label={`Switch to ${isAnalog ? 'Digital' : 'Analog'} Clock`} placement="top">
+                            <IconButton
+                                icon={isAnalog ? <FaDigitalTachograph /> : <FaClock />}
+                                size="xs"
+                                variant="ghost"
+                                position="absolute"
+                                top="8px"
+                                right="8px"
+                                onClick={() => setIsAnalog(!isAnalog)}
+                                aria-label="Toggle clock type"
+                            />
                         </Tooltip>
-                    </HStack>
-                    <Text fontSize="xs" color="gray.500" mt="-8px">{clock.timeZone.replace('_', ' ')}</Text>
-                    {!isAnalog && (
-                        <VStack align="flex-start" spacing={0}>
-                            <DigitalClock time={time} compact timeFormat={timeFormat} timeZone={clock.timeZone} />
-                            <Text fontSize="xs" color="gray.400">{`Sunrise: ${sunriseStr} | Sunset: ${sunsetStr}`}</Text>
-                        </VStack>
-                    )}
-                </VStack>
-                {isAnalog ? (
-                    <AnalogClock time={time} clockTheme={clockTheme} />
-                ) : (
-                    loading ? (
-                        <Spinner size="md" />
-                    ) : weather ? (
-                        <HStack>
-                            <Text fontSize="2xl" fontWeight="bold">{Math.round(weather.temperature_2m)}°C</Text>
-                            <Tooltip label={getWeatherDescription(weather.weather_code)} placement="top">
-                                <Box><AnimatedWeatherIcon weatherCode={weather.weather_code} w={10} h={10} /></Box>
-                            </Tooltip>
+                        <HStack justify="space-between" align="center">
+                            <VStack align="flex-start">
+                                <HStack>
+                                    <Text fontWeight="bold" fontSize="lg">{clock.location.split(',')[0]}</Text>
+                                    <Tooltip label={tooltipLabel} placement="top">
+                                        <Box as={isDay ? WiDaySunny : WiNightClear} size="24px" color={isDay ? "yellow.400" : "gray.300"} />
+                                    </Tooltip>
+                                </HStack>
+                                <Text fontSize="xs" color="gray.500" mt="-8px">{clock.timeZone.replace('_', ' ')}</Text>
+                                {!isAnalog && (
+                                    <VStack align="flex-start" spacing={0}>
+                                        <DigitalClock time={time} compact timeFormat={timeFormat} timeZone={clock.timeZone} />
+                                        <Text fontSize="xs" color="gray.400">{`Sunrise: ${sunriseStr} | Sunset: ${sunsetStr}`}</Text>
+                                    </VStack>
+                                )}
+                            </VStack>
+                            {isAnalog ? (
+                                <AnalogClock time={time} clockTheme={clockTheme} />
+                            ) : (
+                                loading ? (
+                                    <Spinner size="md" />
+                                ) : weather ? (
+                                    <HStack>
+                                        <Text fontSize="2xl" fontWeight="bold">{Math.round(weather.temperature_2m)}°C</Text>
+                                        <Tooltip label={getWeatherDescription(weather.weather_code)} placement="top">
+                                            <Box><AnimatedWeatherIcon weatherCode={weather.weather_code} w={10} h={10} /></Box>
+                                        </Tooltip>
+                                    </HStack>
+                                ) : null
+                            )}
                         </HStack>
-                    ) : null
-                )}
-            </HStack>
-        </Box>
+                    </Box>
+                </motion.div>
+            ) : (
+                <motion.div key="collapsed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <Tooltip label={`${clock.location} - ${time.format(timeFormat === '12h' ? 'h:mm A' : 'HH:mm')}`} placement="right">
+                        <HStack
+                            className="glass"
+                            p={3} borderRadius="xl"
+                            justify="center"
+                            spacing={4}
+                        >
+                            <motion.div whileHover={{ scale: 1.2 }}>
+                                <Box as={isDay ? WiDaySunny : WiNightClear} size="24px" color={isDay ? "yellow.400" : "gray.300"} />
+                            </motion.div>
+                        </HStack>
+                    </Tooltip>
+                </motion.div>
+            )}
+        </AnimatePresence>
     );
 }
 

@@ -8,7 +8,7 @@ import {
     Text,
     VStack,
     HStack,
-    useColorModeValue,
+    Grid,
     useDisclosure,
     Alert,
     AlertIcon,
@@ -33,7 +33,6 @@ import WeatherCardSkeleton from './WeatherCardSkeleton';
 function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, locationName, timeFormat }) {
     // New component for the auto-scrolling carousel
     const ForecastCarousel = ({ children, itemCount }) => {
-        const [isHovering, setIsHovering] = useState(false);
         const contentRef = useRef(null);
         const [contentWidth, setContentWidth] = useState(0);
 
@@ -50,7 +49,7 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
         const duration = itemCount * 3; // Adjust speed by changing the multiplier
 
         return (
-            <Box overflowX="hidden" onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)} ref={contentRef}>
+            <Box overflowX="hidden" ref={contentRef}>
                 <motion.div
                     animate={{
                         x: [0, -contentWidth / 2], // Animate to half the content width for a seamless loop
@@ -72,8 +71,8 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
     const [error, setError] = useState(null);
     const [unit, setUnit] = useState('C'); // 'C' for Celsius, 'F' for Fahrenheit
     const { isOpen, onOpen, onClose } = useDisclosure();
-    const scrollbarThumbColor = useColorModeValue('primaryPurple', 'lightLavender');
     const [selectedForecast, setSelectedForecast] = useState(null);
+    const [lastUpdated, setLastUpdated] = useState(null);
 
     const fetchWeather = useCallback(async () => {
         setIsLoading(true);
@@ -88,6 +87,7 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
                 throw new Error(error);
             }
             setWeatherData(response.data);
+            setLastUpdated(new Date()); // Set the last updated time
             if (onForecastFetch) {
                 onForecastFetch(response.data.daily);
             }
@@ -215,42 +215,49 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
         <Box className="glass" p={4} borderRadius="xl">
             <VStack justify="center" mb={2}>
                 <HStack>
-                    <Heading as="h3" size="lg">{locationName}</Heading>
-                    <Tooltip label="Refresh weather" placement="top">
-                        <IconButton
-                            icon={<RepeatIcon />}
-                            isRound size="sm" variant="ghost"
-                            onClick={fetchWeather}
-                            isLoading={isLoading}
-                            aria-label="Refresh weather" />
-                    </Tooltip>
+                    <Heading as="h3" size="lg" noOfLines={1} title={locationName}>{locationName}</Heading>
+                    <HStack>
+                        <Tooltip label="Refresh weather" placement="top">
+                            <IconButton
+                                icon={<RepeatIcon />}
+                                isRound size="sm" variant="ghost"
+                                onClick={fetchWeather}
+                                isLoading={isLoading}
+                                aria-label="Refresh weather" />
+                        </Tooltip>
+                        {lastUpdated && <Text fontSize="xs" color="gray.500">Updated: {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>}
+                    </HStack>
                 </HStack>
                 <Text>{getWeatherDescription(current.weathercode)}</Text>
             </VStack>
             <VStack spacing={6} align="stretch">
                 {/* Current Weather */}
-                <HStack justify="space-around" align="center" className="glass" p={4} borderRadius="xl">
-                    <HStack>
-                        <AnimatedWeatherIcon weatherCode={current.weathercode} w={24} h={24} />
-                        <Text fontSize="6xl" fontWeight="bold">{displayTemp(current.temperature, false)}</Text>
-                    </HStack>
-                    <VStack align="flex-start">
-                        {currentApparentTemperature !== undefined && (
-                            <Text>Feels like: {displayTemp(currentApparentTemperature, false)}</Text>
-                        )}
-                        {currentHumidity !== undefined && (
-                            <Text>Humidity: {currentHumidity}%</Text>
-                        )}
-                        <Text>Wind: {current.windspeed} km/h</Text>
-                        {airQuality?.us_aqi && (
-                            <Text>AQI: <Badge colorScheme={getAqiColor(airQuality.us_aqi)}>{airQuality.us_aqi}</Badge></Text>
-                        )}
+                <Box className="glass" p={4} borderRadius="xl">
+                    <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap={6} alignItems="center">
+                        <HStack spacing={4} justify="center">
+                            <AnimatedWeatherIcon weatherCode={current.weathercode} w={24} h={24} />
+                            <Text fontSize="6xl" fontWeight="bold">{displayTemp(current.temperature, false)}</Text>
+                        </HStack>
+                        <VStack align="stretch" justify="center" spacing={1}>
+                            {currentApparentTemperature !== undefined && (
+                                <Text>Feels like: {displayTemp(currentApparentTemperature, false)}</Text>
+                            )}
+                            {currentHumidity !== undefined && (
+                                <Text>Humidity: {currentHumidity}%</Text>
+                            )}
+                            <Text>Wind: {current.windspeed} km/h</Text>
+                            {airQuality?.us_aqi && (
+                                <Text>AQI: <Badge colorScheme={getAqiColor(airQuality.us_aqi)}>{airQuality.us_aqi}</Badge></Text>
+                            )}
+                        </VStack>
+                    </Grid>
+                    <VStack align="stretch" mt={4}>
                         <ButtonGroup isAttached size="sm" mt={2}>
                             <Button onClick={() => setUnit('C')} isActive={unit === 'C'}>°C</Button>
                             <Button onClick={() => setUnit('F')} isActive={unit === 'F'}>°F</Button>
                         </ButtonGroup>
                     </VStack>
-                </HStack>
+                </Box>
 
                 {/* Hourly Forecast */}
                 <Box>
@@ -279,16 +286,17 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
                     <ForecastCarousel itemCount={7}>
                         {daily && daily.time.slice(0, 7).map((time, index) => {
                             const date = new Date(time);
-                            const dayLabel = index === 0 ? 'Today' : date.toLocaleDateString('en-US', { weekday: 'short' });
-                            const dateLabel = `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`;
+                            const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
+                            const dateString = `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`;
+                            const combinedLabel = `${dateString} - ${weekday}`;
 
                             return (
                                 <ForecastItem
                                     onClick={() => handleForecastClick('daily', index)}
                                     key={time}
                                     index={index}
-                                    label={dayLabel}
-                                    dateLabel={index !== 0 ? dateLabel : undefined}
+                                    label={index === 0 ? 'Today' : combinedLabel}
+                                    dateLabel={index === 0 ? dateString : undefined}
                                     weatherCode={daily.weather_code[index]}
                                     description={getWeatherDescription(daily.weather_code[index])}
                                     temp={`${displayTemp(daily.temperature_2m_min[index], false)} / ${displayTemp(daily.temperature_2m_max[index], false)}`}

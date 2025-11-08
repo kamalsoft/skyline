@@ -232,13 +232,10 @@ function AppContent() {
   const [activeDragItem, setActiveDragItem] = useState(null);
 
   const [clocks, setClocks] = useState(() => {
-    // Ensure 'current-location' clock is not persisted, as it's dynamically determined
-    const savedClocks = localStorage.getItem('clocks');
-    const parsedClocks = savedClocks ? JSON.parse(savedClocks) : initialClocks;
-    return parsedClocks.filter(c => c.id !== 'current-location');
     try {
       const savedClocks = localStorage.getItem('clocks');
-      return savedClocks ? JSON.parse(savedClocks) : initialClocks;
+      const parsedClocks = savedClocks ? JSON.parse(savedClocks) : initialClocks;
+      return parsedClocks.filter(c => c.id !== 'current-location');
     } catch (error) {
       console.error("Could not parse clocks from localStorage", error);
       return initialClocks;
@@ -473,18 +470,26 @@ function AppContent() {
         weatherCode={primaryLocation ? clocks.find(c => c.id === primaryLocation.id)?.weatherCode : null}
       />
       <HStack justify="flex-end" mb={4} position="relative" zIndex="10">
-        <HStack className="glass" p={2} borderRadius="md">
-          <Tooltip label={themePreference === 'auto' ? 'Theme is in Auto mode' : 'Toggle theme'}>
-            <IconButton
-              onClick={toggleColorMode} icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />} aria-label="Toggle theme"
-              isDisabled={themePreference === 'auto'}
-            />
-          </Tooltip>
-          <IconButton onClick={() => setShowLogTerminal(!showLogTerminal)} icon={<ViewIcon />} aria-label="Toggle Log Terminal" variant={showLogTerminal ? 'solid' : 'ghost'} />
-          <Button ref={btnRef} leftIcon={<SettingsIcon />} colorScheme="teal" variant="ghost" onClick={onOpen}>
-            Settings
-          </Button>
-        </HStack>
+        <motion.div>
+          <HStack className="glass" p={2} borderRadius="md">
+            <Tooltip label={themePreference === 'auto' ? 'Theme is in Auto mode' : 'Toggle theme'}>
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <IconButton
+                  onClick={toggleColorMode} icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />} aria-label="Toggle theme"
+                  isDisabled={themePreference === 'auto'}
+                />
+              </motion.div>
+            </Tooltip>
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <IconButton onClick={() => setShowLogTerminal(!showLogTerminal)} icon={<ViewIcon />} aria-label="Toggle Log Terminal" variant={showLogTerminal ? 'solid' : 'ghost'} />
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <Button ref={btnRef} leftIcon={<SettingsIcon />} colorScheme="teal" variant="ghost" onClick={onOpen}>
+                Settings
+              </Button>
+            </motion.div>
+          </HStack>
+        </motion.div>
       </HStack>
 
       {currentLocationStatus === 'loading' && (
@@ -593,10 +598,20 @@ function AppContent() {
 
         {/* Main Content Column */}
         <Box overflowY="auto" p={2} sx={{ '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { bg: 'gray.600', borderRadius: '24px' }, 'scrollbarWidth': 'thin' }}>
-          {primaryLocation && <WeatherCard latitude={primaryLocation.latitude} longitude={primaryLocation.longitude} onForecastFetch={handleForecastFetch} locationName={primaryLocation.location} onWeatherFetch={handleWeatherFetch} timeFormat={timeFormat} />}
+          <AnimatePresence>
+            {primaryLocation && (
+              <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+                <WeatherCard latitude={primaryLocation.latitude} longitude={primaryLocation.longitude} onForecastFetch={handleForecastFetch} locationName={primaryLocation.location} onWeatherFetch={handleWeatherFetch} timeFormat={timeFormat} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Box>
       </Grid>
-      {showLogTerminal && <LogTerminal />}
+      <AnimatePresence>
+        {showLogTerminal && (
+          <LogTerminal />
+        )}
+      </AnimatePresence>
     </Box>
   );
 }

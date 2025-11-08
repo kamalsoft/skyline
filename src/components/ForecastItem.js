@@ -10,12 +10,13 @@ function ForecastItem({ label, dateLabel, weatherCode, description, temp, index,
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
+            whileTap={{ scale: 0.95 }}
         >
             <VStack
                 className="glass"
                 spacing={1} p={3}
                 borderRadius="md"
-                minW="90px" h="100%"
+                minW="110px" h="100%"
                 justify="space-between"
                 onClick={onClick}
                 _hover={{ cursor: 'pointer', transform: 'scale(1.05)', transition: 'transform 0.2s', bg: useColorModeValue('rgba(123, 97, 255, 0.1)', 'rgba(255, 255, 255, 0.1)') }}
