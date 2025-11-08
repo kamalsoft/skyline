@@ -3,7 +3,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import {
     Box, Text, HStack, useColorModeValue, IconButton, Tooltip,
     AlertDialog, AlertDialogBody, AlertDialogFooter, AlertDialogHeader, AlertDialogContent,
-    AlertDialogOverlay, useDisclosure, Button, VStack, ButtonGroup
+    AlertDialogOverlay, useDisclosure, Button, VStack, ButtonGroup, useToast
 } from '@chakra-ui/react';
 import { motion, useDragControls } from 'framer-motion';
 import { DeleteIcon, WarningTwoIcon } from '@chakra-ui/icons';
@@ -31,14 +31,27 @@ function LogEntry({ log }) {
 function LogTerminal() {
     const { logs, clearLogs, clearCacheAndReload } = useLogs();
     const terminalRef = useRef(null);
-    const bgColor = useColorModeValue('rgba(240, 240, 240, 0.9)', 'rgba(20, 20, 20, 0.9)');
+    const bgColor = useColorModeValue('rgba(245, 245, 245, 0.8)', 'rgba(26, 32, 44, 0.8)');
     const borderColor = useColorModeValue('gray.300', 'gray.600');
     const { isOpen, onOpen, onClose } = useDisclosure();
     const cancelRef = React.useRef();
     const dragControls = useDragControls();
+    const toast = useToast();
 
     const [size, setSize] = useState({ width: 500, height: 300 });
     const [filterLevel, setFilterLevel] = useState('all'); // 'all', 'info', 'warn', 'error'
+
+    const handleClearCache = () => {
+        clearCacheAndReload();
+        toast({
+            title: "Cache Cleared",
+            description: "Application is reloading with a fresh state.",
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+        });
+        onClose();
+    };
 
     // Auto-scroll to the bottom when new logs are added
     useEffect(() => {
@@ -98,7 +111,7 @@ function LogTerminal() {
                             </Tooltip>
                         </HStack>
                     </HStack>
-                    <ButtonGroup size="xs" isAttached variant="outline" pt={1} onClick={(e) => e.stopPropagation()}>
+                    <ButtonGroup size="xs" isAttached variant="outline" pt={1} onPointerDown={(e) => e.stopPropagation()}>
                         <Button onClick={() => setFilterLevel('all')} isActive={filterLevel === 'all'}>All</Button>
                         <Button onClick={() => setFilterLevel('info')} isActive={filterLevel === 'info'}>Info</Button>
                         <Button onClick={() => setFilterLevel('warn')} isActive={filterLevel === 'warn'}>Warn</Button>
@@ -115,8 +128,9 @@ function LogTerminal() {
                 >
                     {filteredLogs.map((log, index) => <LogEntry key={index} log={log} />)}
                 </Box>
+                {/* Resize Handles */}
                 <motion.div
-                    drag="x, y"
+                    drag="x"
                     onDrag={(event, info) => {
                         setSize(prevSize => ({
                             width: Math.max(300, prevSize.width + info.delta.x),
@@ -124,14 +138,7 @@ function LogTerminal() {
                         }));
                     }}
                     dragMomentum={false}
-                    style={{
-                        position: 'absolute',
-                        bottom: '0px',
-                        right: '0px',
-                        width: '20px',
-                        height: '20px',
-                        cursor: 'nwse-resize',
-                    }}
+                    style={{ position: 'absolute', bottom: '0px', right: '0px', width: '20px', height: '20px', cursor: 'nwse-resize' }}
                 />
             </Box>
             <AlertDialog
@@ -149,7 +156,7 @@ function LogTerminal() {
                         </AlertDialogBody>
                         <AlertDialogFooter>
                             <Button ref={cancelRef} onClick={onClose}>Cancel</Button>
-                            <Button colorScheme="red" onClick={clearCacheAndReload} ml={3}>Clear & Reload</Button>
+                            <Button colorScheme="red" onClick={handleClearCache} ml={3}>Clear & Reload</Button>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialogOverlay>

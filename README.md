@@ -46,8 +46,8 @@ Here are some ideas for future enhancements:
 - [ ] **User Accounts**: Allow users to sync their clocks and settings across multiple devices.
 - [ ] **Advanced Theming**: Introduce more themes and allow users to set custom background images or gradients.
 - [ ] **Weather Alerts**: Provide notifications for severe weather alerts for the user's current location.
-- [ ] **Internationalization (i18n)**: Add support for multiple languages in the user interface.
-- [ ] **Accessibility Improvements**: Continue to enhance the application to meet WCAG standards.
+- [x] **Internationalization (i18n)**: Add support for multiple languages in the user interface.
+- [x] **Accessibility Improvements**: Continue to enhance the application to meet WCAG standards.
 
 See the open issues for a full list of proposed features (and known issues).
 

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Box, HStack, VStack, Text, Spinner, IconButton, Tooltip } from '@chakra-ui/react';
+import { WiDaySunny, WiNightClear } from 'react-icons/wi';
 import { FaClock, FaDigitalTachograph } from 'react-icons/fa';
 import DigitalClock from './DigitalClock';
 import AnalogClock from './AnalogClock';
@@ -9,11 +10,13 @@ import { useWorldClock } from '../hooks/useWorldClock';
 import { getWeatherDescription } from '../utils/weatherUtils';
 import AnimatedWeatherIcon from './AnimatedWeatherIcon';
 
-function WorldClockCard({ clock, isDragging, clockTheme, timeFormat }) {
+function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOpen }) {
     const time = useWorldClock(clock.timeZone);
     const [isAnalog, setIsAnalog] = useState(false);
     const [weather, setWeather] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isDay, setIsDay] = useState(true);
+    const [sunTimes, setSunTimes] = useState({ sunrise: null, sunset: null });
 
     useEffect(() => {
         const fetchWeather = async () => {
@@ -21,9 +24,16 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat }) {
             setLoading(true);
             try {
                 const response = await axios.get(
-                    `https://api.open-meteo.com/v1/forecast?latitude=${clock.latitude}&longitude=${clock.longitude}&current=temperature_2m,weather_code`
+                    `https://api.open-meteo.com/v1/forecast?latitude=${clock.latitude}&longitude=${clock.longitude}&current=temperature_2m,weather_code&daily=sunrise,sunset&forecast_days=1&timezone=${clock.timeZone}`
                 );
-                setWeather(response.data.current);
+                const data = response.data;
+                setWeather(data.current);
+
+                if (data.daily && data.daily.sunrise && data.daily.sunset) {
+                    const sunriseDate = new Date(data.daily.sunrise[0]);
+                    const sunsetDate = new Date(data.daily.sunset[0]);
+                    setSunTimes({ sunrise: sunriseDate, sunset: sunsetDate });
+                }
             } catch (error) {
                 console.error("Failed to fetch weather for world clock", error);
             } finally {
@@ -39,13 +49,45 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat }) {
         return () => {
             clearInterval(intervalId);
         };
-    }, [clock.latitude, clock.longitude]);
+    }, [clock.latitude, clock.longitude, clock.timeZone]);
+
+    useEffect(() => {
+        if (sunTimes.sunrise && sunTimes.sunset) {
+            const isCurrentlyDay = time.valueOf() >= sunTimes.sunrise.getTime() && time.valueOf() <= sunTimes.sunset.getTime();
+            setIsDay(isCurrentlyDay);
+        }
+    }, [time, sunTimes]);
+
+    const timeOptions = {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: timeFormat === '12h',
+    };
+
+    const sunriseStr = sunTimes.sunrise ? sunTimes.sunrise.toLocaleTimeString('en-US', timeOptions) : 'N/A';
+    const sunsetStr = sunTimes.sunset ? sunTimes.sunset.toLocaleTimeString('en-US', timeOptions) : 'N/A';
+    const tooltipLabel = `Sunrise: ${sunriseStr} | Sunset: ${sunsetStr}`;
+
+    // Collapsed view
+    if (!isSidebarOpen) {
+        return (
+            <Tooltip label={`${clock.location} - ${time.format(timeFormat === '12h' ? 'h:mm A' : 'HH:mm')}`} placement="right">
+                <HStack
+                    className="glass"
+                    p={3} borderRadius="xl"
+                    justify="center"
+                    spacing={4}
+                >
+                    <Box as={isDay ? WiDaySunny : WiNightClear} size="24px" color={isDay ? "yellow.400" : "gray.300"} />
+                </HStack>
+            </Tooltip>
+        );
+    }
 
     return (
         <Box
             className="glass"
-            p={4}
-            borderRadius="lg"
+            p={4} borderRadius="xl"
             h="100%"
             position="relative"
             boxShadow={isDragging ? 'xl' : 'none'}
@@ -65,8 +107,19 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat }) {
             </Tooltip>
             <HStack justify="space-between" align="center">
                 <VStack align="flex-start">
-                    <Text fontWeight="bold" fontSize="lg">{clock.location.split(',')[0]}</Text>
-                    {!isAnalog && <DigitalClock time={time} compact timeFormat={timeFormat} />}
+                    <HStack>
+                        <Text fontWeight="bold" fontSize="lg">{clock.location.split(',')[0]}</Text>
+                        <Tooltip label={tooltipLabel} placement="top">
+                            <Box as={isDay ? WiDaySunny : WiNightClear} size="24px" color={isDay ? "yellow.400" : "gray.300"} />
+                        </Tooltip>
+                    </HStack>
+                    <Text fontSize="xs" color="gray.500" mt="-8px">{clock.timeZone.replace('_', ' ')}</Text>
+                    {!isAnalog && (
+                        <VStack align="flex-start" spacing={0}>
+                            <DigitalClock time={time} compact timeFormat={timeFormat} timeZone={clock.timeZone} />
+                            <Text fontSize="xs" color="gray.400">{`Sunrise: ${sunriseStr} | Sunset: ${sunsetStr}`}</Text>
+                        </VStack>
+                    )}
                 </VStack>
                 {isAnalog ? (
                     <AnalogClock time={time} clockTheme={clockTheme} />

@@ -13,6 +13,7 @@ import {
   DrawerOverlay,
   DrawerContent,
   CloseButton,
+  Heading,
   DrawerCloseButton,
   Text,
   Spinner,
@@ -24,8 +25,9 @@ import {
   AlertTitle,
   AlertDescription,
   extendTheme,
+  Tooltip,
 } from '@chakra-ui/react';
-import { MoonIcon, SunIcon, SettingsIcon, ViewIcon } from '@chakra-ui/icons';
+import { MoonIcon, SunIcon, SettingsIcon, ViewIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import {
   DndContext,
   closestCenter,
@@ -63,25 +65,19 @@ const theme = extendTheme({
     initialColorMode: 'dark',
     useSystemColorMode: false,
   },
-  // Define custom metallic colors for the analog clock
   colors: {
-    metallic: {
-      light: {
-        bg: 'linear-gradient(145deg, #d98752, #b87333)', // Copper
-        shadowLight: '#ffb87a',
-        shadowDark: '#a15e2c',
-        hands: '#4A4A4A',
-        numbers: '#333',
-        secondHand: '#FF0000',
-      },
-      dark: {
-        bg: 'linear-gradient(145deg, #b87333, #8c5829)', // Dark Copper
-        shadowLight: '#d98752',
-        shadowDark: '#7a4f24',
-        hands: '#E0E0E0',
-        numbers: '#EEE',
-        secondHand: '#FF4500',
-      },
+    // New Vibrant Purple Palette
+    primaryPurple: '#7B61FF',
+    accentPink: '#FF6EC7',
+    deepViolet: '#5A4FCF',
+    lightLavender: '#E4D9FF',
+    softGray: '#F5F5F5',
+    darkGray: '#4A4A4A',
+
+    // Existing clock themes
+    metallic: { // Copper theme
+      light: { bg: 'linear-gradient(145deg, #d98752, #b87333)', shadowLight: '#ffb87a', shadowDark: '#a15e2c', hands: '#4A4A4A', numbers: '#333', secondHand: '#FF0000' },
+      dark: { bg: 'linear-gradient(145deg, #b87333, #8c5829)', shadowLight: '#d98752', shadowDark: '#7a4f24', hands: '#E0E0E0', numbers: '#EEE', secondHand: '#FF4500' },
     },
     minimalist: {
       light: {
@@ -95,15 +91,53 @@ const theme = extendTheme({
         secondHand: '#FC8181', // red.300
       },
     },
+    ocean: {
+      light: {
+        bg: 'linear-gradient(145deg, #E4D9FF, #F5F5F5)',
+        shadowLight: '#ffffff',
+        shadowDark: '#c1b7d7',
+        hands: '#5A4FCF',
+        numbers: '#7B61FF',
+        secondHand: '#FF6EC7',
+      },
+      dark: {
+        bg: 'linear-gradient(145deg, #5A4FCF, #2c3e50)',
+        shadowLight: '#7c6be0',
+        shadowDark: '#382e7e',
+        hands: '#E4D9FF',
+        numbers: '#FFFFFF',
+        secondHand: '#FF6EC7',
+      },
+    },
+    cyberpunk: {
+      light: { // A light mode variant for cyberpunk
+        bg: 'linear-gradient(145deg, #e0e0e0, #f5f5f5)',
+        shadowLight: '#ffffff',
+        shadowDark: '#c7c7c7',
+        hands: '#00ffff', // Cyan
+        numbers: '#ff00ff', // Magenta
+        secondHand: '#ffff00', // Yellow,
+        numberFontFamily: "'Orbitron', sans-serif",
+      },
+      dark: {
+        bg: 'linear-gradient(145deg, #0d0221, #241e4e)',
+        shadowLight: '#3a307b',
+        shadowDark: '#000000',
+        hands: '#00ffff', // Cyan
+        numbers: '#ff00ff', // Magenta
+        secondHand: '#ffff00', // Yellow,
+        numberFontFamily: "'Orbitron', sans-serif",
+      },
+    },
   },
   styles: {
     global: (props) => ({
       '.glass': {
-        bg: props.colorMode === 'dark' ? 'rgba(26, 32, 44, 0.6)' : 'rgba(255, 255, 255, 0.6)',
-        backdropFilter: 'blur(10px)',
+        bg: props.colorMode === 'dark' ? 'rgba(90, 79, 207, 0.25)' : 'rgba(228, 217, 255, 0.5)',
+        backdropFilter: 'blur(15px)',
         borderWidth: '1px',
-        borderColor: props.colorMode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-        boxShadow: props.colorMode === 'dark' ? '0 4px 6px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.15)' : '0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08)',
+        borderColor: props.colorMode === 'dark' ? 'rgba(228, 217, 255, 0.2)' : 'rgba(90, 79, 207, 0.3)',
+        boxShadow: props.colorMode === 'dark' ? '0 8px 20px rgba(0,0,0,0.3)' : `0 8px 20px rgba(90, 79, 207, 0.2)`,
       }
     }),
   },
@@ -111,10 +145,10 @@ const theme = extendTheme({
     Drawer: { baseStyle: { dialog: { bg: 'transparent' } } }, // Merged Drawer and Button
     Button: {
       variants: {
-        ghost: (props) => ({
-          color: props.colorMode === 'dark' ? 'whiteAlpha.800' : 'gray.700',
+        'ghost': (props) => ({
+          color: props.colorMode === 'dark' ? 'white' : 'primaryPurple',
           _hover: {
-            bg: props.colorMode === 'dark' ? 'whiteAlpha.200' : 'gray.200',
+            bg: props.colorMode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(123, 97, 255, 0.1)',
           },
         }),
       },
@@ -123,7 +157,7 @@ const theme = extendTheme({
 });
 
 function AppContent() {
-  const { colorMode, toggleColorMode } = useColorMode();
+  const { colorMode, toggleColorMode, setColorMode } = useColorMode();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const btnRef = useRef();
   const [showLogTerminal, setShowLogTerminal] = useState(false);
@@ -132,6 +166,11 @@ function AppContent() {
   const [currentLocationError, setCurrentLocationError] = useState(null);
   const [primaryLocation, setPrimaryLocation] = useState(null);
   const [dailyForecast, setDailyForecast] = useState(null);
+
+  const [themePreference, setThemePreference] = useState(() => {
+    return localStorage.getItem('themePreference') || 'dark'; // 'light', 'dark', 'auto'
+  });
+
 
   // Centralized function to set the primary location and update the clocks list
   const setPrimaryLocationAndUpdateClocks = useCallback((locationData) => {
@@ -151,6 +190,32 @@ function AppContent() {
     console.log('[App.js] Primary location state changed:', primaryLocation);
   }, [primaryLocation]);
 
+  useEffect(() => {
+    const applyTheme = () => {
+      if (themePreference === 'auto') {
+        if (dailyForecast?.sunrise?.[0] && dailyForecast?.sunset?.[0]) {
+          const now = new Date().getTime();
+          const sunriseTime = new Date(dailyForecast.sunrise[0]).getTime();
+          const sunsetTime = new Date(dailyForecast.sunset[0]).getTime();
+          const isDay = now >= sunriseTime && now < sunsetTime;
+          setColorMode(isDay ? 'light' : 'dark');
+        } else {
+          setColorMode('dark'); // Default to dark if sun times are not available
+        }
+      } else {
+        setColorMode(themePreference);
+      }
+    };
+
+    applyTheme();
+    // Check every minute if in auto mode
+    const intervalId = setInterval(() => {
+      if (themePreference === 'auto') applyTheme();
+    }, 60000);
+
+    return () => clearInterval(intervalId);
+  }, [themePreference, dailyForecast, setColorMode]);
+
   const [weatherAlerts, setWeatherAlerts] = useState([]);
   const [dismissedAlerts, setDismissedAlerts] = useState([]);
   const sensors = useSensors(
@@ -167,6 +232,10 @@ function AppContent() {
   const [activeDragItem, setActiveDragItem] = useState(null);
 
   const [clocks, setClocks] = useState(() => {
+    // Ensure 'current-location' clock is not persisted, as it's dynamically determined
+    const savedClocks = localStorage.getItem('clocks');
+    const parsedClocks = savedClocks ? JSON.parse(savedClocks) : initialClocks;
+    return parsedClocks.filter(c => c.id !== 'current-location');
     try {
       const savedClocks = localStorage.getItem('clocks');
       return savedClocks ? JSON.parse(savedClocks) : initialClocks;
@@ -177,7 +246,8 @@ function AppContent() {
   });
 
   useEffect(() => {
-    localStorage.setItem('clocks', JSON.stringify(clocks));
+    // Don't save the 'current-location' clock to localStorage
+    localStorage.setItem('clocks', JSON.stringify(clocks.filter(c => c.id !== 'current-location')));
   }, [clocks]);
 
   useEffect(() => {
@@ -316,6 +386,11 @@ function AppContent() {
     setClocks((prevClocks) => prevClocks.filter((clock) => clock.id !== id));
   };
 
+  const removeAllClocks = () => {
+    // Keep the primary location if it's the current location, otherwise clear all
+    setClocks(clocks.filter(c => c.id === 'current-location'));
+  };
+
   function handleDragStart(event) {
     const { active } = event;
     const item = clocks.find(clock => clock.id === active.id);
@@ -350,6 +425,11 @@ function AppContent() {
     localStorage.setItem('background', JSON.stringify(newBackground));
   };
 
+  const handleThemePreferenceChange = (newPreference) => {
+    setThemePreference(newPreference);
+    localStorage.setItem('themePreference', newPreference);
+  };
+
   function handleDragEnd(event) {
     const { active, over } = event;
     setActiveDragItem(null);
@@ -378,6 +458,12 @@ function AppContent() {
 
   const activeAlerts = weatherAlerts.filter(alert => !dismissedAlerts.includes(alert.id));
 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
   return (
     <Box p={5}>
       <AnimatedBackground
@@ -388,7 +474,12 @@ function AppContent() {
       />
       <HStack justify="flex-end" mb={4} position="relative" zIndex="10">
         <HStack className="glass" p={2} borderRadius="md">
-          <IconButton onClick={toggleColorMode} icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />} aria-label="Toggle theme" />
+          <Tooltip label={themePreference === 'auto' ? 'Theme is in Auto mode' : 'Toggle theme'}>
+            <IconButton
+              onClick={toggleColorMode} icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />} aria-label="Toggle theme"
+              isDisabled={themePreference === 'auto'}
+            />
+          </Tooltip>
           <IconButton onClick={() => setShowLogTerminal(!showLogTerminal)} icon={<ViewIcon />} aria-label="Toggle Log Terminal" variant={showLogTerminal ? 'solid' : 'ghost'} />
           <Button ref={btnRef} leftIcon={<SettingsIcon />} colorScheme="teal" variant="ghost" onClick={onOpen}>
             Settings
@@ -430,7 +521,7 @@ function AppContent() {
         </VStack>
       )}
 
-      <Drawer isOpen={isOpen} placement="right" onClose={onClose} finalFocusRef={btnRef} size="md">
+      <Drawer isOpen={isOpen} placement="right" onClose={onClose} finalFocusRef={btnRef} size="lg">
         <DrawerOverlay />
         <DrawerContent className="glass">
           <DrawerCloseButton />
@@ -440,53 +531,69 @@ function AppContent() {
               clocks={clocks}
               addClock={addClock}
               removeClock={removeClock}
+              removeAllClocks={removeAllClocks}
               clockTheme={clockTheme} onThemeChange={handleThemeChange}
               timeFormat={timeFormat} onTimeFormatChange={handleTimeFormatChange}
               background={background} onBackgroundChange={handleBackgroundChange} setPrimaryLocation={setPrimaryLocationAndUpdateClocks}
+              themePreference={themePreference}
+              onThemePreferenceChange={handleThemePreferenceChange}
               onClose={onClose}
             />
           </DrawerBody>
         </DrawerContent>
       </Drawer>
 
-      <Grid templateColumns={{ base: '1fr', lg: 'minmax(0, 2fr) minmax(0, 1fr)' }} gap={6} h="calc(100vh - 80px)" overflow="hidden">
-        <Box overflowY="auto" p={2} sx={{ '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { bg: 'gray.600', borderRadius: '24px' }, 'scrollbarWidth': 'thin' }}>
-          {primaryLocation && (
-            <WeatherCard
-              latitude={primaryLocation.latitude}
-              longitude={primaryLocation.longitude}
-              onForecastFetch={handleForecastFetch}
-              locationName={primaryLocation.location}
-              onWeatherFetch={handleWeatherFetch}
-              timeFormat={timeFormat}
-            />
-          )}
+      <Grid
+        templateColumns={{ base: '1fr', lg: isSidebarOpen ? '380px 1fr' : '80px 1fr' }}
+        gap={6}
+        h="calc(100vh - 120px)"
+        overflow="hidden"
+        transition="template-columns 0.3s ease-in-out"
+      >
+        {/* Sidebar Column */}
+        <Box className="glass" borderRadius="xl" p={4} display="flex" flexDirection="column">
+          <HStack justify="space-between" mb={4} flexShrink={0}>
+            {isSidebarOpen && <Heading size="md">World Clocks</Heading>}
+            <Tooltip label={isSidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"} placement="right">
+              <IconButton
+                icon={isSidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+                onClick={toggleSidebar}
+                aria-label="Toggle sidebar"
+                variant="ghost"
+              />
+            </Tooltip>
+          </HStack>
+          <Box overflowY="auto" flex="1" sx={{ '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { bg: 'gray.600', borderRadius: '24px' } }}>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              onDragCancel={handleDragCancel}
+            >
+              <SortableContext items={clocks.map(c => String(c.id))} strategy={rectSortingStrategy}>
+                <VStack spacing={4} align="stretch">
+                  <AnimatePresence>
+                    {clocks.map((clock) => (
+                      <motion.div key={clock.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}>
+                        <SortableWorldClock clock={clock} clockTheme={clockTheme} timeFormat={timeFormat} isSidebarOpen={isSidebarOpen} />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </VStack>
+                <DragOverlay>
+                  {activeDragItem ? (
+                    <WorldClockCard clock={activeDragItem} isDragging clockTheme={clockTheme} timeFormat={timeFormat} isSidebarOpen={isSidebarOpen} />
+                  ) : null}
+                </DragOverlay>
+              </SortableContext>
+            </DndContext>
+          </Box>
         </Box>
-        <Box overflowY="auto" p={2} sx={{ '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { bg: 'gray.600', borderRadius: '24px' } }}>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-            onDragCancel={handleDragCancel}
-          >
-            <SortableContext items={clocks.map(c => String(c.id))} strategy={rectSortingStrategy}>
-              <VStack spacing={4} align="stretch">
-                <AnimatePresence>
-                  {clocks.map((clock) => (
-                    <motion.div key={clock.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}>
-                      <SortableWorldClock clock={clock} clockTheme={clockTheme} timeFormat={timeFormat} />
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </VStack>
-              <DragOverlay>
-                {activeDragItem ? (
-                  <WorldClockCard clock={activeDragItem} isDragging clockTheme={clockTheme} timeFormat={timeFormat} />
-                ) : null}
-              </DragOverlay>
-            </SortableContext>
-          </DndContext>
+
+        {/* Main Content Column */}
+        <Box overflowY="auto" p={2} sx={{ '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { bg: 'gray.600', borderRadius: '24px' }, 'scrollbarWidth': 'thin' }}>
+          {primaryLocation && <WeatherCard latitude={primaryLocation.latitude} longitude={primaryLocation.longitude} onForecastFetch={handleForecastFetch} locationName={primaryLocation.location} onWeatherFetch={handleWeatherFetch} timeFormat={timeFormat} />}
         </Box>
       </Grid>
       {showLogTerminal && <LogTerminal />}

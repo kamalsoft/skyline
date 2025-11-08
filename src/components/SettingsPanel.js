@@ -27,7 +27,7 @@ import {
 } from '@chakra-ui/react';
 import { DeleteIcon, WarningTwoIcon } from '@chakra-ui/icons';
 
-function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChange, timeFormat, onTimeFormatChange, background, onBackgroundChange, setPrimaryLocation, onClose }) {
+function SettingsPanel({ clocks, addClock, removeClock, removeAllClocks, clockTheme, onThemeChange, timeFormat, onTimeFormatChange, background, onBackgroundChange, setPrimaryLocation, themePreference, onThemePreferenceChange, onClose }) {
     const [formData, setFormData] = useState({
         location: '',
         timeZone: '',
@@ -39,7 +39,9 @@ function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChang
     const [isLoading, setIsLoading] = useState(false);
     const { isOpen: isAlertOpen, onOpen: onAlertOpen, onClose: onAlertClose } = useDisclosure();
     const { isOpen: isDuplicateAlertOpen, onOpen: onDuplicateAlertOpen, onClose: onDuplicateAlertClose } = useDisclosure();
+    const { isOpen: isDeleteAllAlertOpen, onOpen: onDeleteAllAlertOpen, onClose: onDeleteAllAlertClose } = useDisclosure();
     const [clockToDelete, setClockToDelete] = useState(null);
+    const [isDeletingAll, setIsDeletingAll] = useState(false);
     const [bgUrl, setBgUrl] = useState(background.type === 'image' ? background.value : '');
     const toast = useToast();
 
@@ -100,10 +102,20 @@ function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChang
         onAlertClose();
     }
 
+    const executeDeleteAll = () => {
+        setIsDeletingAll(true);
+        // Simulate a short delay for visual feedback
+        setTimeout(() => {
+            removeAllClocks();
+            setIsDeletingAll(false);
+            onDeleteAllAlertClose();
+        }, 500);
+    };
+
 
     const selectLocation = (result) => {
         const newClock = {
-            location: `${result.name}, ${result.admin1 || ''} ${result.country_code}`.replace(/, {2}/g, ', '),
+            location: [result.name, result.admin1, result.country].filter(Boolean).join(', '),
             timeZone: result.timezone,
             latitude: parseFloat(result.latitude.toFixed(4)),
             longitude: parseFloat(result.longitude.toFixed(4)),
@@ -121,7 +133,7 @@ function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChang
     const handleSetPrimary = (result) => {
         setPrimaryLocation({
             id: 'manual-primary',
-            location: `${result.name}, ${result.admin1 || ''} ${result.country_code}`.replace(/, {2}/g, ', '),
+            location: [result.name, result.admin1, result.country].filter(Boolean).join(', '),
             timeZone: result.timezone,
             latitude: result.latitude,
             longitude: result.longitude,
@@ -132,7 +144,7 @@ function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChang
     };
 
     return (
-        <VStack spacing={8} align="stretch" className="glass" p={5} borderRadius="lg">
+        <VStack spacing={8} align="stretch" className="glass" p={5} borderRadius="xl">
             <Box>
                 <Heading as="h3" size="md" mb={4}>Add New Clock</Heading>
                 <FormControl>
@@ -154,7 +166,7 @@ function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChang
                             >
                                 <VStack align="stretch">
                                     <Text fontWeight="semibold">{result.name}, {result.admin1 ? `${result.admin1}, ` : ''}{result.country}</Text>
-                                    <Text fontSize="sm" color="gray.600">Timezone: {result.timezone} | Lat: {result.latitude.toFixed(2)}, Lon: {result.longitude.toFixed(2)}</Text>
+                                    <Text fontSize="sm" color="darkGray">Timezone: {result.timezone} | Lat: {result.latitude.toFixed(2)}, Lon: {result.longitude.toFixed(2)}</Text>
                                     <HStack mt={2}>
                                         <Button size="xs" colorScheme="blue" onClick={() => handleSetPrimary(result)}>Set as Primary</Button>
                                         <Button size="xs" onClick={() => selectLocation(result)}>Add to Clocks</Button>
@@ -189,12 +201,23 @@ function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChang
             <Box>
                 <Heading as="h3" size="md" mb={4}>Appearance</Heading>
                 <FormControl>
+                    <FormLabel>Theme</FormLabel>
+                    <RadioGroup onChange={onThemePreferenceChange} value={themePreference}>
+                        <HStack spacing={5}>
+                            <Radio value="light">Light</Radio>
+                            <Radio value="dark">Dark</Radio>
+                            <Radio value="auto">Auto</Radio>
+                        </HStack>
+                    </RadioGroup>
+                </FormControl>
+                <FormControl>
                     <FormLabel>Analog Clock Style</FormLabel>
                     <RadioGroup onChange={onThemeChange} value={clockTheme}>
                         <HStack spacing={5}>
                             <Radio value="metallic">Copper</Radio>
                             <Radio value="minimalist">Minimalist</Radio>
                             <Radio value="ocean">Ocean</Radio>
+                            <Radio value="cyberpunk">Cyberpunk</Radio>
                         </HStack>
                     </RadioGroup>
                 </FormControl>
@@ -209,7 +232,10 @@ function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChang
                 </FormControl>
             </Box>
             <Box>
-                <Heading as="h3" size="md" mb={4}>Manage Clocks</Heading>
+                <HStack justify="space-between" mb={4}>
+                    <Heading as="h3" size="md">Manage Clocks</Heading>
+                    <Button size="xs" colorScheme="red" variant="outline" onClick={onDeleteAllAlertOpen} isDisabled={clocks.length === 0} isLoading={isDeletingAll}>Delete All</Button>
+                </HStack>
                 {clocks.map((clock) => (
                     <HStack
                         key={clock.id}
@@ -273,6 +299,27 @@ function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChang
                         <AlertDialogFooter>
                             <Button onClick={onDuplicateAlertClose}>Cancel</Button>
                             <Button colorScheme="blue" onClick={addClockAndClear} ml={3}>Add Anyway</Button>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialogOverlay>
+            </AlertDialog>
+
+            <AlertDialog
+                isOpen={isDeleteAllAlertOpen}
+                leastDestructiveRef={undefined}
+                onClose={onDeleteAllAlertClose}
+            >
+                <AlertDialogOverlay>
+                    <AlertDialogContent>
+                        <AlertDialogHeader fontSize="lg" fontWeight="bold">
+                            <HStack><WarningTwoIcon color="red.500" /> <Text>Delete All Clocks</Text></HStack>
+                        </AlertDialogHeader>
+                        <AlertDialogBody>
+                            Are you sure you want to delete all clocks? This action cannot be undone.
+                        </AlertDialogBody>
+                        <AlertDialogFooter>
+                            <Button onClick={onDeleteAllAlertClose}>Cancel</Button>
+                            <Button colorScheme="red" onClick={executeDeleteAll} ml={3}>Delete All</Button>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialogOverlay>

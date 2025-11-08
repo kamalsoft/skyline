@@ -3,10 +3,13 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Box } from '@chakra-ui/react';
-import { motion } from 'framer-motion';
 import WorldClockCard from './WorldClockCard';
 
-function SortableWorldClock({ clock, clockTheme, timeFormat }) {
+/**
+ * This component acts as a wrapper around the WorldClockCard to make it sortable.
+ * It uses the useSortable hook from dnd-kit to handle drag and drop states.
+ */
+function SortableWorldClock({ clock, clockTheme, timeFormat, isSidebarOpen }) {
     const {
         attributes,
         listeners,
@@ -20,15 +23,17 @@ function SortableWorldClock({ clock, clockTheme, timeFormat }) {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0 : 1, // Hide the original item while dragging
-        transformOrigin: '50% 50%',
     };
 
     return (
-        <motion.div layout>
-            <Box ref={setNodeRef} style={style} {...attributes} {...listeners}>
-                <WorldClockCard clock={clock} clockTheme={clockTheme} timeFormat={timeFormat} />
-            </Box>
-        </motion.div>
+        <Box
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            {...listeners}
+        >
+            <WorldClockCard clock={clock} isDragging={isDragging} clockTheme={clockTheme} timeFormat={timeFormat} isSidebarOpen={isSidebarOpen} />
+        </Box>
     );
 }
 

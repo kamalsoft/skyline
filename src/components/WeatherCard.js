@@ -1,6 +1,6 @@
 
 // src/components/WeatherCard.js
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import {
     Box,
@@ -23,6 +23,7 @@ import {
 import { getWeatherDescription } from '../utils/weatherUtils';
 import { RepeatIcon } from '@chakra-ui/icons';
 import AnimatedWeatherIcon from './AnimatedWeatherIcon';
+import { motion } from 'framer-motion';
 import { validateWeatherData } from '../utils/weatherValidation';
 import { getAqiColor } from '../utils/aqiUtils';
 import ForecastItem from './ForecastItem';
@@ -30,12 +31,48 @@ import DetailedWeatherModal from './DetailedWeatherModal';
 import WeatherCardSkeleton from './WeatherCardSkeleton';
 
 function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, locationName, timeFormat }) {
+    // New component for the auto-scrolling carousel
+    const ForecastCarousel = ({ children, itemCount }) => {
+        const [isHovering, setIsHovering] = useState(false);
+        const contentRef = useRef(null);
+        const [contentWidth, setContentWidth] = useState(0);
+
+        useEffect(() => {
+            if (contentRef.current) {
+                // Calculate the total width of all children
+                const totalWidth = Array.from(contentRef.current.children).reduce((acc, child) => acc + child.offsetWidth, 0);
+                // Add spacing (itemCount - 1) * 16px (for spacing={4})
+                const totalSpacing = (itemCount - 1) * 16;
+                setContentWidth(totalWidth + totalSpacing);
+            }
+        }, [itemCount, children]);
+
+        const duration = itemCount * 3; // Adjust speed by changing the multiplier
+
+        return (
+            <Box overflowX="hidden" onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)} ref={contentRef}>
+                <motion.div
+                    animate={{
+                        x: [0, -contentWidth / 2], // Animate to half the content width for a seamless loop
+                    }}
+                    whileHover={{ paused: true }}
+                    transition={{
+                        x: { repeat: Infinity, repeatType: 'loop', duration: duration, ease: 'linear' },
+                    }}
+                    style={{ x: 0, display: 'flex', width: `${contentWidth * 2}px` }} // Double the width for duplicated content
+                >
+                    <HStack spacing={4}>{children}</HStack>
+                    <HStack spacing={4} ml={4}>{children}</HStack> {/* Duplicate children for seamless loop */}
+                </motion.div>
+            </Box>
+        );
+    };
     const [weatherData, setWeatherData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [unit, setUnit] = useState('C'); // 'C' for Celsius, 'F' for Fahrenheit
     const { isOpen, onOpen, onClose } = useDisclosure();
-    const scrollbarThumbColor = useColorModeValue('gray.400', 'gray.600');
+    const scrollbarThumbColor = useColorModeValue('primaryPurple', 'lightLavender');
     const [selectedForecast, setSelectedForecast] = useState(null);
 
     const fetchWeather = useCallback(async () => {
@@ -134,8 +171,7 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
                 alignItems="center"
                 justifyContent="center"
                 textAlign="center"
-                minH="250px"
-                borderRadius="lg"
+                minH="250px" borderRadius="xl"
                 className="glass"
             >
                 <AlertIcon boxSize="40px" mr={0} />
@@ -154,29 +190,13 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
 
     if (!weatherData) {
         return (
-            <Box p={4} borderWidth="1px" borderRadius="lg" minH="250px">
+            <Box p={4} borderWidth="1px" borderRadius="xl" minH="250px">
                 <Text>No weather data available.</Text>
             </Box>
         );
     }
 
     const { current_weather: current, hourly, daily, air_quality: airQuality } = weatherData;
-
-    const scrollbarStyles = {
-        '&::-webkit-scrollbar': {
-            height: '6px',
-        },
-        '&::-webkit-scrollbar-track': {
-            background: 'transparent',
-        },
-        '&::-webkit-scrollbar-thumb': {
-            background: 'transparent',
-            borderRadius: '24px',
-        },
-        '&:hover::-webkit-scrollbar-thumb': {
-            background: scrollbarThumbColor,
-        },
-    };
 
     // Find the index of the current hour to start the hourly forecast from now
     const currentHourIndex = hourly
@@ -192,7 +212,7 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
         : undefined;
 
     return (
-        <Box className="glass" p={4} borderRadius="lg">
+        <Box className="glass" p={4} borderRadius="xl">
             <VStack justify="center" mb={2}>
                 <HStack>
                     <Heading as="h3" size="lg">{locationName}</Heading>
@@ -209,7 +229,7 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
             </VStack>
             <VStack spacing={6} align="stretch">
                 {/* Current Weather */}
-                <HStack justify="space-around" align="center" className="glass" p={4} borderRadius="md">
+                <HStack justify="space-around" align="center" className="glass" p={4} borderRadius="xl">
                     <HStack>
                         <AnimatedWeatherIcon weatherCode={current.weathercode} w={24} h={24} />
                         <Text fontSize="6xl" fontWeight="bold">{displayTemp(current.temperature, false)}</Text>
@@ -235,46 +255,47 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
                 {/* Hourly Forecast */}
                 <Box>
                     <Heading as="h4" size="sm" mb={2}>Hourly</Heading>
-                    <Box overflowX="auto" whiteSpace="nowrap" sx={scrollbarStyles}>
-                        <HStack spacing={4}>
-                            {hourly && currentHourIndex !== -1 && hourly.time.slice(currentHourIndex, currentHourIndex + 24).map((time, index) => {
-                                const actualIndex = currentHourIndex + index;
-                                return (
-                                    <ForecastItem
-                                        onClick={() => handleForecastClick('hourly', actualIndex)}
-                                        key={time}
-                                        index={index}
-                                        label={`${new Date(time).getHours()}:00`}
-                                        weatherCode={hourly.weather_code[actualIndex]}
-                                        description={getWeatherDescription(hourly.weather_code[actualIndex])}
-                                        temp={displayTemp(hourly.temperature_2m[actualIndex], true)}
-                                    />
-                                );
-                            })}
-                        </HStack>
-                    </Box>
+                    <ForecastCarousel itemCount={24}>
+                        {hourly && currentHourIndex !== -1 && hourly.time.slice(currentHourIndex, currentHourIndex + 24).map((time, index) => {
+                            const actualIndex = currentHourIndex + index;
+                            return (
+                                <ForecastItem
+                                    onClick={() => handleForecastClick('hourly', actualIndex)}
+                                    key={time}
+                                    index={index}
+                                    label={`${new Date(time).getHours()}:00`}
+                                    weatherCode={hourly.weather_code[actualIndex]}
+                                    description={getWeatherDescription(hourly.weather_code[actualIndex])}
+                                    temp={displayTemp(hourly.temperature_2m[actualIndex], true)}
+                                />
+                            );
+                        })}
+                    </ForecastCarousel>
                 </Box>
 
                 {/* Daily Forecast */}
                 <Box>
-                    <Heading as="h4" size="sm" mb={2}>Daily</Heading>
-                    <Box overflowX="auto" whiteSpace="nowrap" sx={scrollbarStyles}>
-                        <HStack spacing={4}>
-                            {daily && daily.time.map((time, index) => {
-                                return (
-                                    <ForecastItem
-                                        onClick={() => handleForecastClick('daily', index)}
-                                        key={time}
-                                        index={index}
-                                        label={new Date(time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                        weatherCode={daily.weather_code[index]}
-                                        description={getWeatherDescription(daily.weather_code[index])}
-                                        temp={`${displayTemp(daily.temperature_2m_min[index], false)} / ${displayTemp(daily.temperature_2m_max[index], false)}`}
-                                    />
-                                );
-                            })}
-                        </HStack>
-                    </Box>
+                    <Heading as="h4" size="sm" mb={2}>Weekly</Heading>
+                    <ForecastCarousel itemCount={7}>
+                        {daily && daily.time.slice(0, 7).map((time, index) => {
+                            const date = new Date(time);
+                            const dayLabel = index === 0 ? 'Today' : date.toLocaleDateString('en-US', { weekday: 'short' });
+                            const dateLabel = `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`;
+
+                            return (
+                                <ForecastItem
+                                    onClick={() => handleForecastClick('daily', index)}
+                                    key={time}
+                                    index={index}
+                                    label={dayLabel}
+                                    dateLabel={index !== 0 ? dateLabel : undefined}
+                                    weatherCode={daily.weather_code[index]}
+                                    description={getWeatherDescription(daily.weather_code[index])}
+                                    temp={`${displayTemp(daily.temperature_2m_min[index], false)} / ${displayTemp(daily.temperature_2m_max[index], false)}`}
+                                />
+                            );
+                        })}
+                    </ForecastCarousel>
                 </Box>
             </VStack>
             <DetailedWeatherModal
@@ -284,7 +305,7 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
                 displayTemp={displayTemp}
                 timeFormat={timeFormat}
             />
-        </Box>
+        </Box >
     );
 }
 
