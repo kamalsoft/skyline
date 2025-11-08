@@ -122,7 +122,7 @@ function SettingsPanel({ clocks, addClock, removeClock, clockTheme, onThemeChang
 
 
     const selectLocation = (result) => {
-        const formattedLocation = `${result.name}, ${result.admin1 || ''} ${result.country_code}`.replace(/,  /g, ', ');
+        const formattedLocation = `${result.name}, ${result.admin1 || ''} ${result.country_code}`.replace(/, {2}/g, ', ');
         setFormData({
             location: formattedLocation,
             timeZone: result.timezone,

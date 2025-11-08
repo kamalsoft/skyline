@@ -6,7 +6,6 @@ import {
     HStack,
     Skeleton,
     SkeletonCircle,
-    SkeletonText,
 } from '@chakra-ui/react';
 
 function WeatherCardSkeleton() {

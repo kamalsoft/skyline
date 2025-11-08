@@ -12,7 +12,6 @@ import {
     VStack,
     HStack,
     Divider,
-    Box,
 } from '@chakra-ui/react';
 import { getWeatherDescription } from '../utils/weatherUtils';
 

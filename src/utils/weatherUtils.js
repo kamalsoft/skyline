@@ -1,7 +1,7 @@
 // src/utils/weatherUtils.js
 import {
-    WiDaySunny, WiCloudy, WiRain, WiSnow, WiThunderstorm,
-    WiFog, WiSleet, WiHail, WiRainMix, WiShowers, WiSnowflakeCold
+    WiDaySunny, WiCloudy, WiRain, WiSnow, WiThunderstorm, WiFog,
+    WiSleet, WiRainMix, WiShowers, WiSnowflakeCold
 } from 'react-icons/wi';
 
 // WMO Weather interpretation codes (WW)
