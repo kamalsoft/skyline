@@ -6,6 +6,7 @@ import { motion, useTransform, useMotionValue, AnimatePresence } from 'framer-mo
 import TwinklingStar from './TwinklingStar';
 import ShootingStar from './ShootingStar';
 import { getMoonPhaseInfo } from '../utils/moonUtils';
+import { useSound } from '../contexts/SoundContext';
 
 const RainDrop = ({ left, duration, isAnimationPaused }) => {
     return (
@@ -121,6 +122,7 @@ const MemoizedTwinklingStars = React.memo(({ count, isAnimationPaused }) => {
 
 function AnimatedBackground({ sunrise, sunset, weatherCode, background, isAnimationPaused, onLightningFlash }) {
     const timeOfDay = useMotionValue(0); // 0 = midnight, 0.5 = noon, 1 = midnight
+    const { playSound, stopSound } = useSound();
 
     // --- Performance Optimization 1: Animate opacity of solid layers instead of gradients ---
     const nightOpacity = useTransform(timeOfDay, [0, 0.2, 0.8, 1], [1, 1, 1, 1]);
@@ -217,6 +219,31 @@ function AnimatedBackground({ sunrise, sunset, weatherCode, background, isAnimat
     const isRainy = (weatherCode >= 51 && weatherCode <= 67) || (weatherCode >= 80 && weatherCode <= 82);
     const isThunderstorm = weatherCode === 95 || weatherCode === 96 || weatherCode === 99;
     const isFoggy = weatherCode === 45 || weatherCode === 48;
+
+    useEffect(() => {
+        // Manage weather sounds
+        if (isRainy) {
+            playSound('weather-rain', { fade: true });
+        } else {
+            stopSound('weather-rain', { fade: true });
+        }
+
+        if (isThunderstorm) {
+            const thunderInterval = setInterval(() => {
+                const thunderSound = Math.random() > 0.5 ? 'weather-thunder1' : 'weather-thunder2';
+                playSound(thunderSound);
+            }, 8000); // Random thunder every 8 seconds on average
+            return () => clearInterval(thunderInterval);
+        }
+    }, [isRainy, isThunderstorm, playSound, stopSound]);
+
+    useEffect(() => {
+        // Manage ambient sounds
+        playSound(isDay ? 'ambient-day' : 'ambient-night', { fade: true });
+        stopSound(isDay ? 'ambient-night' : 'ambient-day', { fade: true });
+
+        return () => { stopSound('ambient-day', { fade: true }); stopSound('ambient-night', { fade: true }); }; // Cleanup on unmount
+    }, [isDay, playSound, stopSound]);
 
     // Calculate sun's seasonal path for Uttarayanam and Dakshinayanam
     const now = new Date();

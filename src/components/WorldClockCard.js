@@ -8,12 +8,14 @@ import { FaClock, FaDigitalTachograph } from 'react-icons/fa';
 import DigitalClock from './DigitalClock';
 import AnalogClock from './AnalogClock';
 import { useWorldClock } from '../hooks/useWorldClock';
+import { useSound } from '../contexts/SoundContext';
 import { getWeatherDescription } from '../utils/weatherUtils';
 import AnimatedWeatherIcon from './AnimatedWeatherIcon';
 
 function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOpen }) {
     const time = useWorldClock(clock.timeZone);
     const [isAnalog, setIsAnalog] = useState(false);
+    const { playSound } = useSound();
     const [weather, setWeather] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isDay, setIsDay] = useState(true);
@@ -89,8 +91,10 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOp
                                 variant="ghost"
                                 position="absolute"
                                 top="8px"
-                                right="8px"
-                                onClick={() => setIsAnalog(!isAnalog)}
+                                right="8px" onClick={() => {
+                                    setIsAnalog(!isAnalog);
+                                    playSound('ui-toggle');
+                                }}
                                 aria-label="Toggle clock type"
                             />
                         </Tooltip>

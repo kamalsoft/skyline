@@ -46,6 +46,7 @@ import { LogProvider } from './contexts/LogContext';
 import { useClockManager } from './useClockManager';
 import LogTerminal from './components/LogTerminal';
 import { generateWeatherAlerts } from './utils/alertUtils';
+import { SoundProvider, useSound } from './contexts/SoundContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 import 'leaflet/dist/leaflet.css';
@@ -153,6 +154,7 @@ function AppContent() {
     activeDragItem, handleDragStart, handleDragEnd, handleDragCancel
   } = useClockManager();
 
+  const { playSound } = useSound();
   const { colorMode, toggleColorMode, setColorMode } = useColorMode();
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [showLogTerminal, setShowLogTerminal] = useState(false);
@@ -525,10 +527,12 @@ function AppContent() {
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragStart={(event) => {
+                playSound('ui-drag');
                 handleDragStart(event);
                 handleHapticFeedback();
               }}
-              onDragEnd={handleDragEnd}
+              onDragEnd={(event) => { playSound('ui-drop'); handleDragEnd(event); }}
+              onDragOver={() => playSound('ui-click')}
               onDragCancel={handleDragCancel}
               announcements={customAnnouncements}
               accessibility={{
@@ -595,11 +599,13 @@ function AppContent() {
 function App() {
   return (
     <LogProvider>
-      <ChakraProvider theme={theme}>
-        <ErrorBoundary>
-          <AppContent />
-        </ErrorBoundary>
-      </ChakraProvider>
+      <SoundProvider>
+        <ChakraProvider theme={theme}>
+          <ErrorBoundary>
+            <AppContent />
+          </ErrorBoundary>
+        </ChakraProvider>
+      </SoundProvider>
     </LogProvider>
   );
 }

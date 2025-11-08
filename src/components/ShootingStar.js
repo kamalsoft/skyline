@@ -1,6 +1,7 @@
 // src/components/ShootingStar.js
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useSound } from '../contexts/SoundContext';
 
 // Define different animation paths for the shooting stars
 const scenarios = [
@@ -27,6 +28,7 @@ const scenarios = [
 ];
 
 function ShootingStar({ isAnimationPaused }) {
+    const { playSound } = useSound();
     // Randomly select a scenario
     const scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
 
@@ -51,6 +53,7 @@ function ShootingStar({ isAnimationPaused }) {
                 repeatDelay: randomDelay,
                 ease: 'easeIn',
             }}
+            onAnimationStart={() => playSound('ambient-shooting-star')}
         />
     );
 }

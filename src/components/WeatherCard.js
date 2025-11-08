@@ -39,6 +39,7 @@ import DetailedWeatherModal from './DetailedWeatherModal';
 import SunCalendar from './SunCalendar';
 import WeatherMapModal from './WeatherMapModal';
 import WeatherCardSkeleton from './WeatherCardSkeleton';
+import { useSound } from '../contexts/SoundContext';
 
 // Extracted and memoized ForecastCarousel to prevent re-creation on every render
 const ForecastCarousel = React.memo(({ children, itemCount }) => {
@@ -90,6 +91,7 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
     const { isOpen: isCalendarOpen, onOpen: onCalendarOpen, onClose: onCalendarClose } = useDisclosure();
     const { isOpen: isMapOpen, onOpen: onMapOpen, onClose: onMapClose } = useDisclosure();
     const [currentTime, setCurrentTime] = useState(new Date());
+    const { playSound } = useSound();
 
     const fetchWeather = useCallback(async () => {
         setIsLoading(true);
@@ -366,18 +368,18 @@ function WeatherCard({ latitude, longitude, onForecastFetch, onWeatherFetch, loc
                         <VStack align="flex-end" justify="space-between" h="100%">
                             <ButtonGroup isAttached size="sm" variant="outline">
                                 <Tooltip label="Refresh weather" placement="top">
-                                    <IconButton icon={<RepeatIcon />} onClick={fetchWeather} isLoading={isLoading} aria-label="Refresh weather" />
+                                    <IconButton icon={<RepeatIcon />} onClick={() => { playSound('ui-click'); fetchWeather(); }} isLoading={isLoading} aria-label="Refresh weather" />
                                 </Tooltip>
                                 <Tooltip label="Open Sunrise/Sunset Calendar" placement="top">
-                                    <IconButton icon={<CalendarIcon />} onClick={onCalendarOpen} aria-label="Open sunrise/sunset calendar" />
+                                    <IconButton icon={<CalendarIcon />} onClick={() => { playSound('ui-click'); onCalendarOpen(); }} aria-label="Open sunrise/sunset calendar" />
                                 </Tooltip>
                                 <Tooltip label="Open Weather Map" placement="top">
-                                    <IconButton icon={<ViewIcon />} onClick={onMapOpen} aria-label="Open weather map" />
+                                    <IconButton icon={<ViewIcon />} onClick={() => { playSound('ui-click'); onMapOpen(); }} aria-label="Open weather map" />
                                 </Tooltip>
                             </ButtonGroup>
                             <ButtonGroup isAttached size="sm">
-                                <Button onClick={() => setUnit('C')} isActive={unit === 'C'}>°C</Button>
-                                <Button onClick={() => setUnit('F')} isActive={unit === 'F'}>°F</Button>
+                                <Button onClick={() => { playSound('ui-click'); setUnit('C'); }} isActive={unit === 'C'}>°C</Button>
+                                <Button onClick={() => { playSound('ui-click'); setUnit('F'); }} isActive={unit === 'F'}>°F</Button>
                             </ButtonGroup>
                         </VStack>
                     </Grid>
