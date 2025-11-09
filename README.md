@@ -1,91 +1,78 @@
-# Getting Started with Create React App
+# Skyline Weather Dashboard
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+![Skyline Banner](https://via.placeholder.com/1200x400.png?text=Skyline+Weather+Dashboard)
 
-## Available Scripts
+**Skyline is a modern, visually-rich weather dashboard that provides detailed local weather forecasts, world clocks, and a highly customizable interface. With animated backgrounds that reflect the current weather and time of day, Skyline offers an immersive and beautiful way to stay informed.**
 
-In the project directory, you can run:
+---
 
-### `npm start`
+## ✨ Key Features
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **Living Animated Background:** Experience the weather with a dynamic background that reflects the current time of day and weather conditions, complete with stars, clouds, and rain effects.
+- **Detailed Weather Forecasts:** Plan your day with confidence using precise current, hourly, and 7-day forecasts.
+- **Customizable World Clocks:** Stay connected with the world by adding, removing, and reordering clocks for any city.
+- **Deep Personalization:** Make it yours by choosing from multiple clock themes, switching between light/dark modes, or setting an "Auto" theme that syncs with your local day/night cycle.
+- **Immersive Soundscapes:** Optional ambient sounds for day, night, and weather effects create a fully immersive experience.
+- **Modern "Glassmorphism" UI:** A clean, beautiful interface that is a pleasure to use.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 🛠️ Technology Stack
 
-### `npm test`
+- **Framework:** React (v18+)
+- **UI Library:** Chakra UI
+- **Animations:** Framer Motion
+- **Drag & Drop:** dnd-kit
+- **State Management:** React Context API with `useReducer`
+- **Audio:** Howler.js
+- **Mapping:** Leaflet & React-Leaflet
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## 🚀 Getting Started
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+This project was bootstrapped with Create React App.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Prerequisites
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- Node.js (v16 or later)
+- npm or yarn
 
-### `npm run eject`
+### Running Locally
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+1.  **Clone the repository:**
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+    ```sh
+    git clone <repository-url>
+    ```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+2.  **Install dependencies:**
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+    ```sh
+    npm install
+    ```
 
-## Roadmap
+3.  **Start the development server:**
 
-Here is the current roadmap for the Skyline weather application.
+    ```sh
+    npm start
+    ```
 
-### Implemented
+4.  Open http://localhost:3000 in your browser.
 
-- [x] **AI-Powered Weather Summaries**: Generates daily weather briefs in natural language.
-- [x] **Event-Based Suggestions**: Recommends indoor/outdoor activities based on current weather.
-- [x] **Sunrise/Sunset Calendar**: A monthly view for sunrise and sunset times.
-- [x] **In-App Weather Alerts**: Banners for significant upcoming weather events.
-- [x] **Live Radar & Satellite Maps**: Integrated animated precipitation and cloud coverage maps.
-- [x] **Location Search**: Add a search bar to find and add new locations.
-- [x] **Push Notifications**: Send notifications for severe weather alerts (client-side setup).
+---
 
-### Next Up
+## 📚 Documentation
 
-- [ ] **Unit & Integration Testing**: Build a robust test suite with Jest and React Testing Library.
-- [ ] **Advanced Accessibility**: Full keyboard navigation for all features and enhanced screen reader support.
+For more detailed information, please refer to the full documentation:
 
-See the open issues for a full list of proposed features (and known issues).
+- **User Manual:** A guide for end-users on how to use the application's features.
+- **Technical Documentation:** A technical overview of the project, intended for developers.
+- **Architecture Document:** A high-level overview of the software and hardware architecture.
+- **Use Cases & Personas:** Describes the target users and the scenarios the application is designed to handle.
+- **Business & Marketing Plan:** Outlines the project's mission, market strategy, and monetization goals.
+- **Project Roadmap:** See what features have been implemented and what's coming next.
 
-## Learn More
+## 🤝 Contributing
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Contributions are welcome! Please see the **Contribution Guidelines** for more details on how to get involved.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+---
