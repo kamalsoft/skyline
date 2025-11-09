@@ -6,6 +6,7 @@ version: '1.0'
 project:
   name: 'Skyline Weather Dashboard'
   description: 'Your Weather, Beautifully Visualized.'
+  repository: 'https://github.com/kamalsoft/skyline' # Explicitly define the repository URL
   logo: './assets/logo.png' # Assumes you have a logo in an assets folder
 
 docs:
