@@ -6,20 +6,20 @@
  * @returns {string} The name of the color scheme.
  */
 export const getAqiColor = (aqi) => {
-    if (aqi <= 50) {
-        return 'green'; // Good
-    }
-    if (aqi <= 100) {
-        return 'yellow'; // Moderate
-    }
-    if (aqi <= 150) {
-        return 'orange'; // Unhealthy for Sensitive Groups
-    }
-    if (aqi <= 200) {
-        return 'red'; // Unhealthy
-    }
-    if (aqi <= 300) {
-        return 'purple'; // Very Unhealthy
-    }
-    return 'maroon'; // Hazardous
+  if (aqi <= 50) {
+    return 'green'; // Good
+  }
+  if (aqi <= 100) {
+    return 'yellow'; // Moderate
+  }
+  if (aqi <= 150) {
+    return 'orange'; // Unhealthy for Sensitive Groups
+  }
+  if (aqi <= 200) {
+    return 'red'; // Unhealthy
+  }
+  if (aqi <= 300) {
+    return 'purple'; // Very Unhealthy
+  }
+  return 'maroon'; // Hazardous
 };

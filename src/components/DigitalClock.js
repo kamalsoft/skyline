@@ -3,19 +3,16 @@ import React from 'react';
 import { Text, VStack } from '@chakra-ui/react';
 
 function DigitalClock({ time, compact, timeFormat, timeZone }) {
-    if (compact) {
-        return (
-            <Text fontSize="md">{time.format(timeFormat === '12h' ? 'hh:mm:ss A' : 'HH:mm:ss')}</Text>
-        );
-    }
+  if (compact) {
+    return <Text fontSize="md">{time.format(timeFormat === '12h' ? 'hh:mm:ss A' : 'HH:mm:ss')}</Text>;
+  }
 
-    return (
-        <VStack spacing={0}>
-            <Text fontSize="2xl">{time.format(timeFormat === '12h' ? 'hh:mm:ss A' : 'HH:mm:ss')}</Text>
-            <Text fontSize="md">{time.format('MMMM D, YYYY')}
-            </Text>
-        </VStack>
-    );
+  return (
+    <VStack spacing={0}>
+      <Text fontSize="2xl">{time.format(timeFormat === '12h' ? 'hh:mm:ss A' : 'HH:mm:ss')}</Text>
+      <Text fontSize="md">{time.format('MMMM D, YYYY')}</Text>
+    </VStack>
+  );
 }
 
 export default DigitalClock;

@@ -13,47 +13,45 @@ precacheAndRoute(self.__WB_MANIFEST);
 
 const fileExtensionRegexp = new RegExp('/[^/?]+\\.[^/]+$');
 registerRoute(
-    ({ request, url }) => {
-        if (request.mode !== 'navigate') {
-            return false;
-        }
-        if (url.pathname.startsWith('/_')) {
-            return false;
-        }
-        if (url.pathname.match(fileExtensionRegexp)) {
-            return false;
-        }
-        return true;
-    },
-    createHandlerBoundToURL(process.env.PUBLIC_URL + '/index.html')
+  ({ request, url }) => {
+    if (request.mode !== 'navigate') {
+      return false;
+    }
+    if (url.pathname.startsWith('/_')) {
+      return false;
+    }
+    if (url.pathname.match(fileExtensionRegexp)) {
+      return false;
+    }
+    return true;
+  },
+  createHandlerBoundToURL(process.env.PUBLIC_URL + '/index.html')
 );
 
 registerRoute(
-    ({ url }) => url.origin === self.location.origin && url.pathname.endsWith('.png'),
-    new StaleWhileRevalidate({
-        cacheName: 'images',
-        plugins: [
-            new ExpirationPlugin({ maxEntries: 50 }),
-        ],
-    })
+  ({ url }) => url.origin === self.location.origin && url.pathname.endsWith('.png'),
+  new StaleWhileRevalidate({
+    cacheName: 'images',
+    plugins: [new ExpirationPlugin({ maxEntries: 50 })],
+  })
 );
 
 // This is the event listener for push notifications.
-self.addEventListener('push', event => {
-    const data = event.data.json();
-    console.log('Push received:', data);
+self.addEventListener('push', (event) => {
+  const data = event.data.json();
+  console.log('Push received:', data);
 
-    const title = data.title || 'Weather Alert';
-    const options = {
-        body: data.body,
-        icon: '/logo192.png',
-        badge: '/logo192.png'
-    };
+  const title = data.title || 'Weather Alert';
+  const options = {
+    body: data.body,
+    icon: '/logo192.png',
+    badge: '/logo192.png',
+  };
 
-    event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
-self.addEventListener('notificationclick', event => {
-    event.notification.close();
-    event.waitUntil(self.clients.openWindow('/'));
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(self.clients.openWindow('/'));
 });

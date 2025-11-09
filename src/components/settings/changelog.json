@@ -1,0 +1,22 @@
+{
+  "version": "1.3.0",
+  "date": "2025-11-10",
+  "changes": [
+    {
+      "type": "feat",
+      "description": "Added a new \"About\" tab with version info and update checker."
+    },
+    {
+      "type": "feat",
+      "description": "Implemented a changelog modal to display recent updates."
+    },
+    {
+      "type": "fix",
+      "description": "Resolved ESLint warnings for unused variables in several components."
+    },
+    {
+      "type": "refactor",
+      "description": "Broke down the monolithic `SettingsPanel` into smaller, tab-specific components."
+    }
+  ]
+}

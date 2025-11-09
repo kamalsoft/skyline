@@ -7,117 +7,124 @@ const LogContext = createContext();
 export const useLogs = () => useContext(LogContext);
 
 export const LogProvider = ({ children }) => {
-    const [logs, setLogs] = useState([]);
+  const [logs, setLogs] = useState([]);
 
-    const addLog = useCallback((message, level = 'info', source = 'system') => {
-        const newLog = {
-            message: message,
-            level,
-            source,
-            timestamp: new Date().toLocaleTimeString(),
-        };
-        // Add new log and keep only the last 100 entries
-        setLogs(prevLogs => [...prevLogs, newLog].slice(-100));
-    }, []);
+  const addLog = useCallback((message, level = 'info', source = 'system') => {
+    const newLog = {
+      message: message,
+      level,
+      source,
+      timestamp: new Date().toLocaleTimeString(),
+    };
+    // Add new log and keep only the last 100 entries
+    setLogs((prevLogs) => [...prevLogs, newLog].slice(-100));
+  }, []);
 
-    const clearLogs = useCallback(() => {
-        setLogs([]);
-        addLog('Logs cleared.', 'info');
-    }, [addLog]);
+  const clearLogs = useCallback(() => {
+    setLogs([]);
+    addLog('Logs cleared.', 'info');
+  }, [addLog]);
 
-    const clearCacheAndReload = useCallback(() => {
-        addLog('Clearing all caches and local storage...', 'warn');
-        try {
-            // Clear local storage
-            localStorage.clear();
-            addLog('localStorage cleared.', 'info');
+  const clearCacheAndReload = useCallback(() => {
+    addLog('Clearing all caches and local storage...', 'warn');
+    try {
+      // Clear local storage
+      localStorage.clear();
+      addLog('localStorage cleared.', 'info');
 
-            // Unregister service workers
-            serviceWorkerRegistration.unregister();
-            addLog('Service worker unregistered.', 'info');
+      // Unregister service workers
+      serviceWorkerRegistration.unregister();
+      addLog('Service worker unregistered.', 'info');
 
-            // Clear all caches and reload
-            if ('caches' in window) {
-                caches.keys().then(cacheNames => {
-                    return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
-                }).then(() => {
-                    addLog('All caches cleared. Reloading page...', 'info');
-                    window.location.reload();
-                });
-            } else {
-                window.location.reload();
-            }
-        } catch (error) {
-            addLog(`Error during cache clearing: ${error.message}`, 'error');
+      // Clear all caches and reload
+      if ('caches' in window) {
+        caches
+          .keys()
+          .then((cacheNames) => {
+            return Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+          })
+          .then(() => {
+            addLog('All caches cleared. Reloading page...', 'info');
+            window.location.reload();
+          });
+      } else {
+        window.location.reload();
+      }
+    } catch (error) {
+      addLog(`Error during cache clearing: ${error.message}`, 'error');
+    }
+  }, [addLog]);
+
+  // Override console methods to automatically capture logs
+  useEffect(() => {
+    const originalConsole = {
+      log: console.log,
+      warn: console.warn,
+      error: console.error,
+    };
+
+    const getLogSource = () => {
+      try {
+        throw new Error();
+      } catch (e) {
+        // The stack gives us the call trace. We want the caller of the console function.
+        // The stack format varies by browser, but generally the third or fourth line is what we want.
+        const stackLines = e.stack.split('\n');
+        if (stackLines.length > 3) {
+          const callerLine = stackLines[3]; // e.g., " at AppContent (http://.../App.js:123:4)"
+          const match = callerLine.match(/at\s+(?:.*\s+)?\((?:.*\/)?(.*?):\d+:\d+\)/);
+          if (match && match[1]) {
+            return match[1]; // Extracts "App.js"
+          }
+          // Fallback for anonymous functions or different stack formats
+          const simpleMatch = callerLine.match(/(?:.*\/)?(.*?):\d+:\d+/);
+          if (simpleMatch && simpleMatch[1]) {
+            return simpleMatch[1];
+          }
         }
-    }, [addLog]);
+        return 'unknown';
+      }
+    };
 
-    // Override console methods to automatically capture logs
-    useEffect(() => {
-        const originalConsole = {
-            log: console.log,
-            warn: console.warn,
-            error: console.error,
-        };
+    console.log = (...args) => {
+      originalConsole.log(...args);
+      const message = args
+        .map((arg) => (typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)))
+        .join(' ');
+      addLog(message, 'info', getLogSource());
+    };
 
-        const getLogSource = () => {
-            try {
-                throw new Error();
-            } catch (e) {
-                // The stack gives us the call trace. We want the caller of the console function.
-                // The stack format varies by browser, but generally the third or fourth line is what we want.
-                const stackLines = e.stack.split('\n');
-                if (stackLines.length > 3) {
-                    const callerLine = stackLines[3]; // e.g., " at AppContent (http://.../App.js:123:4)"
-                    const match = callerLine.match(/at\s+(?:.*\s+)?\((?:.*\/)?(.*?):\d+:\d+\)/);
-                    if (match && match[1]) {
-                        return match[1]; // Extracts "App.js"
-                    }
-                    // Fallback for anonymous functions or different stack formats
-                    const simpleMatch = callerLine.match(/(?:.*\/)?(.*?):\d+:\d+/);
-                    if (simpleMatch && simpleMatch[1]) {
-                        return simpleMatch[1];
-                    }
-                }
-                return 'unknown';
-            }
-        };
+    console.warn = (...args) => {
+      originalConsole.warn(...args);
+      const message = args
+        .map((arg) => (typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)))
+        .join(' ');
+      addLog(message, 'warn', getLogSource());
+    };
 
-        console.log = (...args) => {
-            originalConsole.log(...args);
-            const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)).join(' ');
-            addLog(message, 'info', getLogSource());
-        };
+    console.error = (...args) => {
+      originalConsole.error(...args);
+      // For errors, also include the stack trace if available
+      const message = args
+        .map((arg) => {
+          if (arg instanceof Error) return arg.stack || arg.message;
+          return typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg);
+        })
+        .join(' ');
+      addLog(message, 'error', getLogSource());
+    };
 
-        console.warn = (...args) => {
-            originalConsole.warn(...args);
-            const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)).join(' ');
-            addLog(message, 'warn', getLogSource());
-        };
+    addLog('Log terminal initialized.', 'info');
 
-        console.error = (...args) => {
-            originalConsole.error(...args);
-            // For errors, also include the stack trace if available
-            const message = args.map(arg => {
-                if (arg instanceof Error) return arg.stack || arg.message;
-                return typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg);
-            }).join(' ');
-            addLog(message, 'error', getLogSource());
-        };
+    // Restore original console methods on component unmount
+    return () => {
+      console.log = originalConsole.log;
+      console.warn = originalConsole.warn;
+      console.error = originalConsole.error;
+    };
+  }, [addLog]);
 
-        addLog('Log terminal initialized.', 'info');
+  const value = { logs, addLog, clearLogs, clearCacheAndReload };
 
-        // Restore original console methods on component unmount
-        return () => {
-            console.log = originalConsole.log;
-            console.warn = originalConsole.warn;
-            console.error = originalConsole.error;
-        };
-    }, [addLog]);
-
-    const value = { logs, addLog, clearLogs, clearCacheAndReload };
-
-    return (
-        <LogContext.Provider value={value}>{children}</LogContext.Provider>
-    );
+  return <LogContext.Provider value={value}>{children}</LogContext.Provider>;
 };

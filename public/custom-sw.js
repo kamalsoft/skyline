@@ -10,80 +10,80 @@ console.log('Custom Service Worker loaded.');
 // This is a placeholder for the function that generates alerts.
 // In a real service worker, you can't import from src/, so we have to duplicate or simplify the logic.
 const ALERT_TRIGGERS = {
-    95: { title: 'Thunderstorm Expected', status: 'warning' },
-    96: { title: 'Thunderstorm with Hail', status: 'error' },
-    99: { title: 'Thunderstorm with Heavy Hail', status: 'error' },
-    75: { title: 'Heavy Snowfall Expected', status: 'info' },
-    82: { title: 'Violent Rain Showers Expected', status: 'warning' },
+  95: { title: 'Thunderstorm Expected', status: 'warning' },
+  96: { title: 'Thunderstorm with Hail', status: 'error' },
+  99: { title: 'Thunderstorm with Heavy Hail', status: 'error' },
+  75: { title: 'Heavy Snowfall Expected', status: 'info' },
+  82: { title: 'Violent Rain Showers Expected', status: 'warning' },
 };
 
 const generateWeatherAlerts = (dailyForecast) => {
-    if (!dailyForecast || !dailyForecast.time || !dailyForecast.weather_code) return [];
-    const alerts = [];
-    dailyForecast.weather_code.slice(0, 3).forEach((code, index) => { // Check next 3 days
-        if (ALERT_TRIGGERS[code]) {
-            const date = new Date(dailyForecast.time[index]);
-            const dayString = date.toLocaleDateString('en-US', { weekday: 'long' });
-            alerts.push({
-                id: `${code}-${dailyForecast.time[index]}`,
-                title: ALERT_TRIGGERS[code].title,
-                description: `Prepare for potential severe weather on ${dayString}.`,
-            });
-        }
-    });
-    return alerts;
+  if (!dailyForecast || !dailyForecast.time || !dailyForecast.weather_code) return [];
+  const alerts = [];
+  dailyForecast.weather_code.slice(0, 3).forEach((code, index) => {
+    // Check next 3 days
+    if (ALERT_TRIGGERS[code]) {
+      const date = new Date(dailyForecast.time[index]);
+      const dayString = date.toLocaleDateString('en-US', { weekday: 'long' });
+      alerts.push({
+        id: `${code}-${dailyForecast.time[index]}`,
+        title: ALERT_TRIGGERS[code].title,
+        description: `Prepare for potential severe weather on ${dayString}.`,
+      });
+    }
+  });
+  return alerts;
 };
 
-
 self.addEventListener('push', (event) => {
-    console.log('[Service Worker] Push Received.');
-    const data = event.data.json();
-    console.log('[Service Worker] Push data:', data);
+  console.log('[Service Worker] Push Received.');
+  const data = event.data.json();
+  console.log('[Service Worker] Push data:', data);
 
-    const title = data.title || 'Skyline Weather';
-    const options = {
-        body: data.body,
-        icon: '/logo192.png',
-        badge: '/logo72.png', // A smaller icon for the notification bar
-    };
+  const title = data.title || 'Skyline Weather';
+  const options = {
+    body: data.body,
+    icon: '/logo192.png',
+    badge: '/logo72.png', // A smaller icon for the notification bar
+  };
 
-    event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener('notificationclick', (event) => {
-    console.log('[Service Worker] Notification click Received.');
-    event.notification.close();
-    event.waitUntil(
-        clients.openWindow('/')
-    );
+  console.log('[Service Worker] Notification click Received.');
+  event.notification.close();
+  event.waitUntil(clients.openWindow('/'));
 });
 
 // Background check for weather alerts
 self.addEventListener('periodicsync', (event) => {
-    if (event.tag === 'check-weather-alerts') {
-        console.log('[Service Worker] Performing periodic weather check.');
-        event.waitUntil(checkWeatherAndNotify());
-    }
+  if (event.tag === 'check-weather-alerts') {
+    console.log('[Service Worker] Performing periodic weather check.');
+    event.waitUntil(checkWeatherAndNotify());
+  }
 });
 
 async function checkWeatherAndNotify() {
-    // In a real app, you'd get the user's primary location from IndexedDB
-    // For this example, we'll use a hardcoded location (e.g., New York)
-    const lat = 40.71;
-    const lon = -74.01;
+  // In a real app, you'd get the user's primary location from IndexedDB
+  // For this example, we'll use a hardcoded location (e.g., New York)
+  const lat = 40.71;
+  const lon = -74.01;
 
-    try {
-        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weather_code&forecast_days=3&timezone=auto`);
-        const weatherData = await response.json();
-        const alerts = generateWeatherAlerts(weatherData.daily);
+  try {
+    const response = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weather_code&forecast_days=3&timezone=auto`
+    );
+    const weatherData = await response.json();
+    const alerts = generateWeatherAlerts(weatherData.daily);
 
-        if (alerts.length > 0) {
-            self.registration.showNotification(alerts[0].title, {
-                body: alerts[0].description,
-                icon: '/logo192.png',
-            });
-        }
-    } catch (error) {
-        console.error('[Service Worker] Failed to check weather:', error);
+    if (alerts.length > 0) {
+      self.registration.showNotification(alerts[0].title, {
+        body: alerts[0].description,
+        icon: '/logo192.png',
+      });
     }
+  } catch (error) {
+    console.error('[Service Worker] Failed to check weather:', error);
+  }
 }
