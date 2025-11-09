@@ -70,11 +70,11 @@ For more detailed information, please refer to the full documentation:
 - **[Architecture Document](./docs/ARCHITECTURE.md):** A high-level overview of the software and hardware architecture.
 - **[Use Cases & Personas](./docs/USE_CASES.md):** Describes the target users and the scenarios the application is designed to handle.
 - **[Business & Marketing Plan](./docs/BUSINESS_PLAN.md):** Outlines the project's mission, market strategy, and monetization goals.
-- **[Project Roadmap](./docs/ROADMAP.md):** See what features have been implemented and what's coming next.
+- **[Project Roadmap](./ROADMAP.md):** See what features have been implemented and what's coming next.
 - **[Testing Strategy](./docs/TESTING.md):** Outlines the plan for building a robust test suite.
 - **[Contributing](./docs/CONTRIBUTING.md):** Guidelines for contributing to the project.
 - **[Code of Conduct](./docs/CODE_OF_CONDUCT.md):** Code of Conduct for the project.
-- **[License](./docs/LICENSE.md):** Information about the project's license.
+- **[License](./docs/LICENSE):** Information about the project's license.
 - **[Changelog](./docs/CHANGELOG.md):** Keep track of changes to the project.
 - **[Security](./docs/SECURITY.md):** Information about the project's security practices.
 - **[FAQ](./docs/FAQ.md):** Common questions and answers about the project.

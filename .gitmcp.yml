@@ -1,0 +1,64 @@
+# GitMCP Configuration for the Skyline Project
+# This file defines the structure and navigation for your documentation portal.
+
+version: '1.0'
+
+project:
+  name: 'Skyline Weather Dashboard'
+  description: 'Your Weather, Beautifully Visualized.'
+  logo: './assets/logo.png' # Assumes you have a logo in an assets folder
+
+docs:
+  # The main entry point for your documentation.
+  - title: 'Overview'
+    path: './README.md'
+
+  # Grouping for user-facing documentation.
+  - group: 'User Guides'
+    items:
+      - title: 'User Manual'
+        path: './docs/USER_MANUAL.md'
+      - title: 'Frequently Asked Questions'
+        path: './docs/FAQ.md'
+      - title: 'Getting Support'
+        path: './docs/SUPPORT.md'
+
+  # Grouping for developer and technical documentation.
+  - group: 'For Developers'
+    items:
+      - title: 'Technical Documentation'
+        path: './docs/TECHNICAL_DOCUMENTATION.md'
+      - title: 'Architecture'
+        path: './docs/ARCHITECTURE.md'
+      - title: 'Testing Strategy'
+        path: './docs/TESTING.md'
+      - title: 'API Acknowledgments'
+        path: './docs/ACKNOWLEDGMENTS.md'
+
+  # Grouping for community and contribution information.
+  - group: 'Community & Contribution'
+    items:
+      - title: 'Contribution Guidelines'
+        path: './docs/CONTRIBUTING.md'
+      - title: 'Code of Conduct'
+        path: './docs/CODE_OF_CONDUCT.md'
+      - title: 'Our Contributors'
+        path: './docs/CONTRIBUTORS.md'
+      - title: 'Security Policy'
+        path: './docs/SECURITY.md'
+      - title: 'License'
+        path: './docs/LICENSE'
+
+  # Grouping for project planning and vision.
+  - group: 'Project Vision'
+    items:
+      - title: 'Project Roadmap'
+        path: './ROADMAP.md'
+      - title: 'Business & Marketing Plan'
+        path: './docs/BUSINESS_PLAN.md'
+      - title: 'Use Cases & Personas'
+        path: './docs/USE_CASES.md'
+
+  # Standalone link to the project changelog.
+  - title: 'Changelog'
+    path: './docs/CHANGELOG.md'
