@@ -14,6 +14,7 @@
 - **Deep Personalization:** Make it yours by choosing from multiple clock themes, switching between light/dark modes, or setting an "Auto" theme that syncs with your local day/night cycle.
 - **Immersive Soundscapes:** Optional ambient sounds for day, night, and weather effects create a fully immersive experience.
 - **Modern "Glassmorphism" UI:** A clean, beautiful interface that is a pleasure to use.
+- **Accessible:** Full keyboard navigation and screen reader support ensure the app is usable by everyone.
 
 ## 🛠️ Technology Stack
 
@@ -64,15 +65,27 @@ This project was bootstrapped with Create React App.
 
 For more detailed information, please refer to the full documentation:
 
-- **User Manual:** A guide for end-users on how to use the application's features.
-- **Technical Documentation:** A technical overview of the project, intended for developers.
-- **Architecture Document:** A high-level overview of the software and hardware architecture.
-- **Use Cases & Personas:** Describes the target users and the scenarios the application is designed to handle.
-- **Business & Marketing Plan:** Outlines the project's mission, market strategy, and monetization goals.
-- **Project Roadmap:** See what features have been implemented and what's coming next.
+- **[User Manual](./docs/USER_MANUAL.md):** A guide for end-users on how to use the application's features.
+- **[Technical Documentation](./docs/TECHNICAL_DOCUMENTATION.md):** A technical overview of the project, intended for developers.
+- **[Architecture Document](./docs/ARCHITECTURE.md):** A high-level overview of the software and hardware architecture.
+- **[Use Cases & Personas](./docs/USE_CASES.md):** Describes the target users and the scenarios the application is designed to handle.
+- **[Business & Marketing Plan](./docs/BUSINESS_PLAN.md):** Outlines the project's mission, market strategy, and monetization goals.
+- **[Project Roadmap](./docs/ROADMAP.md):** See what features have been implemented and what's coming next.
+- **[Testing Strategy](./docs/TESTING.md):** Outlines the plan for building a robust test suite.
+- **[Contributing](./docs/CONTRIBUTING.md):** Guidelines for contributing to the project.
+- **[Code of Conduct](./docs/CODE_OF_CONDUCT.md):** Code of Conduct for the project.
+- **[License](./docs/LICENSE.md):** Information about the project's license.
+- **[Changelog](./docs/CHANGELOG.md):** Keep track of changes to the project.
+- **[Security](./docs/SECURITY.md):** Information about the project's security practices.
+- **[FAQ](./docs/FAQ.md):** Common questions and answers about the project.
+- **[Support](./docs/SUPPORT.md):** Information about how to get support for the project.
+- **[Contributors](./docs/CONTRIBUTORS.md):** A list of contributors to the project.
+- **[Acknowledgments](./docs/ACKNOWLEDGMENTS.md):** Acknowledgments for the project.
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please see the **Contribution Guidelines** for more details on how to get involved.
+Contributions are welcome! Please read our **[Contribution Guidelines](./docs/CONTRIBUTING.md)** to get started.
+
+This project is governed by our **[Code of Conduct](./docs/CODE_OF_CONDUCT.md)**.
 
 ---
