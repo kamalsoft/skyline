@@ -1,5 +1,5 @@
 // src/components/SettingsPanel.js
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Badge,
   Box,
@@ -14,9 +14,12 @@ import {
   Text,
   Tab,
   Icon,
+  useToast,
   Tooltip,
 } from '@chakra-ui/react';
-import { CloseIcon } from '@chakra-ui/icons';
+import {
+  CloseIcon,
+} from '@chakra-ui/icons';
 import { motion, useDragControls } from 'framer-motion';
 import { FaPalette, FaMagic, FaVolumeUp, FaMapMarkerAlt, FaDatabase, FaInfoCircle } from 'react-icons/fa';
 import GeneralSettings from './settings/GeneralSettings';
@@ -25,6 +28,7 @@ import EffectsSettings from './settings/EffectsSettings';
 import DataSettings from './settings/DataSettings';
 import AudioSettings from './settings/AudioSettings';
 import AboutSettings from './settings/AboutSettings';
+import CustomToast from './CustomToast';
 function SettingsPanel({
   clocks,
   addClock,
@@ -49,10 +53,40 @@ function SettingsPanel({
   isUpdateAvailable,
   appSettings,
   onAppSettingsChange,
+  // New props for the moved buttons
+  colorMode,
+  toggleColorMode,
+  isAnimationPaused,
+  onToggleAnimation,
+  onToggleLogger,
 }) {
-  const [size, setSize] = useState({ width: 550, height: 700 });
+  const [size, setSize] = useState({ width: 700, height: 700 });
   const dragControls = useDragControls();
   const [activeTab, setActiveTab] = useState(0);
+  const toast = useToast();
+
+  const handleClearCache = useCallback(async () => {
+    console.log('[SettingsPanel] Initiating cache clearing process...');
+    if (typeof onClearCache === 'function') {
+      await onClearCache();
+      console.log('[SettingsPanel] Cache clearing process completed successfully.');
+      toast({
+        position: 'bottom-right',
+        duration: null, // Stays until action is taken
+        isClosable: true,
+        render: () => (
+          <CustomToast
+            title="Cache Cleared"
+            description="The application data has been reset. Please refresh to apply the changes."
+            status="success"
+            action={{ label: 'Refresh Now', onClick: () => window.location.reload() }}
+          />
+        ),
+      });
+    } else {
+      console.error('[SettingsPanel] onClearCache prop is not a function!');
+    }
+  }, [onClearCache, toast]);
 
   return (
     <motion.div
@@ -89,7 +123,9 @@ function SettingsPanel({
             <Heading as="h3" size="md">
               Settings
             </Heading>
-            <IconButton icon={<CloseIcon />} size="sm" variant="ghost" onClick={onClose} aria-label="Close settings" />
+            <HStack>
+              <IconButton icon={<CloseIcon />} size="sm" variant="ghost" onClick={onClose} aria-label="Close settings" />
+            </HStack>
           </HStack>
         </Box>
         <Tabs
@@ -172,6 +208,8 @@ function SettingsPanel({
                   onThemeChange={onThemeChange}
                   timeFormat={timeFormat}
                   onTimeFormatChange={onTimeFormatChange}
+                  colorMode={colorMode}
+                  toggleColorMode={toggleColorMode}
                   displaySettings={displaySettings}
                   onDisplaySettingsChange={onDisplaySettingsChange}
                 />
@@ -180,10 +218,14 @@ function SettingsPanel({
                 <EffectsSettings
                   animationSettings={animationSettings}
                   onAnimationSettingsChange={onAnimationSettingsChange}
+                  isAnimationPaused={isAnimationPaused}
+                  onToggleAnimation={onToggleAnimation}
+                  appSettings={appSettings}
+                  onAppSettingsChange={onAppSettingsChange}
                 />
               </TabPanel>
               <TabPanel role="tabpanel" aria-labelledby="tab-data">
-                <DataSettings onClearCache={onClearCache} />
+                <DataSettings onClearCache={handleClearCache} onToggleLogger={onToggleLogger} />
               </TabPanel>
               <TabPanel role="tabpanel" aria-labelledby="tab-audio">
                 <AudioSettings />
@@ -214,6 +256,7 @@ function SettingsPanel({
           }}
         />
       </VStack>
+
     </motion.div>
   );
 }

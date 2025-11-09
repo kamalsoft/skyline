@@ -1,5 +1,5 @@
 // src/components/settings/AppearanceSettings.js
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   VStack,
   HStack,
@@ -12,7 +12,9 @@ import {
   Button,
   Switch,
   Text,
+  IconButton,
 } from '@chakra-ui/react';
+import { FaMoon, FaSun } from 'react-icons/fa';
 import { useSound } from '../../contexts/SoundContext';
 
 function AppearanceSettings({
@@ -26,9 +28,14 @@ function AppearanceSettings({
   onTimeFormatChange,
   displaySettings,
   onDisplaySettingsChange,
+  // New props for the moved button
+  colorMode,
+  toggleColorMode,
 }) {
   const [bgUrl, setBgUrl] = useState(background.type === 'image' ? background.value : '');
   const { playSound } = useSound();
+
+  const ThemeIcon = useMemo(() => (colorMode === 'light' ? FaMoon : FaSun), [colorMode]);
 
   const handleDisplaySettingChange = (key, value) => {
     onDisplaySettingsChange({ ...displaySettings, [key]: value });
@@ -39,22 +46,31 @@ function AppearanceSettings({
       <Heading as="h3" size="md">
         Theme
       </Heading>
-      <FormControl>
-        <FormLabel>Color Mode</FormLabel>
-        <RadioGroup
-          onChange={(val) => {
-            playSound('ui-click');
-            onThemePreferenceChange(val);
-          }}
-          value={themePreference}
-        >
-          <HStack spacing={5}>
-            <Radio value="light">Light</Radio>
-            <Radio value="dark">Dark</Radio>
-            <Radio value="auto">Auto (Day/Night)</Radio>
-          </HStack>
-        </RadioGroup>
-      </FormControl>
+      <VStack spacing={4} align="stretch">
+        <HStack justify="space-between">
+          <Text fontWeight="bold">Toggle Light/Dark Mode</Text>
+          <IconButton icon={<ThemeIcon />} onClick={toggleColorMode} aria-label="Toggle theme" />
+        </HStack>
+        <FormControl>
+          <FormLabel>Automatic Theme</FormLabel>
+          <RadioGroup
+            onChange={(val) => {
+              playSound('ui-click');
+              onThemePreferenceChange(val);
+            }}
+            value={themePreference}
+          >
+            <HStack spacing={5}>
+              <Radio value="light">Always Light</Radio>
+              <Radio value="dark">Always Dark</Radio>
+              <Radio value="auto">Auto (Day/Night)</Radio>
+            </HStack>
+          </RadioGroup>
+          <Text fontSize="xs" color="gray.500" mt={2}>
+            'Auto' mode switches the theme based on your primary clock's sunrise and sunset times.
+          </Text>
+        </FormControl>
+      </VStack>
       <Heading as="h3" size="md">
         Background
       </Heading>

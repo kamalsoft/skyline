@@ -1,5 +1,5 @@
 // src/components/settings/DataSettings.js
-import React from 'react';
+import React, { useState } from 'react';
 import {
   VStack,
   HStack,
@@ -15,16 +15,41 @@ import {
   AlertDialogOverlay,
   useDisclosure,
 } from '@chakra-ui/react';
-import { WarningTwoIcon } from '@chakra-ui/icons';
+import { WarningTwoIcon, InfoIcon } from '@chakra-ui/icons';
+import { FaTerminal } from 'react-icons/fa';
 
-function DataSettings({ onClearCache }) {
+function DataSettings({ onClearCache, onToggleLogger }) {
   const { isOpen: isResetAlertOpen, onOpen: onResetAlertOpen, onClose: onResetAlertClose } = useDisclosure();
+  const [isClearing, setIsClearing] = useState(false);
+
+  const handleClearAndReset = async () => {
+    console.log('[DataSettings] User confirmed cache clear. Executing onClearCache...');
+    setIsClearing(true);
+    await onClearCache();
+    // The parent component will now handle showing the final "refresh" alert.
+    setIsClearing(false);
+    onResetAlertClose();
+  };
 
   return (
     <VStack spacing={6} align="stretch">
       <Heading size="md" mb={4}>
         Data & Privacy
       </Heading>
+
+      <Heading size="sm">Developer Tools</Heading>
+      <Box p={4} borderWidth="1px" borderColor="gray.500" borderRadius="md">
+        <HStack justify="space-between">
+          <VStack align="start">
+            <Text fontWeight="bold">Log Terminal</Text>
+            <Text fontSize="sm">Show or hide the developer logging console.</Text>
+          </VStack>
+          <Button leftIcon={<FaTerminal />} onClick={onToggleLogger}>
+            Toggle Logger
+          </Button>
+        </HStack>
+      </Box>
+
       <Text>Your settings and clock list are stored locally on your device. This data is not sent to any server.</Text>
       <Heading size="sm" color="red.400">
         Danger Zone
@@ -53,7 +78,7 @@ function DataSettings({ onClearCache }) {
             </AlertDialogBody>
             <AlertDialogFooter>
               <Button onClick={onResetAlertClose}>Cancel</Button>
-              <Button colorScheme="red" onClick={onClearCache} ml={3}>
+              <Button colorScheme="red" onClick={handleClearAndReset} ml={3} isLoading={isClearing}>
                 Clear & Reset
               </Button>
             </AlertDialogFooter>

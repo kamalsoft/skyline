@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Box, HStack, VStack, Text, Spinner, IconButton, Tooltip } from '@chakra-ui/react';
+import { Box, HStack, VStack, Text, Spinner, IconButton, Tooltip, Icon } from '@chakra-ui/react';
 import { WiDaySunny, WiNightClear } from 'react-icons/wi';
 import { FaClock, FaDigitalTachograph } from 'react-icons/fa';
 import DigitalClock from './DigitalClock';
@@ -23,13 +23,16 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOp
 
   useEffect(() => {
     const fetchWeather = async () => {
+      console.log(`[WorldClockCard] Fetching weather for: ${clock.location}`);
       if (!clock.latitude || !clock.longitude) return;
       setLoading(true);
       try {
+        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${clock.latitude}&longitude=${clock.longitude}&current=temperature_2m,weather_code&daily=sunrise,sunset&forecast_days=1&timezone=${clock.timeZone}`;
         const response = await axios.get(
-          `https://api.open-meteo.com/v1/forecast?latitude=${clock.latitude}&longitude=${clock.longitude}&current=temperature_2m,weather_code&daily=sunrise,sunset&forecast_days=1&timezone=${clock.timeZone}`
+          apiUrl
         );
         const data = response.data;
+        console.log(`[WorldClockCard] API Response for ${clock.location}:`, data);
         setWeather(data.current);
 
         if (data.daily && data.daily.sunrise && data.daily.sunset) {
@@ -38,7 +41,7 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOp
           setSunTimes({ sunrise: sunriseDate, sunset: sunsetDate });
         }
       } catch (error) {
-        console.error('Failed to fetch weather for world clock', error);
+        console.error(`[WorldClockCard] Failed to fetch weather for ${clock.location}:`, error);
       } finally {
         setLoading(false);
       }
@@ -52,14 +55,16 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOp
     return () => {
       clearInterval(intervalId);
     };
-  }, [clock.latitude, clock.longitude, clock.timeZone]);
+  }, [clock.latitude, clock.longitude, clock.timeZone, clock.location]);
 
   useEffect(() => {
     if (sunTimes.sunrise && sunTimes.sunset) {
+      console.log(`[WorldClockCard] Calculating day/night for ${clock.location}. Current time: ${time.format()}, Sunrise: ${sunTimes.sunrise}, Sunset: ${sunTimes.sunset}`);
       const isCurrentlyDay = time.isAfter(sunTimes.sunrise) && time.isBefore(sunTimes.sunset);
       setIsDay(isCurrentlyDay);
+      console.log(`[WorldClockCard] Is it day in ${clock.location}? ${isCurrentlyDay}`);
     }
-  }, [time, sunTimes]);
+  }, [time, sunTimes, clock.location]);
 
   const timeOptions = {
     hour: 'numeric',
@@ -112,7 +117,9 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOp
                     {clock.location.split(',')[0]}
                   </Text>
                   <Tooltip label={tooltipLabel} placement="top">
-                    <Box as={isDay ? WiDaySunny : WiNightClear} size="24px" color={isDay ? 'yellow.400' : 'gray.300'} />
+                    <Box>
+                      <Icon as={isDay ? WiDaySunny : WiNightClear} boxSize="24px" color={isDay ? 'yellow.400' : 'gray.300'} />
+                    </Box>
                   </Tooltip>
                 </HStack>
                 <Text fontSize="xs" color="gray.500" mt="-8px">
@@ -135,7 +142,7 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOp
                     {Math.round(weather.temperature_2m)}°C
                   </Text>
                   <Tooltip label={getWeatherDescription(weather.weather_code)} placement="top">
-                    <Box>
+                    <Box w={10} h={10}>
                       <AnimatedWeatherIcon weatherCode={weather.weather_code} w={10} h={10} />
                     </Box>
                   </Tooltip>
@@ -152,7 +159,9 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOp
           >
             <HStack className="glass" p={3} borderRadius="xl" justify="center" spacing={4}>
               <motion.div whileHover={{ scale: 1.2 }}>
-                <Box as={isDay ? WiDaySunny : WiNightClear} size="24px" color={isDay ? 'yellow.400' : 'gray.300'} />
+                <Box>
+                  <Icon as={isDay ? WiDaySunny : WiNightClear} boxSize="24px" color={isDay ? 'yellow.400' : 'gray.300'} />
+                </Box>
               </motion.div>
             </HStack>
           </Tooltip>
