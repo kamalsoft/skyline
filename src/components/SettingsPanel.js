@@ -1,5 +1,5 @@
 // src/components/SettingsPanel.js
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   Badge,
   Box,
@@ -16,6 +16,7 @@ import {
   Icon,
   useToast,
   Tooltip,
+  useBreakpointValue,
 } from '@chakra-ui/react';
 import {
   CloseIcon,
@@ -30,33 +31,12 @@ import AudioSettings from './settings/AudioSettings';
 import NetworkSettings from './settings/NetworkSettings';
 import AboutSettings from './settings/AboutSettings';
 import CustomToast from './CustomToast';
+
 function SettingsPanel({
-  clocks,
-  addClock,
-  removeClock,
-  removeAllClocks,
-  clockTheme,
-  onThemeChange,
-  timeFormat,
-  onTimeFormatChange,
-  background,
-  onBackgroundChange,
-  setPrimaryLocation,
-  themePreference,
-  onThemePreferenceChange,
-  animationSettings,
-  onAnimationSettingsChange,
-  displaySettings,
-  onDisplaySettingsChange,
   onClearCache = () => console.warn('[SettingsPanel] onClearCache prop was not provided.'),
   onClose,
   onUpdateFound,
   isUpdateAvailable,
-  appSettings,
-  onAppSettingsChange,
-  // New props for the moved buttons
-  colorMode,
-  toggleColorMode,
   isAnimationPaused,
   onToggleAnimation,
   onToggleLogger,
@@ -65,33 +45,23 @@ function SettingsPanel({
   const dragControls = useDragControls();
   const [activeTab, setActiveTab] = useState(0);
   const toast = useToast();
+  const panelRef = useRef(null);
+
+  // Determine layout based on breakpoint
+  const isMobile = useBreakpointValue({ base: true, md: false });
+  const tabOrientation = isMobile ? 'horizontal' : 'vertical';
+  const panelMotionProps = isMobile ? {} : { drag: true, dragListener: false, dragControls: dragControls, dragMomentum: false };
 
   const handleClearCache = useCallback(async () => {
     console.log('[SettingsPanel] Initiating cache clearing process...');
     if (typeof onClearCache === 'function') {
       await onClearCache();
 
-      const localStorageKeys = [
-        'appSettings',
-        'clocks',
-        'themePreference',
-        'background',
-        'clockTheme',
-        'timeFormat',
-        'displaySettings',
-        'animationSettings',
-        'primaryLocation',
-        'soundSettings',
-        'chakra-ui-color-mode',
-        'weatherDataCache', // Added for weather data
-        'lastKnownLocation' // Added for location data
-
-      ];
-
-      localStorageKeys.forEach(key => {
+      // Clear all app-related keys from localStorage
+      Object.keys(localStorage).forEach((key) => {
         try {
-          localStorage.removeItem(key);
-          console.log(`  - Removed '${key}' from localStorage.`);
+          localStorage.removeItem(key); // This will clear all settings
+          console.log(`- Removed '${key}' from localStorage.`);
         } catch (error) {
           console.error(`  - Failed to remove '${key}':`, error);
         }
@@ -118,19 +88,18 @@ function SettingsPanel({
 
   return (
     <motion.div
+      ref={panelRef}
       initial={{ opacity: 0, scale: 0.9, x: -100 }}
       animate={{ opacity: 1, scale: 1, x: 0 }}
       exit={{ opacity: 0, scale: 0.9, x: -100 }}
-      drag
-      dragListener={false}
-      dragControls={dragControls}
-      dragMomentum={false}
+      {...panelMotionProps}
       style={{
         position: 'fixed',
-        bottom: '20px',
-        left: '20px',
-        width: size.width,
-        height: size.height,
+        // Responsive positioning and sizing
+        bottom: isMobile ? '0' : '20px',
+        left: isMobile ? '0' : '20px',
+        width: isMobile ? '100%' : size.width,
+        height: isMobile ? '100%' : size.height,
         zIndex: 1400,
       }}
       whileDrag={{
@@ -139,10 +108,10 @@ function SettingsPanel({
       }}
       aria-label="Settings Panel"
     >
-      <VStack spacing={4} align="stretch" className="glass" p={4} borderRadius="xl" h="100%" boxShadow="2xl">
+      <VStack spacing={4} align="stretch" className="glass" p={4} borderRadius={{ base: 0, md: 'xl' }} h="100%" boxShadow="2xl">
         <Box
-          cursor="move"
-          onPointerDown={(e) => dragControls.start(e)}
+          cursor={!isMobile ? 'move' : 'default'}
+          onPointerDown={(e) => !isMobile && dragControls.start(e, { snapToCursor: false })}
           pb={2}
           borderBottomWidth="1px"
           borderColor="whiteAlpha.300"
@@ -157,134 +126,113 @@ function SettingsPanel({
           </HStack>
         </Box>
         <Tabs
-          orientation="vertical"
+          orientation={tabOrientation}
           variant="vertical-glass"
           index={activeTab}
           onChange={(index) => setActiveTab(index)}
           flex="1"
           display="flex"
-          overflow="hidden"
+          flexDirection={{ base: 'column', md: 'row' }} // Control layout direction
         >
-          <HStack align="stretch" flex="1">
-            <TabList minW="150px">
-              <Tooltip label="General Settings" placement="right" hasArrow>
-                <Tab id="tab-general">
-                  <Icon as={FaMapMarkerAlt} mr={2} /> General
-                </Tab>
-              </Tooltip>
-              <Tooltip label="Appearance Settings" placement="right" hasArrow>
-                <Tab id="tab-appearance">
-                  <Icon as={FaPalette} mr={2} /> Appearance
-                </Tab>
-              </Tooltip>
-              <Tooltip label="Animation & Effects Settings" placement="right" hasArrow>
-                <Tab id="tab-effects">
-                  <Icon as={FaMagic} mr={2} /> Effects
-                </Tab>
-              </Tooltip>
-              <Tooltip label="Data & Privacy Settings" placement="right" hasArrow>
-                <Tab id="tab-data">
-                  <Icon as={FaDatabase} mr={2} /> Data
-                </Tab>
-              </Tooltip>
-              <Tooltip label="Audio Settings" placement="right" hasArrow>
-                <Tab id="tab-audio">
-                  <Icon as={FaVolumeUp} mr={2} /> Audio
-                </Tab>
-              </Tooltip>
-              <Tooltip label="Network Settings" placement="right" hasArrow>
-                <Tab id="tab-network">
-                  <Icon as={FaWifi} mr={2} /> Network
-                </Tab>
-              </Tooltip>
-              <Tooltip label="About Skyline" placement="right" hasArrow>
-                <Tab id="tab-about">
-                  <HStack>
-                    <Icon as={FaInfoCircle} mr={2} />
-                    <Text>About</Text>
-                    {isUpdateAvailable && (
-                      <Badge colorScheme="green" ml={2}>
-                        New
-                      </Badge>
-                    )}
-                  </HStack>
-                </Tab>
-              </Tooltip>
-            </TabList>
-            <TabPanels
-              overflowY="auto"
-              sx={{
-                '&::-webkit-scrollbar': { width: '4px' },
-                '&::-webkit-scrollbar-thumb': { bg: 'gray.600', borderRadius: '24px' },
-              }}
-              flex="1"
-            >
-              <TabPanel role="tabpanel" aria-labelledby="tab-general">
-                <GeneralSettings
-                  clocks={clocks}
-                  addClock={addClock}
-                  removeClock={removeClock}
-                  removeAllClocks={removeAllClocks}
-                  setPrimaryLocation={setPrimaryLocation}
-                  appSettings={appSettings}
-                  onAppSettingsChange={onAppSettingsChange}
-                  onClosePanel={onClose}
-                />
-              </TabPanel>
-              <TabPanel role="tabpanel" aria-labelledby="tab-appearance">
-                <AppearanceSettings
-                  themePreference={themePreference}
-                  onThemePreferenceChange={onThemePreferenceChange}
-                  background={background}
-                  onBackgroundChange={onBackgroundChange}
-                  clockTheme={clockTheme}
-                  onThemeChange={onThemeChange}
-                  timeFormat={timeFormat}
-                  onTimeFormatChange={onTimeFormatChange}
-                  colorMode={colorMode}
-                  toggleColorMode={toggleColorMode}
-                  displaySettings={displaySettings}
-                  onDisplaySettingsChange={onDisplaySettingsChange}
-                />
-              </TabPanel>
-              <TabPanel role="tabpanel" aria-labelledby="tab-effects">
-                <EffectsSettings
-                  animationSettings={animationSettings}
-                  onAnimationSettingsChange={onAnimationSettingsChange}
-                  isAnimationPaused={isAnimationPaused}
-                  onToggleAnimation={onToggleAnimation}
-                  appSettings={appSettings}
-                  onAppSettingsChange={onAppSettingsChange}
-                />
-              </TabPanel>
-              <TabPanel role="tabpanel" aria-labelledby="tab-data">
-                <DataSettings onClearCache={handleClearCache} onToggleLogger={onToggleLogger} />
-              </TabPanel>
-              <TabPanel role="tabpanel" aria-labelledby="tab-audio">
-                <AudioSettings />
-              </TabPanel>
-              <TabPanel role="tabpanel" aria-labelledby="tab-network">
-                <NetworkSettings
-                  appSettings={appSettings} // This was already present
-                  onAppSettingsChange={onAppSettingsChange} // This was already present
-                />
-              </TabPanel>
-              <TabPanel role="tabpanel" aria-labelledby="tab-about">
-                <AboutSettings
-                  onUpdateFound={onUpdateFound}
-                  appSettings={appSettings}
-                  onAppSettingsChange={onAppSettingsChange}
-                />
-              </TabPanel>
-            </TabPanels>
-          </HStack>
+
+          <TabList
+            minW="150px"
+            overflowY="auto"
+            sx={{
+              '&::-webkit-scrollbar': { width: '4px' },
+              '&::-webkit-scrollbar-thumb': { bg: 'gray.600', borderRadius: '24px' },
+            }}
+          >
+            <Tooltip label="General Settings" placement="right" hasArrow>
+              <Tab id="tab-general">
+                <Icon as={FaMapMarkerAlt} mr={2} /> General
+              </Tab>
+            </Tooltip>
+            <Tooltip label="Appearance Settings" placement="right" hasArrow>
+              <Tab id="tab-appearance">
+                <Icon as={FaPalette} mr={2} /> Appearance
+              </Tab>
+            </Tooltip>
+            <Tooltip label="Animation & Effects Settings" placement="right" hasArrow>
+              <Tab id="tab-effects">
+                <Icon as={FaMagic} mr={2} /> Effects
+              </Tab>
+            </Tooltip>
+            <Tooltip label="Data & Privacy Settings" placement="right" hasArrow>
+              <Tab id="tab-data">
+                <Icon as={FaDatabase} mr={2} /> Data
+              </Tab>
+            </Tooltip>
+            <Tooltip label="Audio Settings" placement="right" hasArrow>
+              <Tab id="tab-audio">
+                <Icon as={FaVolumeUp} mr={2} /> Audio
+              </Tab>
+            </Tooltip>
+            <Tooltip label="Network Settings" placement="right" hasArrow>
+              <Tab id="tab-network">
+                <Icon as={FaWifi} mr={2} /> Network
+              </Tab>
+            </Tooltip>
+            <Tooltip label="About Skyline" placement="right" hasArrow>
+              <Tab id="tab-about">
+                <HStack>
+                  <Icon as={FaInfoCircle} mr={2} />
+                  <Text>About</Text>
+                  {isUpdateAvailable && (
+                    <Badge colorScheme="green" ml={2}>
+                      New
+                    </Badge>
+                  )}
+                </HStack>
+              </Tab>
+            </Tooltip>
+          </TabList>
+          <TabPanels
+            overflowY="auto"
+            sx={{
+              '&::-webkit-scrollbar': { width: '4px' },
+              '&::-webkit-scrollbar-thumb': { bg: 'gray.600', borderRadius: '24px' },
+            }}
+            flex="1"
+          >
+            <TabPanel role="tabpanel" aria-labelledby="tab-general">
+              {/* Components now get data from context, only pass down non-context functions */}
+              <GeneralSettings onClosePanel={onClose} />
+            </TabPanel>
+            <TabPanel role="tabpanel" aria-labelledby="tab-appearance">
+              <AppearanceSettings />
+            </TabPanel>
+            <TabPanel role="tabpanel" aria-labelledby="tab-effects">
+              <EffectsSettings
+                isAnimationPaused={isAnimationPaused}
+                onToggleAnimation={onToggleAnimation}
+              />
+            </TabPanel>
+            <TabPanel role="tabpanel" aria-labelledby="tab-data">
+              <DataSettings onClearCache={handleClearCache} onToggleLogger={onToggleLogger} />
+            </TabPanel>
+            <TabPanel role="tabpanel" aria-labelledby="tab-audio">
+              {/* AudioSettings already uses its own context, so no changes needed */}
+              <AudioSettings />
+            </TabPanel>
+            <TabPanel role="tabpanel" aria-labelledby="tab-network">
+              <NetworkSettings />
+            </TabPanel>
+            <TabPanel role="tabpanel" aria-labelledby="tab-about">
+              <AboutSettings onUpdateFound={onUpdateFound} />
+            </TabPanel>
+          </TabPanels>
+
         </Tabs>
         <motion.div
-          drag="x"
+          drag={true}
           onDrag={(event, info) => {
-            setSize((prevSize) => ({ ...prevSize, width: Math.max(400, prevSize.width + info.delta.x) }));
+            setSize((prevSize) => ({
+              width: Math.max(500, prevSize.width + info.delta.x),
+              height: Math.max(500, prevSize.height + info.delta.y),
+            }));
           }}
-          dragMomentum={false}
+          dragMomentum={false} // Disable momentum for precise resizing
           style={{
             position: 'absolute',
             bottom: '0px',
@@ -293,6 +241,7 @@ function SettingsPanel({
             height: '20px',
             cursor: 'nwse-resize',
           }}
+          aria-label="Resize panel"
         />
       </VStack>
 

@@ -1,6 +1,7 @@
 // src/components/WeatherCard.js
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
+  useBreakpointValue,
   Box,
   Heading,
   Text,
@@ -26,9 +27,9 @@ import {
   Tooltip,
 } from '@chakra-ui/react';
 import { getWeatherDescription, WeatherError } from '../utils/weatherUtils';
-import { RepeatIcon, CalendarIcon, ViewIcon } from '@chakra-ui/icons';
+import { RepeatIcon, CalendarIcon, ViewIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import AnimatedWeatherIcon from './AnimatedWeatherIcon';
-import { motion } from 'framer-motion';
+import { motion, useAnimation } from 'framer-motion';
 import { validateWeatherData } from '../utils/weatherValidation';
 import { getAqiColor } from '../utils/aqiUtils';
 import ForecastItem from './ForecastItem';
@@ -41,42 +42,139 @@ import { useSound } from '../contexts/SoundContext';
 
 // Extracted and memoized ForecastCarousel to prevent re-creation on every render
 const ForecastCarousel = React.memo(({ children, itemCount }) => {
+  const controls = useAnimation();
   const contentRef = useRef(null);
   const [contentWidth, setContentWidth] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const containerRef = useRef(null);
+  // Determine if the view is mobile to switch behavior
+  const isMobile = useBreakpointValue({ base: true, md: false });
+
+  const itemWidth = 100; // Approximate width of a ForecastItem
+  const spacing = 16; // Corresponds to spacing={4} in HStack
 
   useEffect(() => {
     if (contentRef.current) {
       // Calculate the total width of all children
-      const totalWidth = Array.from(contentRef.current.children).reduce((acc, child) => acc + child.offsetWidth, 0);
-      // Add spacing (itemCount - 1) * 16px (for spacing={4})
-      const totalSpacing = (itemCount - 1) * 16;
-      setContentWidth(totalWidth + totalSpacing);
+      const totalWidth = itemCount * (itemWidth + spacing) - spacing;
+      setContentWidth(totalWidth);
     }
-  }, [itemCount, children]);
+  }, [children, itemCount]);
 
-  const duration = itemCount * 3; // Adjust speed by changing the multiplier
+  const scrollConstraints = { right: 0, left: -(contentWidth - (containerRef.current?.offsetWidth || 0)) };
+
+  useEffect(() => {
+    const containerWidth = containerRef.current?.offsetWidth || 0;
+    const centerOffset = containerWidth / 2 - itemWidth / 2;
+    const itemAndSpacingWidth = itemWidth + spacing;
+    const targetX = -currentIndex * itemAndSpacingWidth + centerOffset;
+
+    controls.start({
+      x: targetX,
+      transition: { type: 'spring', stiffness: 400, damping: 40 },
+    });
+  }, [currentIndex, controls, itemWidth, spacing, contentWidth]);
+
+  const onDragEnd = (event, info) => {
+    const { offset, velocity } = info; // Get offset and velocity from the drag event
+
+    // Predict the final position with velocity
+    const projectedOffset = offset.x + velocity.x * 0.4; // A higher multiplier gives more "flick" power
+
+    const containerWidth = containerRef.current?.offsetWidth || 0;
+    const centerOffset = containerWidth / 2 - itemWidth / 2;
+
+    // Calculate which item to snap to
+    const itemAndSpacingWidth = itemWidth + spacing;
+    // We adjust the projected offset by the center offset to find the correct item
+    const snapIndex = Math.round((-projectedOffset + centerOffset) / itemAndSpacingWidth);
+
+    // Clamp the index to be within bounds
+    const clampedIndex = Math.max(0, Math.min(snapIndex, itemCount - 1));
+
+    setCurrentIndex(clampedIndex);
+  };
+
+  // On mobile, render a natively scrollable container for a better touch experience
+  if (isMobile) {
+    return (
+      <Box
+        overflowX="auto"
+        css={{
+          '&::-webkit-scrollbar': {
+            display: 'none', // Hide scrollbar for a cleaner look on WebKit browsers
+          },
+          scrollbarWidth: 'none', // Hide scrollbar for Firefox
+        }}
+      >
+        <HStack spacing={4} pb={2}>
+          {children}
+        </HStack>
+      </Box>
+    );
+  }
+
+  // On desktop, use the auto-scrolling animation
+  // with drag-to-scroll functionality
+  const handlePrev = () => {
+    setCurrentIndex((prev) => Math.max(prev - 1, 0));
+  };
+
+  const handleNext = () => {
+    setCurrentIndex((prev) => Math.min(prev + 1, itemCount - 1));
+  };
 
   return (
-    <Box overflowX="hidden" ref={contentRef}>
-      <motion.div
-        animate={{
-          x: [0, -contentWidth / 2], // Animate to half the content width for a seamless loop
-        }}
-        whileHover={{ paused: true }}
-        transition={{
-          x: { repeat: Infinity, repeatType: 'loop', duration: duration, ease: 'linear' },
-        }}
-        style={{ x: 0, display: 'flex', width: `${contentWidth * 2}px` }} // Double the width for duplicated content
-      >
-        <HStack spacing={4}>{children}</HStack>
-        <HStack spacing={4} ml={4}>
-          {children}
-        </HStack>{' '}
-        {/* Duplicate children for seamless loop */}
-      </motion.div>
-    </Box>
+    <HStack w="full" spacing={2}>
+      <IconButton
+        icon={<ChevronLeftIcon />}
+        onClick={handlePrev}
+        aria-label="Previous forecast item"
+        variant="ghost"
+        isRound
+        isDisabled={currentIndex === 0}
+      />
+      <Box overflowX="hidden" ref={containerRef} cursor="grab" w="full">
+        <motion.div
+          animate={controls}
+          ref={contentRef}
+          drag="x"
+          dragConstraints={scrollConstraints}
+          onDragEnd={onDragEnd}
+          whileTap={{ cursor: 'grabbing' }}
+          style={{ display: 'flex' }}
+        >
+          <HStack spacing={4} pb={2}>
+            {children}
+          </HStack>
+        </motion.div>
+      </Box>
+      <IconButton
+        icon={<ChevronRightIcon />}
+        onClick={handleNext}
+        aria-label="Next forecast item"
+        variant="ghost"
+        isRound
+        isDisabled={currentIndex >= itemCount - 1}
+      />
+    </HStack>
   );
 });
+
+const ResponsiveButtonGroup = ({ children }) => { // Accept children explicitly
+  const isMobile = useBreakpointValue({ base: true, md: false });
+  return (
+    <VStack
+      spacing={isMobile ? 2 : 0}
+      align={isMobile ? 'stretch' : 'flex-end'}
+      w={isMobile ? 'full' : 'auto'}
+    >
+      {/* Render children directly. The children are expected to be ButtonGroup components. */}
+      {children}
+    </VStack>
+  );
+};
 
 function WeatherCard({
   latitude,
@@ -90,6 +188,9 @@ function WeatherCard({
   appSettings = {},
 }) {
   const [weatherData, setWeatherData] = useState(null);
+  // Define isMobile at the top level of the component so it can be used in the JSX below
+  const isMobile = useBreakpointValue({ base: true, md: false });
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [unit, setUnit] = useState('C'); // 'C' for Celsius, 'F' for Fahrenheit
@@ -106,8 +207,16 @@ function WeatherCard({
   const [currentTime, setCurrentTime] = useState(new Date());
   const { playSound } = useSound();
 
+  // Create a ref to hold the latest weatherData without causing re-renders
+  const weatherDataRef = useRef(weatherData);
+  useEffect(() => {
+    weatherDataRef.current = weatherData;
+  }, [weatherData]);
+
   const fetchWeather = useCallback(async () => {
-    setIsRefreshing(true); // Set refreshing state at the start of any fetch
+    if (weatherDataRef.current) {
+      setIsRefreshing(true);
+    }
     console.info(`[WeatherCard] Starting weather fetch for ${locationName} (${latitude}, ${longitude})`);
     setError(null);
     try {
@@ -149,9 +258,7 @@ function WeatherCard({
     } finally {
       // This runs regardless of success or error
       setIsRefreshing(false); // Always turn off the refreshing indicator
-      setIsLoading((currentIsLoading) => {
-        return currentIsLoading ? false : currentIsLoading;
-      });
+      setIsLoading(false); // We can safely set this to false
     }
   }, [latitude, longitude, locationName, onForecastFetch, onWeatherFetch]);
 
@@ -412,13 +519,13 @@ function WeatherCard({
             </Box>
           )}
           <Box className="glass" p={4} borderRadius="xl">
-            <Grid templateColumns={{ base: '1fr', md: 'auto 1fr' }} gap={6} alignItems="center">
+            <Grid templateColumns={{ base: '1fr', lg: 'auto 1fr' }} gap={{ base: 4, md: 6 }} alignItems="center">
               <HStack spacing={4} justify="center">
                 <AnimatedWeatherIcon weatherCode={current.weathercode} w={24} h={24} />
                 <Text fontSize="6xl" fontWeight="bold">
                   {displayTemp(current.temperature, false)}
                 </Text>
-                <VStack align="stretch" justify="center" spacing={1}>
+                <VStack align={{ base: 'center', md: 'stretch' }} justify="center" spacing={1}>
                   {currentApparentTemperature !== undefined && (
                     <Text>Feels like: {displayTemp(currentApparentTemperature, false)}</Text>
                   )}
@@ -431,8 +538,9 @@ function WeatherCard({
                   )}
                 </VStack>
               </HStack>
-              <VStack align="flex-end" justify="space-between" h="100%">
-                <ButtonGroup isAttached size="sm" variant="outline">
+              <ResponsiveButtonGroup> {/* This wrapper handles the VStack and responsive alignment */}
+                {/* Action Buttons */}
+                <ButtonGroup isAttached={!isMobile} size="sm" variant="outline">
                   <Tooltip label="Refresh weather" placement="top">
                     <IconButton
                       icon={<RepeatIcon />}
@@ -465,27 +573,16 @@ function WeatherCard({
                     />
                   </Tooltip>
                 </ButtonGroup>
-                <ButtonGroup isAttached size="sm">
-                  <Button
-                    onClick={() => {
-                      playSound('ui-click');
-                      setUnit('C');
-                    }}
-                    isActive={unit === 'C'}
-                  >
+                {/* Unit Toggle Buttons */}
+                <ButtonGroup isAttached={!isMobile} size="sm">
+                  <Button onClick={() => { playSound('ui-click'); setUnit('C'); }} isActive={unit === 'C'}>
                     °C
                   </Button>
-                  <Button
-                    onClick={() => {
-                      playSound('ui-click');
-                      setUnit('F');
-                    }}
-                    isActive={unit === 'F'}
-                  >
+                  <Button onClick={() => { playSound('ui-click'); setUnit('F'); }} isActive={unit === 'F'}>
                     °F
                   </Button>
                 </ButtonGroup>
-              </VStack>
+              </ResponsiveButtonGroup>
             </Grid>
           </Box>
         </Box>
@@ -519,7 +616,7 @@ function WeatherCard({
       />
       <Modal isOpen={isCalendarOpen} onClose={onCalendarClose} size="2xl">
         <ModalOverlay />
-        <ModalContent className="glass">
+        <ModalContent>
           <ModalHeader>Sunrise & Sunset Calendar</ModalHeader>
           <ModalCloseButton />
           <ModalBody>

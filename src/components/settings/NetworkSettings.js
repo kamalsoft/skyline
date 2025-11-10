@@ -10,10 +10,14 @@ import {
     SliderFilledTrack,
     SliderThumb,
 } from '@chakra-ui/react';
+import { useSettings } from '../../contexts/SettingsContext';
 
-function NetworkSettings({ appSettings = {}, onAppSettingsChange = () => { } }) {
+function NetworkSettings() {
+    const { settings, dispatch } = useSettings();
+    const { appSettings } = settings;
+
     const handleIntervalChange = (value) => {
-        onAppSettingsChange({ ...appSettings, weatherRefreshInterval: value });
+        dispatch({ type: 'SET_APP_SETTINGS', payload: { ...appSettings, weatherRefreshInterval: value } });
     };
 
     return (

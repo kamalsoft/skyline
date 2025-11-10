@@ -9,6 +9,7 @@ import {
   ModalBody,
   ModalCloseButton,
   Text,
+  useBreakpointValue,
   VStack,
   HStack,
   Divider,
@@ -16,6 +17,8 @@ import {
 import { getWeatherDescription } from '../utils/weatherUtils';
 
 function DetailedWeatherModal({ isOpen, onClose, data, displayTemp, timeFormat }) {
+  const modalSize = useBreakpointValue({ base: 'full', md: 'xl' });
+
   if (!data) return null;
 
   const { type, details } = data;
@@ -77,9 +80,9 @@ function DetailedWeatherModal({ isOpen, onClose, data, displayTemp, timeFormat }
   );
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered>
+    <Modal isOpen={isOpen} onClose={onClose} isCentered size={modalSize}>
       <ModalOverlay />
-      <ModalContent className="glass">
+      <ModalContent>
         <ModalHeader>Detailed Forecast for {details.time}</ModalHeader>
         <ModalCloseButton />
         <ModalBody>

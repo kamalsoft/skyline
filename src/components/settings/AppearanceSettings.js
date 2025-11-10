@@ -13,32 +13,23 @@ import {
   Switch,
   Text,
   IconButton,
+  useColorMode,
 } from '@chakra-ui/react';
 import { FaMoon, FaSun } from 'react-icons/fa';
 import { useSound } from '../../contexts/SoundContext';
+import { useSettings } from '../../contexts/SettingsContext';
 
-function AppearanceSettings({
-  themePreference,
-  onThemePreferenceChange,
-  background,
-  onBackgroundChange,
-  clockTheme,
-  onThemeChange,
-  timeFormat,
-  onTimeFormatChange,
-  displaySettings,
-  onDisplaySettingsChange,
-  // New props for the moved button
-  colorMode,
-  toggleColorMode,
-}) {
+function AppearanceSettings() {
+  const { settings, dispatch } = useSettings();
+  const { themePreference, background, clockTheme, timeFormat, displaySettings } = settings;
+  const { colorMode, toggleColorMode } = useColorMode();
   const [bgUrl, setBgUrl] = useState(background.type === 'image' ? background.value : '');
   const { playSound } = useSound();
 
   const ThemeIcon = useMemo(() => (colorMode === 'light' ? FaMoon : FaSun), [colorMode]);
 
   const handleDisplaySettingChange = (key, value) => {
-    onDisplaySettingsChange({ ...displaySettings, [key]: value });
+    dispatch({ type: 'SET_DISPLAY_SETTINGS', payload: { ...displaySettings, [key]: value } });
   };
 
   return (
@@ -56,7 +47,7 @@ function AppearanceSettings({
           <RadioGroup
             onChange={(val) => {
               playSound('ui-click');
-              onThemePreferenceChange(val);
+              dispatch({ type: 'SET_THEME_PREFERENCE', payload: val });
             }}
             value={themePreference}
           >
@@ -77,7 +68,7 @@ function AppearanceSettings({
       <RadioGroup
         onChange={(type) => {
           playSound('ui-click');
-          onBackgroundChange({ type, value: type === 'image' ? bgUrl : '' });
+          dispatch({ type: 'SET_BACKGROUND', payload: { type, value: type === 'image' ? bgUrl : '' } });
         }}
         value={background.type}
       >
@@ -92,7 +83,7 @@ function AppearanceSettings({
           <Button
             onClick={() => {
               playSound('ui-click');
-              onBackgroundChange({ type: 'image', value: bgUrl });
+              dispatch({ type: 'SET_BACKGROUND', payload: { type: 'image', value: bgUrl } });
             }}
           >
             Apply
@@ -107,7 +98,7 @@ function AppearanceSettings({
         <RadioGroup
           onChange={(val) => {
             playSound('ui-click');
-            onThemeChange(val);
+            dispatch({ type: 'SET_CLOCK_THEME', payload: val });
           }}
           value={clockTheme}
         >
@@ -124,7 +115,7 @@ function AppearanceSettings({
         <RadioGroup
           onChange={(val) => {
             playSound('ui-click');
-            onTimeFormatChange(val);
+            dispatch({ type: 'SET_TIME_FORMAT', payload: val });
           }}
           value={timeFormat}
         >

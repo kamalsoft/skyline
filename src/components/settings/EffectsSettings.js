@@ -3,16 +3,14 @@ import React, { useMemo } from 'react';
 import { VStack, HStack, Heading, Switch, Text, IconButton } from '@chakra-ui/react';
 import { FaPlay, FaPause } from 'react-icons/fa';
 
-function EffectsSettings({
-  animationSettings,
-  onAnimationSettingsChange,
-  isAnimationPaused,
-  onToggleAnimation,
-  appSettings = {},
-  onAppSettingsChange = () => { },
-}) {
+import { useSettings } from '../../contexts/SettingsContext';
+
+function EffectsSettings({ isAnimationPaused, onToggleAnimation }) {
+  const { settings, dispatch } = useSettings();
+  const { animationSettings } = settings;
+
   const handleAnimationSettingChange = (key, value) => {
-    onAnimationSettingsChange({ ...animationSettings, [key]: value });
+    dispatch({ type: 'SET_ANIMATION_SETTINGS', payload: { ...animationSettings, [key]: value } });
   };
 
   const AnimationIcon = useMemo(() => (isAnimationPaused ? FaPlay : FaPause), [isAnimationPaused]);

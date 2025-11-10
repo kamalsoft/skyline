@@ -28,17 +28,11 @@ import {
 } from '@chakra-ui/react';
 import { DeleteIcon, WarningTwoIcon } from '@chakra-ui/icons';
 import { useSound } from '../../contexts/SoundContext';
+import { useSettings } from '../../contexts/SettingsContext';
 
-function GeneralSettings({
-  clocks,
-  addClock,
-  removeClock,
-  removeAllClocks,
-  setPrimaryLocation,
-  onClosePanel,
-  appSettings = {},
-  onAppSettingsChange,
-}) {
+function GeneralSettings({ onClosePanel }) {
+  const { settings, dispatch } = useSettings();
+  const { clocks, appSettings } = settings;
   const [formData, setFormData] = useState({
     location: '',
     timeZone: '',
@@ -60,6 +54,7 @@ function GeneralSettings({
     onClose: onDeleteAllAlertClose,
   } = useDisclosure();
   const [clockToDelete, setClockToDelete] = useState(null);
+  const [clockToAdd, setClockToAdd] = useState(null); // State to hold the clock when confirming a duplicate
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const toast = useToast();
   const { playSound } = useSound();
@@ -123,23 +118,26 @@ function GeneralSettings({
     };
 
     if (clocks.some((clock) => clock.location === newClock.location)) {
+      setClockToAdd(newClock); // Store the clock object before opening the dialog
       onDuplicateAlertOpen();
     } else {
       playSound('ui-click');
-      addClock(newClock);
+      dispatch({ type: 'ADD_CLOCK', payload: newClock });
       resetForm();
     }
   };
 
   const handleSetPrimary = (result) => {
     playSound('ui-click');
-    setPrimaryLocation({
-      id: 'manual-primary',
-      location: [result.name, result.admin1, result.country].filter(Boolean).join(', '),
-      timeZone: result.timezone,
-      latitude: result.latitude,
-      longitude: result.longitude,
-      countryCode: result.country_code.toLowerCase(),
+    dispatch({
+      type: 'SET_PRIMARY_LOCATION', payload: {
+        id: 'manual-primary',
+        location: [result.name, result.admin1, result.country].filter(Boolean).join(', '),
+        timeZone: result.timezone,
+        latitude: result.latitude,
+        longitude: result.longitude,
+        countryCode: result.country_code.toLowerCase(),
+      }
     });
     resetForm();
     onClosePanel();
@@ -152,7 +150,7 @@ function GeneralSettings({
 
   const executeDelete = () => {
     playSound('ui-click');
-    removeClock(clockToDelete);
+    dispatch({ type: 'REMOVE_CLOCK', payload: clockToDelete });
     onAlertClose();
     if (manageClocksHeadingRef.current) {
       manageClocksHeadingRef.current.focus();
@@ -163,7 +161,7 @@ function GeneralSettings({
     playSound('ui-click');
     setIsDeletingAll(true);
     setTimeout(() => {
-      removeAllClocks();
+      dispatch({ type: 'REMOVE_ALL_CLOCKS' });
       setIsDeletingAll(false);
       onDeleteAllAlertClose();
     }, 500);
@@ -178,7 +176,7 @@ function GeneralSettings({
         <Text fontWeight="bold">Check for updates on startup</Text>
         <Switch
           isChecked={appSettings.autoUpdateCheck}
-          onChange={(e) => onAppSettingsChange({ ...appSettings, autoUpdateCheck: e.target.checked })}
+          onChange={(e) => dispatch({ type: 'SET_APP_SETTINGS', payload: { ...appSettings, autoUpdateCheck: e.target.checked } })}
         />
       </HStack>
 
@@ -311,8 +309,8 @@ function GeneralSettings({
               <Button
                 colorScheme="blue"
                 onClick={() => {
-                  addClock(formData);
-                  resetForm();
+                  dispatch({ type: 'ADD_CLOCK', payload: clockToAdd });
+                  playSound('ui-click');
                   onDuplicateAlertClose();
                 }}
                 ml={3}

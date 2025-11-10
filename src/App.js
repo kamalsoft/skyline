@@ -45,6 +45,7 @@ import { useClockManager } from './useClockManager';
 import LogTerminal from './components/LogTerminal';
 import { generateWeatherAlerts } from './utils/alertUtils';
 import { SoundProvider, useSound } from './contexts/SoundContext';
+import { SettingsProvider } from './contexts/SettingsContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 import 'leaflet/dist/leaflet.css';
@@ -759,14 +760,17 @@ function AppContent() {
 
 function App() {
   return (
-    <LogProvider>
-      <SoundProvider>
-        <ChakraProvider theme={theme}>
-          <ErrorBoundary>
-            <AppContent />
-          </ErrorBoundary>
-        </ChakraProvider>
-      </SoundProvider>
+    // Ensure all providers wrap the single instance of AppContent
+    <LogProvider> {/* LogProvider is typically at the top */}
+      <SettingsProvider> {/* SettingsProvider should wrap the main app content */}
+        <SoundProvider> {/* SoundProvider also needs to wrap the app content */}
+          <ChakraProvider theme={theme}> {/* ChakraProvider for UI styling */}
+            <ErrorBoundary> {/* ErrorBoundary to catch rendering errors */}
+              <AppContent /> {/* Your main application logic */}
+            </ErrorBoundary>
+          </ChakraProvider>
+        </SoundProvider>
+      </SettingsProvider>
     </LogProvider>
   );
 }
