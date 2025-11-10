@@ -1,4 +1,5 @@
 // src/utils/weatherUtils.js
+
 import {
   WiDaySunny,
   WiCloudy,
@@ -11,6 +12,14 @@ import {
   WiShowers,
   WiSnowflakeCold,
 } from 'react-icons/wi';
+
+export class WeatherError extends Error {
+  constructor(message, code) {
+    super(message);
+    this.name = 'WeatherError';
+    this.code = code;
+  }
+}
 
 // WMO Weather interpretation codes (WW)
 // See https://www.nodc.noaa.gov/archive/arc0021/0001995/1.1/data/0-data/HTML/WMO-CODE/WMO4677.HTM

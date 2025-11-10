@@ -14,8 +14,8 @@ import {
   AlertDialogContent,
   AlertDialogOverlay,
   useDisclosure,
-} from '@chakra-ui/react';
-import { WarningTwoIcon, InfoIcon } from '@chakra-ui/icons';
+} from '@chakra-ui/react'; // Removed InfoIcon from here
+import { WarningTwoIcon } from '@chakra-ui/icons'; // InfoIcon was here
 import { FaTerminal } from 'react-icons/fa';
 
 function DataSettings({ onClearCache, onToggleLogger }) {

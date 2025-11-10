@@ -8,8 +8,8 @@ function EffectsSettings({
   onAnimationSettingsChange,
   isAnimationPaused,
   onToggleAnimation,
-  appSettings,
-  onAppSettingsChange,
+  appSettings = {},
+  onAppSettingsChange = () => { },
 }) {
   const handleAnimationSettingChange = (key, value) => {
     onAnimationSettingsChange({ ...animationSettings, [key]: value });

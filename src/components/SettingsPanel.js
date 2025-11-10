@@ -21,12 +21,13 @@ import {
   CloseIcon,
 } from '@chakra-ui/icons';
 import { motion, useDragControls } from 'framer-motion';
-import { FaPalette, FaMagic, FaVolumeUp, FaMapMarkerAlt, FaDatabase, FaInfoCircle } from 'react-icons/fa';
+import { FaPalette, FaMagic, FaVolumeUp, FaMapMarkerAlt, FaDatabase, FaInfoCircle, FaWifi } from 'react-icons/fa';
 import GeneralSettings from './settings/GeneralSettings';
 import AppearanceSettings from './settings/AppearanceSettings';
 import EffectsSettings from './settings/EffectsSettings';
 import DataSettings from './settings/DataSettings';
 import AudioSettings from './settings/AudioSettings';
+import NetworkSettings from './settings/NetworkSettings';
 import AboutSettings from './settings/AboutSettings';
 import CustomToast from './CustomToast';
 function SettingsPanel({
@@ -47,7 +48,7 @@ function SettingsPanel({
   onAnimationSettingsChange,
   displaySettings,
   onDisplaySettingsChange,
-  onClearCache,
+  onClearCache = () => console.warn('[SettingsPanel] onClearCache prop was not provided.'),
   onClose,
   onUpdateFound,
   isUpdateAvailable,
@@ -69,6 +70,33 @@ function SettingsPanel({
     console.log('[SettingsPanel] Initiating cache clearing process...');
     if (typeof onClearCache === 'function') {
       await onClearCache();
+
+      const localStorageKeys = [
+        'appSettings',
+        'clocks',
+        'themePreference',
+        'background',
+        'clockTheme',
+        'timeFormat',
+        'displaySettings',
+        'animationSettings',
+        'primaryLocation',
+        'soundSettings',
+        'chakra-ui-color-mode',
+        'weatherDataCache', // Added for weather data
+        'lastKnownLocation' // Added for location data
+
+      ];
+
+      localStorageKeys.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+          console.log(`  - Removed '${key}' from localStorage.`);
+        } catch (error) {
+          console.error(`  - Failed to remove '${key}':`, error);
+        }
+      });
+
       console.log('[SettingsPanel] Cache clearing process completed successfully.');
       toast({
         position: 'bottom-right',
@@ -164,6 +192,11 @@ function SettingsPanel({
                   <Icon as={FaVolumeUp} mr={2} /> Audio
                 </Tab>
               </Tooltip>
+              <Tooltip label="Network Settings" placement="right" hasArrow>
+                <Tab id="tab-network">
+                  <Icon as={FaWifi} mr={2} /> Network
+                </Tab>
+              </Tooltip>
               <Tooltip label="About Skyline" placement="right" hasArrow>
                 <Tab id="tab-about">
                   <HStack>
@@ -229,6 +262,12 @@ function SettingsPanel({
               </TabPanel>
               <TabPanel role="tabpanel" aria-labelledby="tab-audio">
                 <AudioSettings />
+              </TabPanel>
+              <TabPanel role="tabpanel" aria-labelledby="tab-network">
+                <NetworkSettings
+                  appSettings={appSettings} // This was already present
+                  onAppSettingsChange={onAppSettingsChange} // This was already present
+                />
               </TabPanel>
               <TabPanel role="tabpanel" aria-labelledby="tab-about">
                 <AboutSettings

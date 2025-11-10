@@ -12,7 +12,7 @@ import { useSound } from '../contexts/SoundContext';
 import { getWeatherDescription } from '../utils/weatherUtils';
 import AnimatedWeatherIcon from './AnimatedWeatherIcon';
 
-function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOpen }) {
+function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOpen, appSettings }) {
   const time = useWorldClock(clock.timeZone);
   const [isAnalog, setIsAnalog] = useState(false);
   const { playSound } = useSound();
@@ -49,22 +49,29 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOp
 
     fetchWeather();
 
-    // Refresh weather every 10 minutes
-    const intervalId = setInterval(fetchWeather, 600000);
+    // Get refresh interval from settings, default to 10 minutes
+    const refreshIntervalMinutes = appSettings?.weatherRefreshInterval || 10;
+    const refreshIntervalMs = refreshIntervalMinutes * 60 * 1000;
+
+    console.log(`[WorldClockCard] Setting weather refresh interval for ${clock.location} to ${refreshIntervalMinutes} minutes (${refreshIntervalMs}ms).`);
+
+    // Refresh weather using the interval from settings
+    const intervalId = setInterval(fetchWeather, refreshIntervalMs);
 
     return () => {
       clearInterval(intervalId);
     };
-  }, [clock.latitude, clock.longitude, clock.timeZone, clock.location]);
+  }, [clock.latitude, clock.longitude, clock.timeZone, clock.location, appSettings]);
 
   useEffect(() => {
     if (sunTimes.sunrise && sunTimes.sunset) {
-      console.log(`[WorldClockCard] Calculating day/night for ${clock.location}. Current time: ${time.format()}, Sunrise: ${sunTimes.sunrise}, Sunset: ${sunTimes.sunset}`);
-      const isCurrentlyDay = time.isAfter(sunTimes.sunrise) && time.isBefore(sunTimes.sunset);
+      // Get the current time inside the effect to avoid depending on the ticking `time` object.
+      const now = new Date();
+      const isCurrentlyDay = now > sunTimes.sunrise && now < sunTimes.sunset;
       setIsDay(isCurrentlyDay);
       console.log(`[WorldClockCard] Is it day in ${clock.location}? ${isCurrentlyDay}`);
     }
-  }, [time, sunTimes, clock.location]);
+  }, [sunTimes, clock.location]); // Removed `time` from the dependency array
 
   const timeOptions = {
     hour: 'numeric',

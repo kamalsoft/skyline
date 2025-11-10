@@ -1,6 +1,5 @@
 // src/components/WeatherCard.js
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import axios from 'axios';
 import {
   Box,
   Heading,
@@ -26,7 +25,7 @@ import {
   Spinner,
   Tooltip,
 } from '@chakra-ui/react';
-import { getWeatherDescription } from '../utils/weatherUtils';
+import { getWeatherDescription, WeatherError } from '../utils/weatherUtils';
 import { RepeatIcon, CalendarIcon, ViewIcon } from '@chakra-ui/icons';
 import AnimatedWeatherIcon from './AnimatedWeatherIcon';
 import { motion } from 'framer-motion';
@@ -87,76 +86,84 @@ function WeatherCard({
   locationName,
   timeFormat,
   displaySettings,
+
+  appSettings = {},
 }) {
   const [weatherData, setWeatherData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [unit, setUnit] = useState('C'); // 'C' for Celsius, 'F' for Fahrenheit
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedForecast, setSelectedForecast] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [aiSummary, setAiSummary] = useState('');
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [aiSummary, setAiSummary] = useState('');
   const [activitySuggestion, setActivitySuggestion] = useState(null);
   const { isOpen: isCalendarOpen, onOpen: onCalendarOpen, onClose: onCalendarClose } = useDisclosure();
   const { isOpen: isMapOpen, onOpen: onMapOpen, onClose: onMapClose } = useDisclosure();
+
   const [currentTime, setCurrentTime] = useState(new Date());
   const { playSound } = useSound();
 
   const fetchWeather = useCallback(async () => {
-    setIsLoading(true);
+    setIsRefreshing(true); // Set refreshing state at the start of any fetch
+    console.info(`[WeatherCard] Starting weather fetch for ${locationName} (${latitude}, ${longitude})`);
     setError(null);
     try {
-      const response = await axios.get(
-        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_direction_10m,wind_speed_10m,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,wind_direction_10m_dominant&forecast_days=14&timezone=auto&current_weather=true&air_quality_index=us_aqi`
-      );
-      // Validate the detailed structure of the API response
-      const { isValid, error } = validateWeatherData(response.data);
-      if (!isValid) {
-        throw new Error(error);
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_direction_10m,wind_speed_10m,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,wind_direction_10m_dominant&forecast_days=14&timezone=auto&current_weather=true&air_quality_index=us_aqi`;
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        // Fetch API does not throw for HTTP errors, so we have to check the status and throw manually.
+        throw new WeatherError(`Server error: ${response.status} ${response.statusText}. Please try again later.`, 'SERVER_ERROR');
       }
-      setWeatherData(response.data);
-      setIsGeneratingSummary(true);
-      // Simulate AI generation delay
-      setTimeout(() => {
-        const summary = generateWeatherSummary(response.data);
-        const suggestion = generateActivitySuggestion(response.data);
-        setAiSummary(summary);
-        setActivitySuggestion(suggestion);
-        setIsGeneratingSummary(false);
-      }, 1000);
+
+      const data = await response.json();
+
+      // Validate the detailed structure of the API response
+      const { isValid, error } = validateWeatherData(data);
+      if (!isValid) {
+        throw new WeatherError(error, 'VALIDATION_ERROR');
+      }
+      setWeatherData(data);
 
       setLastUpdated(new Date()); // Set the last updated time
       if (onForecastFetch) {
-        onForecastFetch(response.data.daily);
+        onForecastFetch(data.daily);
       }
       if (onWeatherFetch) {
-        onWeatherFetch(response.data.current_weather);
+        onWeatherFetch(data.current_weather);
       }
+      console.log('[WeatherCard] Weather fetch successful.');
     } catch (err) {
-      console.error('Error fetching weather:', err);
-      let errorMessage = 'An unexpected error occurred.';
-      if (err.response) {
-        // Server responded with a status code outside the 2xx range
-        errorMessage = `Server error: ${err.response.status}. Please try again later.`;
-      } else if (err.request) {
-        // The request was made but no response was received
-        errorMessage = 'Network error. Please check your connection and try again.';
+      console.error('[WeatherCard] Detailed weather fetch error:', err);
+      if (err instanceof WeatherError) {
+        setError(err);
+      } else if (err instanceof TypeError) {
+        // This is often a network error with fetch
+        setError(new WeatherError('Network error. Please check your connection and try again.', 'NETWORK_ERROR'));
+      } else {
+        setError(new WeatherError('An unexpected error occurred while fetching weather data.', 'UNKNOWN_ERROR'));
       }
-      setError(errorMessage);
     } finally {
-      setIsLoading(false);
+      // This runs regardless of success or error
+      setIsRefreshing(false); // Always turn off the refreshing indicator
+      setIsLoading((currentIsLoading) => {
+        return currentIsLoading ? false : currentIsLoading;
+      });
     }
-  }, [latitude, longitude, onForecastFetch, onWeatherFetch]);
+  }, [latitude, longitude, locationName, onForecastFetch, onWeatherFetch]);
 
   useEffect(() => {
     fetchWeather();
 
-    // Set up a timer to refresh the weather data every 10 minutes
-    const refreshInterval = setInterval(fetchWeather, 600000); // 10 minutes in milliseconds
+    const refreshIntervalMinutes = appSettings?.weatherRefreshInterval || 10;
+    const refreshIntervalMs = refreshIntervalMinutes * 60 * 1000;
+    const refreshInterval = setInterval(fetchWeather, refreshIntervalMs);
 
     return () => clearInterval(refreshInterval); // Cleanup the interval on component unmount
-  }, [fetchWeather]); // Rerun this effect if the fetchWeather function changes (e.g., location changes)
+  }, [fetchWeather, latitude, longitude, appSettings.weatherRefreshInterval]); // Rerun this effect if the fetchWeather function changes (e.g., location changes)
 
   // Effect to update the current time every minute to keep the forecast in sync
   useEffect(() => {
@@ -280,6 +287,26 @@ function WeatherCard({
     });
   }, [weatherData, handleForecastClick, displayTemp]);
 
+  // Memoize the AI summary generation to prevent re-running on every render
+  useEffect(() => {
+    if (appSettings.enableAiSummary && weatherData) {
+      console.info('[WeatherCard] AI summary is enabled. Generating...');
+      setIsGeneratingSummary(true);
+      // Simulate AI generation delay to avoid blocking the main thread
+      const timer = setTimeout(() => {
+        setAiSummary(generateWeatherSummary(weatherData));
+        setActivitySuggestion(generateActivitySuggestion(weatherData));
+        setIsGeneratingSummary(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      setAiSummary('');
+      setActivitySuggestion(null);
+    }
+  }, [weatherData, appSettings.enableAiSummary]);
+
+
+
   if (isLoading) {
     return <WeatherCardSkeleton />;
   }
@@ -301,7 +328,7 @@ function WeatherCard({
         <AlertTitle mt={4} mb={1} fontSize="lg">
           Failed to Load Weather
         </AlertTitle>
-        <AlertDescription maxWidth="sm">{error}</AlertDescription>
+        <AlertDescription maxWidth="sm">{error.message}</AlertDescription>
         <Button colorScheme="red" variant="outline" onClick={fetchWeather} mt={4}>
           Retry
         </Button>
@@ -331,112 +358,136 @@ function WeatherCard({
           </Text>
         )}
         <Text>{getWeatherDescription(current.weathercode)}</Text>
-        {isGeneratingSummary ? (
-          <HStack className="glass" p={3} borderRadius="md" w="full" justify="center">
-            <Spinner size="xs" />
-            <Text fontSize="sm" fontStyle="italic">
-              Generating AI weather brief...
-            </Text>
-          </HStack>
-        ) : (
-          <Box className="glass" p={3} borderRadius="md" w="full">
-            <Text fontSize="sm" fontStyle="italic">
-              "{aiSummary}"
-            </Text>
-          </Box>
-        )}
-        {activitySuggestion && !isGeneratingSummary && (
-          <Box className="glass" p={3} borderRadius="md" w="full">
-            <HStack>
-              <Box as={activitySuggestion.icon} size="20px" color="accentPink" />
-              <Text fontSize="sm" fontWeight="bold">
-                Suggestion:{' '}
-                <Text as="span" fontWeight="normal">
-                  {activitySuggestion.text}
+        {appSettings.enableAiSummary && (
+          <>
+            {isGeneratingSummary ? (
+              <HStack className="glass" p={3} borderRadius="md" w="full" justify="center">
+                <Spinner size="xs" />
+                <Text fontSize="sm" fontStyle="italic">
+                  Generating AI weather brief...
                 </Text>
-              </Text>
-            </HStack>
-          </Box>
+              </HStack>
+            ) : (
+              aiSummary && <Box className="glass" p={3} borderRadius="md" w="full">
+                <Text fontSize="sm" fontStyle="italic">{aiSummary}</Text>
+              </Box>
+            )}
+            {activitySuggestion && !isGeneratingSummary && (
+              <Box className="glass" p={3} borderRadius="md" w="full">
+                <HStack>
+                  <Box as={activitySuggestion.icon} size="20px" color="accentPink" />
+                  <Text fontSize="sm" fontWeight="bold">
+                    Suggestion:{' '}
+                    <Text as="span" fontWeight="normal">
+                      {activitySuggestion.text}
+                    </Text>
+                  </Text>
+                </HStack>
+              </Box>
+            )}
+          </>
         )}
       </VStack>
       <VStack spacing={6} align="stretch">
         {/* Current Weather */}
-        <Box className="glass" p={4} borderRadius="xl">
-          <Grid templateColumns={{ base: '1fr', md: 'auto 1fr' }} gap={6} alignItems="center">
-            <HStack spacing={4} justify="center">
-              <AnimatedWeatherIcon weatherCode={current.weathercode} w={24} h={24} />
-              <Text fontSize="6xl" fontWeight="bold">
-                {displayTemp(current.temperature, false)}
-              </Text>
-              <VStack align="stretch" justify="center" spacing={1}>
-                {currentApparentTemperature !== undefined && (
-                  <Text>Feels like: {displayTemp(currentApparentTemperature, false)}</Text>
-                )}
-                {currentHumidity !== undefined && <Text>Humidity: {currentHumidity}%</Text>}
-                <Text>Wind: {current.windspeed} km/h</Text>
-                {airQuality?.us_aqi && (
-                  <Text>
-                    AQI: <Badge colorScheme={getAqiColor(airQuality.us_aqi)}>{airQuality.us_aqi}</Badge>
-                  </Text>
-                )}
+        <Box position="relative">
+          {isRefreshing && (
+            <Box
+              position="absolute"
+              top="0"
+              left="0"
+              right="0"
+              bottom="0"
+              bg="blackAlpha.600"
+              zIndex="1"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              borderRadius="xl"
+            >
+              <VStack>
+                <Spinner color="white" />
+                <Text color="white" fontSize="sm">Refreshing...</Text>
               </VStack>
-            </HStack>
-            <VStack align="flex-end" justify="space-between" h="100%">
-              <ButtonGroup isAttached size="sm" variant="outline">
-                <Tooltip label="Refresh weather" placement="top">
-                  <IconButton
-                    icon={<RepeatIcon />}
+            </Box>
+          )}
+          <Box className="glass" p={4} borderRadius="xl">
+            <Grid templateColumns={{ base: '1fr', md: 'auto 1fr' }} gap={6} alignItems="center">
+              <HStack spacing={4} justify="center">
+                <AnimatedWeatherIcon weatherCode={current.weathercode} w={24} h={24} />
+                <Text fontSize="6xl" fontWeight="bold">
+                  {displayTemp(current.temperature, false)}
+                </Text>
+                <VStack align="stretch" justify="center" spacing={1}>
+                  {currentApparentTemperature !== undefined && (
+                    <Text>Feels like: {displayTemp(currentApparentTemperature, false)}</Text>
+                  )}
+                  {currentHumidity !== undefined && <Text>Humidity: {currentHumidity}%</Text>}
+                  <Text>Wind: {current.windspeed} km/h</Text>
+                  {airQuality?.us_aqi && (
+                    <Text>
+                      AQI: <Badge colorScheme={getAqiColor(airQuality.us_aqi)}>{airQuality.us_aqi}</Badge>
+                    </Text>
+                  )}
+                </VStack>
+              </HStack>
+              <VStack align="flex-end" justify="space-between" h="100%">
+                <ButtonGroup isAttached size="sm" variant="outline">
+                  <Tooltip label="Refresh weather" placement="top">
+                    <IconButton
+                      icon={<RepeatIcon />}
+                      onClick={() => {
+                        playSound('ui-click');
+                        fetchWeather();
+                      }}
+                      isLoading={isLoading}
+                      aria-label="Refresh weather"
+                    />
+                  </Tooltip>
+                  <Tooltip label="Open Sunrise/Sunset Calendar" placement="top">
+                    <IconButton
+                      icon={<CalendarIcon />}
+                      onClick={() => {
+                        playSound('ui-click');
+                        onCalendarOpen();
+                      }}
+                      aria-label="Open sunrise/sunset calendar"
+                    />
+                  </Tooltip>
+                  <Tooltip label="Open Weather Map" placement="top">
+                    <IconButton
+                      icon={<ViewIcon />}
+                      onClick={() => {
+                        playSound('ui-click');
+                        onMapOpen();
+                      }}
+                      aria-label="Open weather map"
+                    />
+                  </Tooltip>
+                </ButtonGroup>
+                <ButtonGroup isAttached size="sm">
+                  <Button
                     onClick={() => {
                       playSound('ui-click');
-                      fetchWeather();
+                      setUnit('C');
                     }}
-                    isLoading={isLoading}
-                    aria-label="Refresh weather"
-                  />
-                </Tooltip>
-                <Tooltip label="Open Sunrise/Sunset Calendar" placement="top">
-                  <IconButton
-                    icon={<CalendarIcon />}
+                    isActive={unit === 'C'}
+                  >
+                    °C
+                  </Button>
+                  <Button
                     onClick={() => {
                       playSound('ui-click');
-                      onCalendarOpen();
+                      setUnit('F');
                     }}
-                    aria-label="Open sunrise/sunset calendar"
-                  />
-                </Tooltip>
-                <Tooltip label="Open Weather Map" placement="top">
-                  <IconButton
-                    icon={<ViewIcon />}
-                    onClick={() => {
-                      playSound('ui-click');
-                      onMapOpen();
-                    }}
-                    aria-label="Open weather map"
-                  />
-                </Tooltip>
-              </ButtonGroup>
-              <ButtonGroup isAttached size="sm">
-                <Button
-                  onClick={() => {
-                    playSound('ui-click');
-                    setUnit('C');
-                  }}
-                  isActive={unit === 'C'}
-                >
-                  °C
-                </Button>
-                <Button
-                  onClick={() => {
-                    playSound('ui-click');
-                    setUnit('F');
-                  }}
-                  isActive={unit === 'F'}
-                >
-                  °F
-                </Button>
-              </ButtonGroup>
-            </VStack>
-          </Grid>
+                    isActive={unit === 'F'}
+                  >
+                    °F
+                  </Button>
+                </ButtonGroup>
+              </VStack>
+            </Grid>
+          </Box>
         </Box>
 
         {/* Hourly Forecast */}

@@ -1,10 +1,10 @@
 // src/hooks/useClockManager.js
 import { useState, useEffect } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
-const initialClocks = [
-  { id: 1, location: 'Naperville, USA', timeZone: 'America/Chicago', latitude: 41.7731, longitude: -88.1502 },
-  { id: 2, location: 'Chennai, India', timeZone: 'Asia/Kolkata', latitude: 13.0827, longitude: 80.2707 },
-];
+const initialClocks = [];
+// { id: 1, location: 'Naperville, USA', timeZone: 'America/Chicago', latitude: 41.7731, longitude: -88.1502 },
+// { id: 2, location: 'Chennai, India', timeZone: 'Asia/Kolkata', latitude: 13.0827, longitude: 80.2707 },
+
 
 export function useClockManager() {
   const [clocks, setClocks] = useState(() => {

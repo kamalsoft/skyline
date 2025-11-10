@@ -459,9 +459,9 @@ function AppContent() {
     return saved
       ? JSON.parse(saved)
       : {
-          showWeatherEffects: true, // clouds, rain, fog, etc.
-          showAmbientEffects: true, // stars, aurora
-        };
+        showWeatherEffects: true, // clouds, rain, fog, etc.
+        showAmbientEffects: true, // stars, aurora
+      };
   });
 
   const [displaySettings, setDisplaySettings] = useState(() => {
@@ -469,10 +469,10 @@ function AppContent() {
     return saved
       ? JSON.parse(saved)
       : {
-          showWorldClock: true,
-          showHourlyForecast: true,
-          showWeeklyForecast: true,
-        };
+        showWorldClock: true,
+        showHourlyForecast: true,
+        showWeeklyForecast: true,
+      };
   });
   const shakeControls = useAnimation();
   const handleLightningFlash = useCallback(() => {
