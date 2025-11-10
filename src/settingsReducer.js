@@ -1,4 +1,5 @@
 // src/settingsReducer.js
+import { arrayMove } from '@dnd-kit/sortable';
 
 export const initialState = {
     clocks: [],
@@ -37,10 +38,23 @@ export const settingsReducer = (state, action) => {
             return { ...state, clocks: [...state.clocks, action.payload] };
         case 'REMOVE_CLOCK':
             return { ...state, clocks: state.clocks.filter((clock) => clock.id !== action.payload) };
+        case 'REORDER_CLOCKS':
+            const { activeId, overId } = action.payload;
+            const oldIndex = state.clocks.findIndex((c) => c.id === activeId);
+            const newIndex = state.clocks.findIndex((c) => c.id === overId);
+            return { ...state, clocks: arrayMove(state.clocks, oldIndex, newIndex) };
         case 'REMOVE_ALL_CLOCKS':
             return { ...state, clocks: state.clocks.filter((c) => c.id === 'current-location') };
+        case 'UPDATE_CURRENT_LOCATION_WEATHER':
+            return {
+                ...state, clocks: state.clocks.map(c =>
+                    c.id === 'current-location' ? { ...c, weatherCode: action.payload } : c
+                )
+            };
         case 'SET_CLOCKS':
-            return { ...state, clocks: action.payload };
+            // Allow functional updates, e.g., dispatch({ type: 'SET_CLOCKS', payload: (prevClocks) => ... })
+            const newClocks = typeof action.payload === 'function' ? action.payload(state.clocks) : action.payload;
+            return { ...state, clocks: newClocks };
         case 'SET_THEME_PREFERENCE':
             return { ...state, themePreference: action.payload };
         case 'SET_BACKGROUND':

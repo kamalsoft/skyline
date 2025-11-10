@@ -131,10 +131,11 @@ function SettingsPanel({
           index={activeTab}
           onChange={(index) => setActiveTab(index)}
           flex="1"
-          display="flex"
-          flexDirection={{ base: 'column', md: 'row' }} // Control layout direction
+          display="flex" // Make Tabs a flex container
+          flexDirection={{ base: 'column', md: 'row' }} // Stack vertically on mobile, horizontally on desktop
+          overflow="hidden" // Prevent children from overflowing the Tabs container
         >
-
+          {/* TabList remains the same */}
           <TabList
             minW="150px"
             overflowY="auto"
@@ -187,13 +188,15 @@ function SettingsPanel({
               </Tab>
             </Tooltip>
           </TabList>
+
+          {/* TabPanels now correctly fills available space and scrolls */}
           <TabPanels
             overflowY="auto"
             sx={{
               '&::-webkit-scrollbar': { width: '4px' },
               '&::-webkit-scrollbar-thumb': { bg: 'gray.600', borderRadius: '24px' },
             }}
-            flex="1"
+            flex="1" // This makes it take up all available space
           >
             <TabPanel role="tabpanel" aria-labelledby="tab-general">
               {/* Components now get data from context, only pass down non-context functions */}

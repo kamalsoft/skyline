@@ -1,7 +1,6 @@
 // src/App.js
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  ChakraProvider,
+import { // Removed ChakraProvider
   Box,
   Grid,
   VStack,
@@ -14,10 +13,9 @@ import {
   useColorMode,
   Alert,
   AlertIcon,
-  AlertTitle,
-  CloseButton,
+  AlertTitle, // Kept for use
+  CloseButton, // Kept for use
   AlertDescription,
-  extendTheme,
   Tooltip,
 } from '@chakra-ui/react';
 import { MoonIcon, SunIcon, SettingsIcon, ViewIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
@@ -41,185 +39,40 @@ import SettingsPanel from './components/SettingsPanel';
 import WorldClockCard from './components/WorldClockCard';
 import SortableWorldClock from './components/SortableWorldClock';
 import { LogProvider } from './contexts/LogContext';
-import { useClockManager } from './useClockManager';
+import { useAppUI } from './useAppUI';
 import LogTerminal from './components/LogTerminal';
 import { generateWeatherAlerts } from './utils/alertUtils';
 import { SoundProvider, useSound } from './contexts/SoundContext';
-import { SettingsProvider } from './contexts/SettingsContext';
+import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios'; // For reverse geocoding
 
-const theme = extendTheme({
-  config: {
-    initialColorMode: 'dark',
-    useSystemColorMode: false,
-  },
-  colors: {
-    // New Vibrant Purple Palette
-    primaryPurple: '#7B61FF',
-    accentPink: '#FF6EC7',
-    deepViolet: '#5A4FCF',
-    lightLavender: '#E4D9FF',
-    softGray: '#F5F5F5',
-    darkGray: '#4A4A4A',
-
-    // Existing clock themes
-    metallic: {
-      // Copper theme
-      light: {
-        bg: 'linear-gradient(145deg, #d98752, #b87333)',
-        shadowLight: '#ffb87a',
-        shadowDark: '#a15e2c',
-        hands: '#4A4A4A',
-        numbers: '#333',
-        secondHand: '#FF0000',
-      },
-      dark: {
-        bg: 'linear-gradient(145deg, #b87333, #8c5829)',
-        shadowLight: '#d98752',
-        shadowDark: '#7a4f24',
-        hands: '#E0E0E0',
-        numbers: '#EEE',
-        secondHand: '#FF4500',
-      },
-    },
-    minimalist: {
-      light: {
-        bg: '#ffffff',
-        hands: '#333333',
-        secondHand: '#E53E3E', // red.500
-      },
-      dark: {
-        bg: '#1A202C', // gray.800
-        hands: '#E2E8F0', // gray.200
-        secondHand: '#FC8181', // red.300
-      },
-    },
-    ocean: {
-      light: {
-        bg: 'linear-gradient(145deg, #E4D9FF, #F5F5F5)',
-        shadowLight: '#ffffff',
-        shadowDark: '#c1b7d7',
-        hands: '#5A4FCF',
-        numbers: '#7B61FF',
-        secondHand: '#FF6EC7',
-      },
-      dark: {
-        bg: 'linear-gradient(145deg, #5A4FCF, #2c3e50)',
-        shadowLight: '#7c6be0',
-        shadowDark: '#382e7e',
-        hands: '#E4D9FF',
-        numbers: '#FFFFFF',
-        secondHand: '#FF6EC7',
-      },
-    },
-    cyberpunk: {
-      light: {
-        // A light mode variant for cyberpunk
-        bg: 'linear-gradient(145deg, #e0e0e0, #f5f5f5)',
-        shadowLight: '#ffffff',
-        shadowDark: '#c7c7c7',
-        hands: '#00ffff', // Cyan
-        numbers: '#ff00ff', // Magenta
-        secondHand: '#ffff00', // Yellow,
-        numberFontFamily: "'Orbitron', sans-serif",
-      },
-      dark: {
-        bg: 'linear-gradient(145deg, #0d0221, #241e4e)',
-        shadowLight: '#3a307b',
-        shadowDark: '#000000',
-        hands: '#00ffff', // Cyan
-        numbers: '#ff00ff', // Magenta
-        secondHand: '#ffff00', // Yellow,
-        numberFontFamily: "'Orbitron', sans-serif",
-      },
-    },
-  },
-  styles: {
-    global: (props) => ({
-      '.glass': {
-        bg: props.colorMode === 'dark' ? 'rgba(90, 79, 207, 0.25)' : 'rgba(228, 217, 255, 0.5)',
-        backdropFilter: 'blur(15px)',
-        borderWidth: '1px',
-        borderColor: props.colorMode === 'dark' ? 'rgba(228, 217, 255, 0.2)' : 'rgba(90, 79, 207, 0.3)',
-        boxShadow: props.colorMode === 'dark' ? '0 8px 20px rgba(0,0,0,0.3)' : `0 8px 20px rgba(90, 79, 207, 0.2)`,
-      },
-    }),
-  },
-  components: {
-    Drawer: { baseStyle: { dialog: { bg: 'transparent' } } }, // Merged Drawer and Button
-    Button: {
-      variants: {
-        ghost: (props) => ({
-          color: props.colorMode === 'dark' ? 'white' : 'primaryPurple',
-          _hover: {
-            bg: props.colorMode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(123, 97, 255, 0.1)',
-          },
-        }),
-      },
-    },
-    Tabs: {
-      variants: {
-        'vertical-glass': {
-          tablist: {
-            borderRight: '1px solid',
-            borderColor: 'whiteAlpha.300',
-          },
-          tab: {
-            justifyContent: 'flex-start',
-            borderLeft: '3px solid transparent',
-            _selected: {
-              color: 'accentPink',
-              bg: 'whiteAlpha.200',
-              borderColor: 'accentPink',
-            },
-          },
-        },
-      },
-    },
-  },
-});
-
 function AppContent() {
-  const {
-    clocks,
-    setClocks,
-    addClock,
-    removeClock,
-    removeAllClocks,
-    activeDragItem,
-    handleDragStart,
-    handleDragEnd,
-    handleDragCancel,
-  } = useClockManager();
+  const { settings, dispatch } = useSettings();
+  const { clocks, primaryLocation, displaySettings, timeFormat, clockTheme, background, animationSettings, themePreference } = settings;
 
   const { playSound } = useSound();
   const { colorMode, toggleColorMode, setColorMode } = useColorMode();
-  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
-  const [showLogTerminal, setShowLogTerminal] = useState(false);
+  const { showSettingsPanel, setShowSettingsPanel, showLogTerminal, setShowLogTerminal, isSidebarOpen, setIsSidebarOpen, isAnimationPaused, setIsAnimationPaused } = useAppUI();
+  const [activeDragItem, setActiveDragItem] = useState(null);
 
   const [currentLocationStatus, setCurrentLocationStatus] = useState('idle'); // 'idle', 'loading', 'success', 'error'
   const [currentLocationError, setCurrentLocationError] = useState(null);
-  const [primaryLocation, setPrimaryLocation] = useState(null);
   const [dailyForecast, setDailyForecast] = useState(null);
-
-  const [themePreference, setThemePreference] = useState(() => {
-    return localStorage.getItem('themePreference') || 'dark'; // 'light', 'dark', 'auto'
-  });
 
   // Centralized function to set the primary location and update the clocks list
   const setPrimaryLocationAndUpdateClocks = useCallback(
     (locationData) => {
-      setPrimaryLocation(locationData);
-
-      setClocks((prevClocks) => {
-        const otherClocks = prevClocks.filter((c) => c.id !== 'current-location');
-        return [locationData, ...otherClocks];
+      dispatch({ type: 'SET_PRIMARY_LOCATION', payload: locationData });
+      // Use a functional update to avoid depending on 'clocks' in the callback
+      dispatch({
+        type: 'SET_CLOCKS',
+        payload: (prevClocks) => [locationData, ...prevClocks.filter((c) => c.id !== 'current-location')],
       });
     },
-    [setClocks]
+    [dispatch] // Now only depends on dispatch, which is stable
   );
 
   useEffect(() => {
@@ -274,6 +127,23 @@ function AppContent() {
     },
   };
 
+  const handleDragStart = (event) => {
+    const { active } = event;
+    const item = clocks.find((clock) => clock.id === active.id);
+    setActiveDragItem(item);
+  };
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    setActiveDragItem(null);
+    if (over && active.id !== over.id) {
+      dispatch({ type: 'REORDER_CLOCKS', payload: { activeId: active.id, overId: over.id } });
+    }
+  };
+
+  const handleDragCancel = () => {
+    setActiveDragItem(null);
+  };
   const [dismissedAlerts, setDismissedAlerts] = useState([]);
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -404,77 +274,20 @@ function AppContent() {
     getLocation();
   }, [setPrimaryLocationAndUpdateClocks]); // Run once on mount
 
-  const [clockTheme, setClockTheme] = useState(() => {
-    return localStorage.getItem('clockTheme') || 'metallic';
-  });
-
-  const handleThemeChange = (newTheme) => {
-    setClockTheme(newTheme);
-    localStorage.setItem('clockTheme', newTheme);
-  };
-
-  const [timeFormat, setTimeFormat] = useState(() => {
-    return localStorage.getItem('timeFormat') || '12h'; // '12h' or '24h'
-  });
-
-  const handleTimeFormatChange = (newFormat) => {
-    setTimeFormat(newFormat);
-    localStorage.setItem('timeFormat', newFormat);
-  };
-
-  const [background, setBackground] = useState(() => {
-    const savedBg = localStorage.getItem('background');
-    return savedBg ? JSON.parse(savedBg) : { type: 'dynamic', value: '' };
-  });
-
-  const handleBackgroundChange = (newBackground) => {
-    setBackground(newBackground);
-    localStorage.setItem('background', JSON.stringify(newBackground));
-  };
-
-  const handleThemePreferenceChange = (newPreference) => {
-    setThemePreference(newPreference);
-    localStorage.setItem('themePreference', newPreference);
-  };
-
   const handleForecastFetch = useCallback((daily) => {
     setDailyForecast(daily);
   }, []);
 
   const handleWeatherFetch = useCallback(
     (weather) => {
-      setClocks((prevClocks) =>
-        prevClocks.map((c) => (c.id === 'current-location' ? { ...c, weatherCode: weather.weathercode } : c))
-      );
+      // Dispatch an action to update the clocks array in the context
+      dispatch({ type: 'UPDATE_CURRENT_LOCATION_WEATHER', payload: weather.weathercode });
     },
-    [setClocks]
-  ); // Correctly include setClocks
+    [dispatch] // dispatch is a stable function and won't cause re-renders
+  );
 
   const activeAlerts = weatherAlerts.filter((alert) => !dismissedAlerts.includes(alert.id));
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isAnimationPaused, setIsAnimationPaused] = useState(false);
-
-  const [animationSettings, setAnimationSettings] = useState(() => {
-    const saved = localStorage.getItem('animationSettings');
-    return saved
-      ? JSON.parse(saved)
-      : {
-        showWeatherEffects: true, // clouds, rain, fog, etc.
-        showAmbientEffects: true, // stars, aurora
-      };
-  });
-
-  const [displaySettings, setDisplaySettings] = useState(() => {
-    const saved = localStorage.getItem('displaySettings');
-    return saved
-      ? JSON.parse(saved)
-      : {
-        showWorldClock: true,
-        showHourlyForecast: true,
-        showWeeklyForecast: true,
-      };
-  });
   const shakeControls = useAnimation();
   const handleLightningFlash = useCallback(() => {
     const getRandomInt = (max) => Math.floor(Math.random() * (max * 2 + 1)) - max;
@@ -497,16 +310,6 @@ function AppContent() {
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const handleAnimationSettingsChange = (newSettings) => {
-    setAnimationSettings(newSettings);
-    localStorage.setItem('animationSettings', JSON.stringify(newSettings));
-  };
-
-  const handleDisplaySettingsChange = (newSettings) => {
-    setDisplaySettings(newSettings);
-    localStorage.setItem('displaySettings', JSON.stringify(newSettings));
   };
 
   return (
@@ -733,23 +536,6 @@ function AppContent() {
       <AnimatePresence>
         {showSettingsPanel && (
           <SettingsPanel
-            clocks={clocks}
-            addClock={addClock}
-            removeClock={removeClock}
-            removeAllClocks={removeAllClocks}
-            clockTheme={clockTheme}
-            onThemeChange={handleThemeChange}
-            timeFormat={timeFormat}
-            onTimeFormatChange={handleTimeFormatChange}
-            background={background}
-            onBackgroundChange={handleBackgroundChange}
-            setPrimaryLocation={setPrimaryLocationAndUpdateClocks}
-            themePreference={themePreference}
-            onThemePreferenceChange={handleThemePreferenceChange}
-            animationSettings={animationSettings}
-            onAnimationSettingsChange={handleAnimationSettingsChange}
-            displaySettings={displaySettings}
-            onDisplaySettingsChange={handleDisplaySettingsChange}
             onClose={() => setShowSettingsPanel(false)}
           />
         )}
@@ -760,15 +546,12 @@ function AppContent() {
 
 function App() {
   return (
-    // Ensure all providers wrap the single instance of AppContent
     <LogProvider> {/* LogProvider is typically at the top */}
       <SettingsProvider> {/* SettingsProvider should wrap the main app content */}
         <SoundProvider> {/* SoundProvider also needs to wrap the app content */}
-          <ChakraProvider theme={theme}> {/* ChakraProvider for UI styling */}
-            <ErrorBoundary> {/* ErrorBoundary to catch rendering errors */}
-              <AppContent /> {/* Your main application logic */}
-            </ErrorBoundary>
-          </ChakraProvider>
+          <ErrorBoundary>
+            <AppContent />
+          </ErrorBoundary>
         </SoundProvider>
       </SettingsProvider>
     </LogProvider>
