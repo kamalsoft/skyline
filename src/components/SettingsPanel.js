@@ -89,9 +89,10 @@ function SettingsPanel({
   return (
     <motion.div
       ref={panelRef}
-      initial={{ opacity: 0, scale: 0.9, x: -100 }}
-      animate={{ opacity: 1, scale: 1, x: 0 }}
-      exit={{ opacity: 0, scale: 0.9, x: -100 }}
+      initial={{ opacity: 0, x: -100 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -100 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       {...panelMotionProps}
       style={{
         position: 'fixed',

@@ -42,11 +42,42 @@ const colors = {
 const styles = {
     global: (props) => ({
         '.glass': {
-            bg: props.colorMode === 'dark' ? 'rgba(90, 79, 207, 0.25)' : 'rgba(228, 217, 255, 0.5)',
-            backdropFilter: 'blur(15px)',
-            borderWidth: '1px',
-            borderColor: props.colorMode === 'dark' ? 'rgba(228, 217, 255, 0.2)' : 'rgba(90, 79, 207, 0.3)',
-            boxShadow: props.colorMode === 'dark' ? '0 8px 20px rgba(0,0,0,0.3)' : `0 8px 20px rgba(90, 79, 207, 0.2)`,
+            // Base styles for the glass effect
+            bg: props.colorMode === 'dark' ? 'rgba(20, 15, 40, 0.5)' : 'rgba(255, 255, 255, 0.3)',
+            backdropFilter: 'blur(20px)',
+            boxShadow: 'lg',
+            position: 'relative',
+            overflow: 'hidden',
+            border: '1px solid',
+            borderColor: props.colorMode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+            transition: 'all 0.3s ease-in-out',
+
+            // The animated gradient border effect
+            _before: {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                borderRadius: 'inherit',
+                p: '1px',
+                bg: `linear-gradient(120deg, transparent, ${props.colorMode === 'dark' ? 'rgba(123, 97, 255, 0.5)' : 'rgba(123, 97, 255, 1)'}, transparent)`,
+                mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                maskComposite: 'exclude',
+                animation: 'shine 3s linear infinite',
+            },
+
+            // Subtle hover effect for interactivity
+            _hover: {
+                boxShadow: 'xl',
+                transform: 'scale(1.01)',
+            },
+        },
+        '@keyframes shine': {
+            'to': {
+                transform: 'translateX(100%)',
+            },
         },
     }),
 };

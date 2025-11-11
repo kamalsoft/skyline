@@ -275,7 +275,10 @@ function AnimatedBackground({
 
   // Motion values for interactive globe dragging
   const dragX = useMotionValue(0);
-  const rotateZ = useTransform(dragX, [-200, 200], [-360, 360], { clamp: false });
+  // The sun/moon's base rotation based on the time of day
+  const timeBasedRotate = useTransform(timeOfDay, [0, 1], [0, 360]);
+  // The final rotation is a sum of the time-based rotation and the user's drag interaction
+  const rotateZ = useTransform([timeBasedRotate, dragX], ([time, drag]) => time + drag);
 
   const { icon: MoonIcon, name: moonPhaseName, illumination } = getMoonPhaseInfo();
 
@@ -372,7 +375,7 @@ function AnimatedBackground({
             drag="x"
             dragConstraints={{ left: -200, right: 200 }}
             dragElastic={0.2}
-            style={{ x: dragX }} // Bind the motion value to the component's style
+            style={{ x: dragX }} // Bind the motion value to the component's style for dragging
           >
             <Tooltip label="Drag to spin the globe" placement="top" hasArrow>
               <Box cursor="grab" as="div"

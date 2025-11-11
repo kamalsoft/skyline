@@ -51,17 +51,15 @@ function SeasonalSunPath() {
 
     useEffect(() => {
         if (pathLength > 0) { // Only start animation after path length is measured
-            const animation = animate(orbitProgress, 1, {
-                duration: 30 * (1 - orbitProgress.get()), // Duration for the rest of the year
+            const animation = animate(orbitProgress, [orbitProgress.get(), 1, 0, orbitProgress.get()], {
+                duration: 60, // A longer, more graceful total animation loop
                 ease: 'linear',
-                onComplete: () => {
-                    orbitProgress.set(0); // Reset to the beginning
-                    animate(orbitProgress, 1, { duration: 30, ease: 'linear', repeat: Infinity });
-                },
+                repeat: Infinity,
+                times: [0, (1 - orbitProgress.get()), (1 - orbitProgress.get() + 0.001), 1] // Keyframe timing
             });
             return () => animation.stop();
         }
-    }, [pathLength, orbitProgress]);
+    }, [pathLength, orbitProgress]); // orbitProgress is stable, so this runs once
 
     const labelColor = useColorModeValue('gray.600', 'gray.400');
 

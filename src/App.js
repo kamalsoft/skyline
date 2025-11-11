@@ -522,6 +522,7 @@ function AppContent() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
+                  transition={{ type: 'spring', stiffness: 200, damping: 25 }}
                 >
                   <WeatherCard
                     latitude={primaryLocation.latitude}
@@ -536,7 +537,11 @@ function AppContent() {
                 </motion.div>
               )}
               {displaySettings.showSunPath && (
-                <motion.div key="sun-path" layout><SeasonalSunPath /></motion.div>
+                <motion.div
+                  key="sun-path"
+                  layout
+                  transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+                ><SeasonalSunPath /></motion.div>
               )}
             </AnimatePresence>
           </Box>

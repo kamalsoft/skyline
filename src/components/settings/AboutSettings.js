@@ -9,14 +9,11 @@ import {
   Grid,
   Tag,
   Link,
-  useColorModeValue,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 
 function AboutSettings({ onUpdateFound }) {
   const appVersion = process.env.REACT_APP_VERSION || '1.2.0'; // Fallback to package.json version
-  const bgColor = useColorModeValue('rgba(255, 255, 255, 0.1)', 'rgba(0, 0, 0, 0.1)');
-  const borderColor = useColorModeValue('rgba(255, 255, 255, 0.4)', 'rgba(255, 255, 255, 0.2)');
 
   return (
     <motion.div
@@ -24,17 +21,8 @@ function AboutSettings({ onUpdateFound }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <VStack
-        spacing={6}
-        align="stretch"
-        p={6}
-        bg={bgColor}
-        backdropFilter="blur(20px)"
-        border="1px solid"
-        borderColor={borderColor}
-        borderRadius="xl"
-        boxShadow="xl"
-      >
+      {/* This component now uses the global .glass style for consistency */}
+      <VStack spacing={6} align="stretch" p={6} className="glass" borderRadius="xl">
         <VStack spacing={2} align="center">
           <Heading size="lg">
             Skyline Weather

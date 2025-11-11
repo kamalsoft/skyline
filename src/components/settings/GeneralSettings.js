@@ -1,5 +1,5 @@
 // src/components/settings/GeneralSettings.js
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import {
   Box,
@@ -23,6 +23,7 @@ import {
   AlertDialogContent,
   AlertDialogOverlay,
   useDisclosure,
+  Divider,
   Grid,
   Tooltip,
 } from '@chakra-ui/react';
@@ -169,65 +170,70 @@ function GeneralSettings({ onClosePanel }) {
 
   return (
     <VStack spacing={6} align="stretch">
-      <Heading as="h3" size="md">
-        Application
-      </Heading>
-      <HStack justify="space-between" p={4} className="glass" borderRadius="md">
-        <Text fontWeight="bold">Check for updates on startup</Text>
-        <Switch
-          isChecked={appSettings.autoUpdateCheck}
-          onChange={(e) => dispatch({ type: 'SET_APP_SETTINGS', payload: { ...appSettings, autoUpdateCheck: e.target.checked } })}
-        />
-      </HStack>
-      <HStack justify="space-between" p={4} className="glass" borderRadius="md">
-        <Text fontWeight="bold">Enable AI Weather Summary</Text>
-        <Switch
-          isChecked={appSettings.enableAiSummary}
-          onChange={(e) => dispatch({ type: 'SET_APP_SETTINGS', payload: { ...appSettings, enableAiSummary: e.target.checked } })}
-        />
-      </HStack>
-
-      <Heading as="h3" size="md">
-        Primary Location
-      </Heading>
-      <FormControl>
-        <FormLabel htmlFor="location-search-input">Location Name</FormLabel>
-        <HStack>
-          <Input
-            id="location-search-input"
-            placeholder="e.g., Tokyo"
-            value={formData.location}
-            onChange={handleInputChange}
+      {/* --- Application Section --- */}
+      <VStack className="glass" p={4} borderRadius="lg" align="stretch" spacing={4}>
+        <Heading size="sm">Application</Heading>
+        <HStack justify="space-between">
+          <Text fontWeight="bold">Check for updates on startup</Text>
+          <Switch
+            isChecked={appSettings.autoUpdateCheck}
+            onChange={(e) => dispatch({ type: 'SET_APP_SETTINGS', payload: { ...appSettings, autoUpdateCheck: e.target.checked } })}
           />
-          {isLoading && <Spinner size="md" />}
         </HStack>
-      </FormControl>
-      {searchResults.length > 0 && !isLoading && (
-        <List spacing={2} mt={4} borderWidth="1px" borderRadius="md" p={2}>
-          {searchResults.map((result) => (
-            <Box key={result.id} p={3} borderWidth="1px" borderRadius="md" boxShadow="sm" role="group">
-              <VStack align="stretch">
-                <Text fontWeight="semibold">
-                  {result.name}, {result.admin1 ? `${result.admin1}, ` : ''}
-                  {result.country}
-                </Text>
-                <Text fontSize="sm" color="darkGray">
-                  Timezone: {result.timezone} | Lat: {result.latitude.toFixed(2)}, Lon: {result.longitude.toFixed(2)}
-                </Text>
-                <HStack mt={2}>
-                  <Button size="xs" colorScheme="blue" onClick={() => handleSetPrimary(result)}>
-                    Set as Primary
-                  </Button>
-                  <Button size="xs" onClick={() => selectLocation(result)}>
-                    Add to Clocks
-                  </Button>
-                </HStack>
-              </VStack>
-            </Box>
-          ))}
-        </List>
-      )}
-      <HStack justify="space-between" mb={4}>
+        <Divider />
+        <HStack justify="space-between">
+          <Text fontWeight="bold">Enable AI Weather Summary</Text>
+          <Switch
+            isChecked={appSettings.enableAiSummary}
+            onChange={(e) => dispatch({ type: 'SET_APP_SETTINGS', payload: { ...appSettings, enableAiSummary: e.target.checked } })}
+          />
+        </HStack>
+      </VStack>
+
+      {/* --- Location Section --- */}
+      <VStack className="glass" p={4} borderRadius="lg" align="stretch" spacing={4}>
+        <Heading size="sm">Primary Location & World Clocks</Heading>
+        <FormControl>
+          <FormLabel htmlFor="location-search-input">Search for a location</FormLabel>
+          <HStack>
+            <Input
+              id="location-search-input"
+              placeholder="e.g., Tokyo"
+              value={formData.location}
+              onChange={handleInputChange}
+            />
+            {isLoading && <Spinner size="md" />}
+          </HStack>
+        </FormControl>
+        {searchResults.length > 0 && !isLoading && (
+          <List spacing={2} mt={2}>
+            {searchResults.map((result) => (
+              <Box key={result.id} p={3} borderWidth="1px" borderRadius="md" role="group" _hover={{ bg: 'whiteAlpha.200' }}>
+                <VStack align="stretch">
+                  <Text fontWeight="semibold">
+                    {result.name}, {result.admin1 ? `${result.admin1}, ` : ''}
+                    {result.country}
+                  </Text>
+                  <Text fontSize="xs" color="gray.400">
+                    Timezone: {result.timezone}
+                  </Text>
+                  <HStack mt={2}>
+                    <Button size="xs" colorScheme="purple" onClick={() => handleSetPrimary(result)}>
+                      Set as Primary
+                    </Button>
+                    <Button size="xs" onClick={() => selectLocation(result)}>
+                      Add to Clocks
+                    </Button>
+                  </HStack>
+                </VStack>
+              </Box>
+            ))}
+          </List>
+        )}
+      </VStack>
+
+      {/* --- Manage Clocks Section --- */}
+      <VStack className="glass" p={4} borderRadius="lg" align="stretch" spacing={4}>
         <Heading as="h3" size="md" ref={manageClocksHeadingRef} tabIndex={-1}>
           Manage Clocks
         </Heading>
@@ -241,47 +247,49 @@ function GeneralSettings({ onClosePanel }) {
         >
           Delete All
         </Button>
-      </HStack>
-      <Grid templateColumns="repeat(auto-fill, minmax(150px, 1fr))" gap={4}>
-        {clocks.map((clock) => (
-          <Tooltip
-            key={clock.id}
-            label={
-              clock.id === 'current-location'
-                ? 'Primary location cannot be deleted here.'
-                : `Press 'Delete' key to remove ${clock.location}`
-            }
-          >
-            <VStack
-              p={3}
-              className="glass"
-              borderRadius="lg"
-              justify="space-between"
-              spacing={3}
-              tabIndex={clock.id === 'current-location' ? -1 : 0}
-              _focus={{ boxShadow: 'outline', outline: 'none' }}
-              onKeyDown={(e) => {
-                if (e.key === 'Delete' && clock.id !== 'current-location') {
-                  confirmDelete(clock.id);
-                }
-              }}
+        <Divider />
+        <Grid templateColumns="repeat(auto-fill, minmax(150px, 1fr))" gap={4}>
+          {clocks.map((clock) => (
+            <Tooltip
+              key={clock.id}
+              label={
+                clock.id === 'current-location'
+                  ? 'Primary location cannot be deleted here.'
+                  : `Press 'Delete' key to remove ${clock.location}`
+              }
             >
-              <Text textAlign="center" noOfLines={2} opacity={clock.id === 'current-location' ? 0.6 : 1}>
-                {clock.location}
-              </Text>
-              <IconButton
-                icon={<DeleteIcon />}
-                size="xs"
-                colorScheme="red"
-                variant="outline"
-                onClick={() => confirmDelete(clock.id)}
-                aria-label={`Delete ${clock.location}`}
-                isDisabled={clock.id === 'current-location'}
-              />
-            </VStack>
-          </Tooltip>
-        ))}
-      </Grid>
+              <VStack
+                p={3}
+                borderWidth="1px"
+                borderColor="whiteAlpha.300"
+                borderRadius="lg"
+                justify="space-between"
+                spacing={3}
+                tabIndex={clock.id === 'current-location' ? -1 : 0}
+                _focus={{ boxShadow: 'outline', outline: 'none' }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Delete' && clock.id !== 'current-location') {
+                    confirmDelete(clock.id);
+                  }
+                }}
+              >
+                <Text textAlign="center" noOfLines={2} opacity={clock.id === 'current-location' ? 0.6 : 1}>
+                  {clock.location}
+                </Text>
+                <IconButton
+                  icon={<DeleteIcon />}
+                  size="xs"
+                  colorScheme="red"
+                  variant="outline"
+                  onClick={() => confirmDelete(clock.id)}
+                  aria-label={`Delete ${clock.location}`}
+                  isDisabled={clock.id === 'current-location'}
+                />
+              </VStack>
+            </Tooltip>
+          ))}
+        </Grid>
+      </VStack>
 
       <AlertDialog isOpen={isAlertOpen} leastDestructiveRef={undefined} onClose={onAlertClose}>
         <AlertDialogOverlay>
