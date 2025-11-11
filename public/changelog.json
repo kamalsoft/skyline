@@ -1,5 +1,16 @@
 [
   {
+    "version": "1.1.0",
+    "date": "2025-11-11",
+    "changes": [
+      "Refactored state management to use React Context API for improved scalability.",
+      "Centralized all application styles and themes into a single `theme.js` file.",
+      "Implemented a fully responsive layout for mobile, tablet, and desktop views.",
+      "Fixed critical performance bugs causing infinite loops and UI flickering.",
+      "Redesigned modals and other components to match the application's 'glass' aesthetic."
+    ]
+  },
+  {
     "version": "1.0.0",
     "date": "2025-11-10",
     "changes": ["Initial release of Skyline Weather application."]

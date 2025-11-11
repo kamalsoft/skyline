@@ -179,6 +179,13 @@ function GeneralSettings({ onClosePanel }) {
           onChange={(e) => dispatch({ type: 'SET_APP_SETTINGS', payload: { ...appSettings, autoUpdateCheck: e.target.checked } })}
         />
       </HStack>
+      <HStack justify="space-between" p={4} className="glass" borderRadius="md">
+        <Text fontWeight="bold">Enable AI Weather Summary</Text>
+        <Switch
+          isChecked={appSettings.enableAiSummary}
+          onChange={(e) => dispatch({ type: 'SET_APP_SETTINGS', payload: { ...appSettings, enableAiSummary: e.target.checked } })}
+        />
+      </HStack>
 
       <Heading as="h3" size="md">
         Primary Location

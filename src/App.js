@@ -14,6 +14,14 @@ import { // Removed ChakraProvider
   Alert,
   AlertIcon,
   AlertTitle, // Kept for use
+  useBreakpointValue,
+  Drawer,
+  DrawerBody,
+  DrawerHeader,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerCloseButton,
+  useDisclosure,
   CloseButton, // Kept for use
   AlertDescription,
   Tooltip,
@@ -51,7 +59,9 @@ import axios from 'axios'; // For reverse geocoding
 
 function AppContent() {
   const { settings, dispatch } = useSettings();
-  const { clocks, primaryLocation, displaySettings, timeFormat, clockTheme, background, animationSettings, themePreference } = settings;
+
+  const { clocks, primaryLocation, displaySettings, timeFormat, clockTheme, background, animationSettings, themePreference, appSettings } = settings;
+  const { isOpen: isDrawerOpen, onOpen: onDrawerOpen, onClose: onDrawerClose } = useDisclosure();
 
   const { playSound } = useSound();
   const { colorMode, toggleColorMode, setColorMode } = useColorMode();
@@ -312,6 +322,11 @@ function AppContent() {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  const isMobile = useBreakpointValue({ base: true, md: false });
+
+  // Main grid layout that adapts based on sidebar visibility and screen size
+  const gridTemplateColumns = displaySettings.showWorldClock && !isMobile ? (isSidebarOpen ? '380px 1fr' : '80px 1fr') : '1fr';
+
   return (
     <Box p={5}>
       <AnimatedBackground
@@ -345,6 +360,17 @@ function AppContent() {
                 />
               </Tooltip>
             </motion.div>
+            {isMobile && displaySettings.showWorldClock && (
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <Tooltip label="Show World Clocks" placement="bottom">
+                  <IconButton
+                    onClick={onDrawerOpen}
+                    icon={<ChevronRightIcon />}
+                    aria-label="Show world clocks"
+                  />
+                </Tooltip>
+              </motion.div>
+            )}
             <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
               <IconButton
                 onClick={() => setShowLogTerminal(!showLogTerminal)}
@@ -408,12 +434,12 @@ function AppContent() {
 
       <motion.div animate={shakeControls}>
         <Grid
-          templateColumns={displaySettings.showWorldClock ? (isSidebarOpen ? '380px 1fr' : '80px 1fr') : '1fr'}
+          templateColumns={gridTemplateColumns}
           gap={6}
           transition="template-columns 0.3s ease-in-out"
         >
           {/* Sidebar Column */}
-          {displaySettings.showWorldClock && (
+          {displaySettings.showWorldClock && !isMobile && (
             <Box
               className="glass"
               borderRadius="xl"
@@ -476,6 +502,7 @@ function AppContent() {
                               clockTheme={clockTheme}
                               timeFormat={timeFormat}
                               isSidebarOpen={isSidebarOpen}
+                              appSettings={appSettings}
                             />
                           </motion.div>
                         ))}
@@ -489,6 +516,7 @@ function AppContent() {
                           clockTheme={clockTheme}
                           timeFormat={timeFormat}
                           isSidebarOpen={isSidebarOpen}
+                          appSettings={appSettings}
                         />
                       ) : null}
                     </DragOverlay>
@@ -525,6 +553,7 @@ function AppContent() {
                     onWeatherFetch={handleWeatherFetch}
                     timeFormat={timeFormat}
                     displaySettings={displaySettings}
+                    appSettings={appSettings}
                   />
                 </motion.div>
               )}
@@ -532,6 +561,66 @@ function AppContent() {
           </Box>
         </Grid>
       </motion.div>
+
+      {/* World Clock Drawer for Mobile */}
+      <Drawer isOpen={isDrawerOpen} placement="left" onClose={onDrawerClose} size="sm">
+        <DrawerOverlay />
+        <DrawerContent className="glass">
+          <DrawerCloseButton />
+          <DrawerHeader>World Clocks</DrawerHeader>
+          <DrawerBody
+            overflowY="auto"
+            sx={{
+              '&::-webkit-scrollbar': { width: '4px' },
+              '&::-webkit-scrollbar-thumb': { bg: 'gray.600', borderRadius: '24px' },
+            }}
+          >
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={(event) => {
+                playSound('ui-drag');
+                handleDragStart(event);
+                handleHapticFeedback();
+              }}
+              onDragEnd={(event) => {
+                playSound('ui-drop');
+                handleDragEnd(event);
+              }}
+              onDragOver={() => playSound('ui-click')}
+              onDragCancel={handleDragCancel}
+              announcements={customAnnouncements}
+              accessibility={{
+                screenReaderInstructions: defaultScreenReaderInstructions,
+              }}
+            >
+              <SortableContext items={clocks.map((c) => String(c.id))} strategy={rectSortingStrategy}>
+                <VStack spacing={4} align="stretch">
+                  <AnimatePresence>
+                    {clocks.map((clock) => (
+                      <motion.div
+                        key={clock.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                      >
+                        <SortableWorldClock clock={clock} clockTheme={clockTheme} timeFormat={timeFormat} isSidebarOpen={true} appSettings={appSettings} />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </VStack>
+                <DragOverlay>
+                  {activeDragItem ? (
+                    <WorldClockCard clock={activeDragItem} isDragging clockTheme={clockTheme} timeFormat={timeFormat} isSidebarOpen={true} appSettings={appSettings} />
+                  ) : null}
+                </DragOverlay>
+              </SortableContext>
+            </DndContext>
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
+
       <AnimatePresence>{showLogTerminal && <LogTerminal />}</AnimatePresence>
       <AnimatePresence>
         {showSettingsPanel && (
