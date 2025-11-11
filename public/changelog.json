@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.2.0",
+    "date": "2025-11-11",
+    "changes": [
+      "Added a new 'Weather History' feature.",
+      "Users can now select a date range to view historical weather data.",
+      "Historical data is displayed in an interactive chart, visualizing temperature ranges and precipitation."
+    ]
+  },
+  {
     "version": "1.1.0",
     "date": "2025-11-11",
     "changes": [
