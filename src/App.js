@@ -5,6 +5,7 @@ import { // Removed ChakraProvider
   Grid,
   VStack,
   HStack,
+  Flex,
   Button,
   Heading,
   Text,
@@ -22,11 +23,12 @@ import { // Removed ChakraProvider
   DrawerContent,
   DrawerCloseButton,
   useDisclosure,
+  Link,
   CloseButton, // Kept for use
   AlertDescription,
   Tooltip,
 } from '@chakra-ui/react';
-import { MoonIcon, SunIcon, SettingsIcon, ViewIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
+import { SettingsIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import {
   DndContext,
   closestCenter,
@@ -39,7 +41,6 @@ import {
 } from '@dnd-kit/core';
 import { DragOverlay } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, rectSortingStrategy } from '@dnd-kit/sortable';
-import { FaPlay, FaPause } from 'react-icons/fa';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import AnimatedBackground from './components/AnimatedBackground';
 import WeatherCard from './components/WeatherCard';
@@ -65,8 +66,8 @@ function AppContent() {
   const { isOpen: isDrawerOpen, onOpen: onDrawerOpen, onClose: onDrawerClose } = useDisclosure();
 
   const { playSound } = useSound();
-  const { colorMode, toggleColorMode, setColorMode } = useColorMode();
-  const { showSettingsPanel, setShowSettingsPanel, showLogTerminal, setShowLogTerminal, isSidebarOpen, setIsSidebarOpen, isAnimationPaused, setIsAnimationPaused } = useAppUI();
+  const { setColorMode } = useColorMode();
+  const { showSettingsPanel, setShowSettingsPanel, showLogTerminal, isSidebarOpen, setIsSidebarOpen, isAnimationPaused } = useAppUI();
   const [activeDragItem, setActiveDragItem] = useState(null);
 
   const [currentLocationStatus, setCurrentLocationStatus] = useState('idle'); // 'idle', 'loading', 'success', 'error'
@@ -339,72 +340,34 @@ function AppContent() {
         animationSettings={animationSettings}
         onLightningFlash={handleLightningFlash}
       />
-      {/* The header controls are now in a draggable motion.div */}
-      <motion.div
-        drag
-        dragMomentum={false} // Prevents it from sliding after drag
-        style={{
-          position: 'fixed', // Use fixed positioning to float above everything
-          top: '20px',
-          right: '20px',
-          zIndex: 1300, // Ensure it's above background but below modals
-          cursor: 'grab',
-        }}
-        whileDrag={{ cursor: 'grabbing', scale: 1.05 }}
-      >
-        {/* The HStack with the glass effect contains the actual buttons */}
-        <HStack justify="flex-end" position="relative">
-          <HStack className="glass" p={2} borderRadius="md">
-            <Tooltip label={themePreference === 'auto' ? 'Theme is in Auto mode' : 'Toggle theme'}>
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                <IconButton
-                  onClick={toggleColorMode}
-                  icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
-                  aria-label="Toggle theme"
-                  isDisabled={themePreference === 'auto'}
-                />
-              </motion.div>
-            </Tooltip>
-            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <Tooltip label={isAnimationPaused ? 'Resume Animations' : 'Pause Animations'} placement="bottom">
-                <IconButton
-                  onClick={() => setIsAnimationPaused(!isAnimationPaused)}
-                  icon={isAnimationPaused ? <FaPlay /> : <FaPause />}
-                  aria-label="Toggle animations"
-                />
-              </Tooltip>
-            </motion.div>
-            {isMobile && displaySettings.showWorldClock && (
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                <Tooltip label="Show World Clocks" placement="bottom">
-                  <IconButton
-                    onClick={onDrawerOpen}
-                    icon={<ChevronRightIcon />}
-                    aria-label="Show world clocks"
-                  />
-                </Tooltip>
-              </motion.div>
-            )}
-            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <IconButton
-                onClick={() => setShowLogTerminal(!showLogTerminal)}
-                icon={<ViewIcon />}
-                aria-label="Toggle Log Terminal"
-                variant={showLogTerminal ? 'solid' : 'ghost'}
-              />
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <Button
-                leftIcon={<SettingsIcon />}
-                colorScheme="teal"
-                variant="ghost"
-                onClick={() => setShowSettingsPanel(!showSettingsPanel)}
-              >
-                Settings
-              </Button>
-            </motion.div>
-          </HStack>
-        </HStack>
+      {/* Mobile-only button to open the World Clock Drawer */}
+      {isMobile && displaySettings.showWorldClock && (
+        <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} style={{ position: 'fixed', top: '20px', left: '20px', zIndex: 1300 }}>
+          <Tooltip label="Show World Clocks" placement="bottom">
+            <IconButton
+              onClick={onDrawerOpen}
+              icon={<ChevronRightIcon />}
+              aria-label="Show world clocks"
+              className="glass"
+            />
+          </Tooltip>
+        </motion.div>
+      )}
+
+      {/* New Floating Settings Button */}
+      <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 1300 }}>
+        <Tooltip label="Settings" placement="left" hasArrow>
+          <IconButton
+            icon={<SettingsIcon />}
+            isRound
+            size="lg"
+            colorScheme="purple"
+            className="glass"
+            onClick={() => setShowSettingsPanel(true)}
+            aria-label="Open Settings"
+            boxShadow="lg"
+          />
+        </Tooltip>
       </motion.div>
 
       {currentLocationStatus === 'loading' && (
@@ -649,29 +612,40 @@ function AppContent() {
       </AnimatePresence>
 
       {/* Footer Section */}
-      <Box
-        as="footer"
-        py={4}
-        px={isMobile ? 2 : 4}
-        mt={6}
-        bg="rgba(0,0,0,0.2)" // Subtle background for contrast
-        color="gray.400"
-        fontSize="xs"
-        textAlign="center"
-        borderRadius="md"
-      >
-        <Text mb={1}>
-          &copy; {new Date().getFullYear()} Skyline Weather Dashboard. All rights reserved.
-        </Text>
-        <Text mb={1}>
-          This application is developed strictly for **educational purposes** and demonstration of modern web technologies.
-        </Text>
-        <Text mb={1}>
-          It contains no commercial elements, advertisements, or user tracking. Weather data is sourced from Open-Meteo.
-        </Text>
-        <Text>
-          Usage is intended for personal learning and exploration of weather data visualization.
-        </Text>
+      <Box as="footer" mt={4} px={4} py={2}>
+        <Flex
+          className="glass"
+          p={{ base: 3, md: 4 }}
+          borderRadius="xl"
+          direction={{ base: 'column', md: 'row' }}
+          align={{ base: 'center', md: 'start' }}
+          justify="space-between"
+          gap={{ base: 3, md: 4 }}
+        >
+          <VStack align={{ base: 'center', md: 'start' }} spacing={1} color="gray.300" fontSize="xs">
+            <Text fontWeight="bold">
+              &copy; {new Date().getFullYear()} Skyline Weather Dashboard
+            </Text>
+            <Text>
+              Ideas & Concept by{' '}
+              <Link href="https://www.linkedin.com/in/kamalesh-k-9a5b3b1b/" isExternal color="purple.300" fontWeight="bold">
+                Kamalesh
+              </Link>
+            </Text>
+            <Text mt={2} fontSize="2xs" color="gray.500" maxW="lg" textAlign={{ base: 'center', md: 'left' }}>
+              This application is for educational and demonstration purposes only. It contains no commercial elements or user tracking.
+            </Text>
+          </VStack>
+
+          <VStack align={{ base: 'center', md: 'end' }} spacing={2} color="gray.400" fontSize="xs">
+            <Text fontWeight="bold">Powered By</Text>
+            <HStack>
+              <Link href="https://open-meteo.com/" isExternal color="teal.300">Open-Meteo</Link>
+              <Text>&</Text>
+              <Link href="https://www.bigdatacloud.com/" isExternal color="teal.300">BigDataCloud</Link>
+            </HStack>
+          </VStack>
+        </Flex>
       </Box>
     </Box>
   );

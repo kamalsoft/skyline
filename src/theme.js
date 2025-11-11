@@ -1,6 +1,11 @@
 // src/theme.js
 import { extendTheme } from '@chakra-ui/react';
 
+const fonts = {
+    heading: "'Poppins', sans-serif",
+    body: "'Poppins', sans-serif",
+};
+
 const config = {
     initialColorMode: 'dark',
     useSystemColorMode: false,
@@ -47,6 +52,12 @@ const styles = {
 };
 
 const components = {
+    Heading: {
+        baseStyle: {
+            fontWeight: '600', // A modern, semi-bold weight for headings
+            letterSpacing: 'tight', // Slightly tighter letter spacing for a clean look
+        },
+    },
     Drawer: { baseStyle: { dialog: { bg: 'transparent' } } },
     Button: {
         variants: {
@@ -93,6 +104,6 @@ const components = {
     },
 };
 
-const theme = extendTheme({ config, colors, styles, components });
+const theme = extendTheme({ config, fonts, colors, styles, components });
 
 export default theme;

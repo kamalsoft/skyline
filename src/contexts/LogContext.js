@@ -91,7 +91,8 @@ export const LogProvider = ({ children }) => {
       const message = args
         .map((arg) => (typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)))
         .join(' ');
-      addLog(message, 'info', getLogSource());
+      // Defer state update to avoid running during another component's render cycle
+      setTimeout(() => addLog(message, 'info', getLogSource()), 0);
     };
 
     console.warn = (...args) => {
@@ -99,7 +100,7 @@ export const LogProvider = ({ children }) => {
       const message = args
         .map((arg) => (typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)))
         .join(' ');
-      addLog(message, 'warn', getLogSource());
+      setTimeout(() => addLog(message, 'warn', getLogSource()), 0);
     };
 
     console.error = (...args) => {
@@ -111,7 +112,7 @@ export const LogProvider = ({ children }) => {
           return typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg);
         })
         .join(' ');
-      addLog(message, 'error', getLogSource());
+      setTimeout(() => addLog(message, 'error', getLogSource()), 0);
     };
 
     addLog('Log terminal initialized.', 'info');
