@@ -1,10 +1,10 @@
 // src/components/WorldClockCard.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Box, HStack, VStack, Text, Spinner, IconButton, Tooltip, Icon } from '@chakra-ui/react';
+import { Box, HStack, VStack, Text, IconButton, Tooltip, Icon } from '@chakra-ui/react';
 import { WiDaySunny, WiNightClear } from 'react-icons/wi';
-import { FaClock, FaDigitalTachograph } from 'react-icons/fa';
+import { FaClock, FaDigitalTachograph, FaThermometerHalf } from 'react-icons/fa';
 import DigitalClock from './DigitalClock';
 import AnalogClock from './AnalogClock';
 import { useWorldClock } from '../hooks/useWorldClock';
@@ -17,43 +17,34 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOp
   const [isAnalog, setIsAnalog] = useState(false);
   const { playSound } = useSound();
   const [weather, setWeather] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [isDay, setIsDay] = useState(true);
   const [sunTimes, setSunTimes] = useState({ sunrise: null, sunset: null });
 
-  useEffect(() => {
-    const fetchWeather = async () => {
-      console.log(`[WorldClockCard] Fetching weather for: ${clock.location}`);
-      if (!clock.latitude || !clock.longitude) return;
-      setLoading(true);
-      try {
-        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${clock.latitude}&longitude=${clock.longitude}&current=temperature_2m,weather_code&daily=sunrise,sunset&forecast_days=1&timezone=${clock.timeZone}`;
-        const response = await axios.get(
-          apiUrl
-        );
-        const data = response.data;
-        console.log(`[WorldClockCard] API Response for ${clock.location}:`, data);
-        setWeather(data.current);
+  const fetchWeather = useCallback(async () => {
+    console.log(`[WorldClockCard] Fetching weather for: ${clock.location}`);
+    if (!clock.latitude || !clock.longitude) return;
+    try {
+      const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${clock.latitude}&longitude=${clock.longitude}&current=temperature_2m,weather_code&daily=sunrise,sunset&forecast_days=1&timezone=${clock.timeZone}`;
+      const response = await axios.get(apiUrl);
+      const data = response.data;
+      setWeather(data.current);
 
-        if (data.daily && data.daily.sunrise && data.daily.sunset) {
-          const sunriseDate = new Date(data.daily.sunrise[0]);
-          const sunsetDate = new Date(data.daily.sunset[0]);
-          setSunTimes({ sunrise: sunriseDate, sunset: sunsetDate });
-        }
-      } catch (error) {
-        console.error(`[WorldClockCard] Failed to fetch weather for ${clock.location}:`, error);
-      } finally {
-        setLoading(false);
+      if (data.daily && data.daily.sunrise && data.daily.sunset) {
+        const sunriseDate = new Date(data.daily.sunrise[0]);
+        const sunsetDate = new Date(data.daily.sunset[0]);
+        setSunTimes({ sunrise: sunriseDate, sunset: sunsetDate });
       }
-    };
+    } catch (error) {
+      console.error(`[WorldClockCard] Failed to fetch weather for ${clock.location}:`, error);
+    }
+  }, [clock.latitude, clock.longitude, clock.timeZone, clock.location]);
 
+  useEffect(() => {
     fetchWeather();
 
     // Get refresh interval from settings, default to 10 minutes
     const refreshIntervalMinutes = appSettings?.weatherRefreshInterval || 10;
     const refreshIntervalMs = refreshIntervalMinutes * 60 * 1000;
-
-    console.log(`[WorldClockCard] Setting weather refresh interval for ${clock.location} to ${refreshIntervalMinutes} minutes (${refreshIntervalMs}ms).`);
 
     // Refresh weather using the interval from settings
     const intervalId = setInterval(fetchWeather, refreshIntervalMs);
@@ -61,7 +52,7 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOp
     return () => {
       clearInterval(intervalId);
     };
-  }, [clock.latitude, clock.longitude, clock.timeZone, clock.location, appSettings]);
+  }, [fetchWeather, appSettings?.weatherRefreshInterval]);
 
   useEffect(() => {
     if (sunTimes.sunrise && sunTimes.sunset) {
@@ -69,9 +60,8 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOp
       const now = new Date();
       const isCurrentlyDay = now > sunTimes.sunrise && now < sunTimes.sunset;
       setIsDay(isCurrentlyDay);
-      console.log(`[WorldClockCard] Is it day in ${clock.location}? ${isCurrentlyDay}`);
     }
-  }, [sunTimes, clock.location]); // Removed `time` from the dependency array
+  }, [sunTimes, clock.location]);
 
   const timeOptions = {
     hour: 'numeric',
@@ -141,15 +131,13 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOp
               </VStack>
               {isAnalog ? (
                 <AnalogClock time={time} clockTheme={clockTheme} />
-              ) : loading ? (
-                <Spinner size="md" />
               ) : weather ? (
                 <HStack>
                   <Text fontSize="2xl" fontWeight="bold">
                     {Math.round(weather.temperature_2m)}°C
                   </Text>
                   <Tooltip label={getWeatherDescription(weather.weather_code)} placement="top">
-                    <Box w={10} h={10}>
+                    <Box w={10} h={10} position="relative">
                       <AnimatedWeatherIcon weatherCode={weather.weather_code} w={10} h={10} />
                     </Box>
                   </Tooltip>
@@ -164,13 +152,18 @@ function WorldClockCard({ clock, isDragging, clockTheme, timeFormat, isSidebarOp
             label={`${clock.location} - ${time.format(timeFormat === '12h' ? 'h:mm A' : 'HH:mm')}`}
             placement="right"
           >
-            <HStack className="glass" p={3} borderRadius="xl" justify="center" spacing={4}>
-              <motion.div whileHover={{ scale: 1.2 }}>
-                <Box>
-                  <Icon as={isDay ? WiDaySunny : WiNightClear} boxSize="24px" color={isDay ? 'yellow.400' : 'gray.300'} />
-                </Box>
-              </motion.div>
-            </HStack>
+            <VStack className="glass" p={3} borderRadius="xl" justify="center" spacing={2} w="64px">
+              <Text fontSize="2xs" fontWeight="bold" noOfLines={1}>{clock.countryCode}</Text>
+              <Text fontSize="sm" fontWeight="bold">{time.format('HH:mm')}</Text>
+              {weather ? (
+                <HStack spacing={1} align="center">
+                  <Icon as={FaThermometerHalf} boxSize="12px" color="gray.400" />
+                  <Text fontSize="xs">{Math.round(weather.temperature_2m)}°</Text>
+                </HStack>
+              ) : (
+                <HStack spacing={1} align="center" h="18px" />
+              )}
+            </VStack>
           </Tooltip>
         </motion.div>
       )}

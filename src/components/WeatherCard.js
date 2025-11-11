@@ -629,7 +629,7 @@ function WeatherCard({
       />
       <Modal isOpen={isCalendarOpen} onClose={onCalendarClose} size="2xl">
         <ModalOverlay />
-        <ModalContent>
+        <ModalContent className="glass">
           <ModalHeader>Sunrise & Sunset Calendar</ModalHeader>
           <ModalCloseButton />
           <ModalBody>

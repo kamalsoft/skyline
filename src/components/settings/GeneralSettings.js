@@ -54,6 +54,11 @@ function GeneralSettings({ onClosePanel }) {
     onOpen: onDeleteAllAlertOpen,
     onClose: onDeleteAllAlertClose,
   } = useDisclosure();
+  const {
+    isOpen: isResetAlertOpen,
+    onOpen: onResetAlertOpen,
+    onClose: onResetAlertClose,
+  } = useDisclosure();
   const [clockToDelete, setClockToDelete] = useState(null);
   const [clockToAdd, setClockToAdd] = useState(null); // State to hold the clock when confirming a duplicate
   const [isDeletingAll, setIsDeletingAll] = useState(false);
@@ -187,6 +192,13 @@ function GeneralSettings({ onClosePanel }) {
             isChecked={appSettings.enableAiSummary}
             onChange={(e) => dispatch({ type: 'SET_APP_SETTINGS', payload: { ...appSettings, enableAiSummary: e.target.checked } })}
           />
+        </HStack>
+        <Divider />
+        <HStack justify="space-between">
+          <Text fontWeight="bold">Reset All Settings</Text>
+          <Button size="xs" colorScheme="orange" variant="outline" onClick={onResetAlertOpen}>
+            Reset to Defaults
+          </Button>
         </HStack>
       </VStack>
 
@@ -350,6 +362,25 @@ function GeneralSettings({ onClosePanel }) {
               <Button onClick={onDeleteAllAlertClose}>Cancel</Button>
               <Button colorScheme="red" onClick={executeDeleteAll} ml={3}>
                 Delete All
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
+
+      <AlertDialog isOpen={isResetAlertOpen} leastDestructiveRef={undefined} onClose={onResetAlertClose}>
+        <AlertDialogOverlay>
+          <AlertDialogContent className="glass">
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              <HStack>
+                <WarningTwoIcon color="orange.500" /> <Text>Reset All Settings?</Text>
+              </HStack>
+            </AlertDialogHeader>
+            <AlertDialogBody>This will reset all appearance, layout, and application settings to their original defaults. Your saved clocks will not be affected.</AlertDialogBody>
+            <AlertDialogFooter>
+              <Button onClick={onResetAlertClose}>Cancel</Button>
+              <Button colorScheme="orange" onClick={() => { dispatch({ type: 'RESET_TO_DEFAULTS' }); onResetAlertClose(); }} ml={3}>
+                Reset Settings
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>

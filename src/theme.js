@@ -71,9 +71,10 @@ const styles = {
             // Subtle hover effect for interactivity
             _hover: {
                 boxShadow: 'xl',
-                transform: 'scale(1.01)',
+                transform: 'translateY(-2px) scale(1.01)',
             },
         },
+        // Keyframes should be defined at the global level, as a sibling to other global styles
         '@keyframes shine': {
             'to': {
                 transform: 'translateX(100%)',

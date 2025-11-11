@@ -1,112 +1,169 @@
 // src/components/SunCalendar.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Box, Heading, Grid, Text, HStack, IconButton, Spinner, VStack } from '@chakra-ui/react';
+import {
+  Box,
+  VStack,
+  HStack,
+  Text,
+  Grid,
+  IconButton,
+  Heading,
+  Icon,
+  Spinner,
+  Alert,
+  AlertIcon,
+  useColorModeValue,
+} from '@chakra-ui/react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import { WiSunrise, WiSunset } from 'react-icons/wi';
+import dayjs from 'dayjs';
 
 function SunCalendar({ latitude, longitude }) {
-  const [date, setDate] = useState(new Date());
-  const [sunData, setSunData] = useState([]);
+  const [currentMonth, setCurrentMonth] = useState(dayjs());
+  const [calendarData, setCalendarData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [firstDayOfMonth, setFirstDayOfMonth] = useState(0);
+  const [error, setError] = useState(null);
+
+  // Define color mode value at the top level to adhere to the Rules of Hooks
+  const dayLengthBg = useColorModeValue('blackAlpha.200', 'whiteAlpha.200');
 
   useEffect(() => {
-    const fetchSunData = async () => {
+    const fetchCalendarData = async () => {
       setLoading(true);
-      const year = date.getFullYear();
-      const month = date.getMonth();
-      const startDate = new Date(year, month, 1).toISOString().split('T')[0];
-      const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
-      setFirstDayOfMonth(new Date(year, month, 1).getDay());
+      setError(null);
 
       try {
-        const response = await axios.get(
-          `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=sunrise,sunset&start_date=${startDate}&end_date=${endDate}&timezone=auto`
-        );
-        setSunData(response.data.daily);
-      } catch (error) {
-        console.error('Error fetching sunrise/sunset data:', error);
+        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=sunrise,sunset&timezone=auto`;
+        const response = await axios.get(apiUrl);
+
+        if (response.data && response.data.daily) {
+          const { time, sunrise, sunset } = response.data.daily;
+          const processedData = time.map((t, i) => {
+            const day = dayjs(t);
+            const sunriseTime = dayjs(sunrise[i]);
+            const sunsetTime = dayjs(sunset[i]);
+            const dayLength = sunsetTime.diff(sunriseTime, 'minute');
+            return {
+              date: day,
+              sunrise: sunriseTime.format('h:mm A'),
+              sunset: sunsetTime.format('h:mm A'),
+              dayLength,
+            };
+          });
+          setCalendarData(processedData);
+        } else {
+          throw new Error('No data returned from API.');
+        }
+      } catch (err) {
+        console.error('Failed to fetch sun calendar data:', err);
+        setError('Could not retrieve calendar data. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchSunData();
-  }, [date, latitude, longitude]);
+    fetchCalendarData();
+  }, [currentMonth, latitude, longitude]);
 
-  const changeMonth = (offset) => {
-    setDate((prevDate) => {
-      const newDate = new Date(prevDate);
-      newDate.setMonth(newDate.getMonth() + offset);
-      return newDate;
-    });
-  };
+  const handlePrevMonth = () => setCurrentMonth(currentMonth.subtract(1, 'month'));
+  const handleNextMonth = () => setCurrentMonth(currentMonth.add(1, 'month'));
+  const isNextMonthDisabled = currentMonth.isAfter(dayjs(), 'month');
 
-  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const today = dayjs().format('YYYY-MM-DD');
+  const dayLengthMin = Math.min(...calendarData.map(d => d.dayLength), 24 * 60);
+  const dayLengthMax = Math.max(...calendarData.map(d => d.dayLength), 0);
 
-  const today = new Date();
+  // --- Generate full calendar grid including placeholder days ---
+  const firstDayOfMonth = currentMonth.startOf('month').day();
+
+  const calendarGrid = [];
+
+  // Add placeholders for previous month
+  for (let i = 0; i < firstDayOfMonth; i++) {
+    calendarGrid.push({ placeholder: true, id: `prev-${i}` });
+  }
+
+  // Add actual days of the month
+  calendarData.forEach(day => {
+    calendarGrid.push({ ...day, id: day.date.toString() });
+  });
+  // --- End of grid generation ---
 
   return (
-    <Box p={4}>
-      <HStack justify="space-between" mb={4}>
-        <IconButton icon={<ChevronLeftIcon />} onClick={() => changeMonth(-1)} aria-label="Previous month" />
-        <Heading size="md">{date.toLocaleString('default', { month: 'long', year: 'numeric' })}</Heading>
-        <IconButton icon={<ChevronRightIcon />} onClick={() => changeMonth(1)} aria-label="Next month" />
+    <VStack spacing={4} align="stretch">
+      <HStack justify="space-between" align="center">
+        <IconButton icon={<ChevronLeftIcon />} onClick={handlePrevMonth} aria-label="Previous month" variant="ghost" />
+        <Heading size="md">{currentMonth.format('MMMM YYYY')}</Heading>
+        <IconButton icon={<ChevronRightIcon />} onClick={handleNextMonth} aria-label="Next month" variant="ghost" isDisabled={isNextMonthDisabled} />
       </HStack>
-      {loading ? (
-        <VStack justify="center" minH="200px">
+
+      {loading && (
+        <HStack justify="center" p={10}>
           <Spinner />
-        </VStack>
-      ) : (
-        <Grid templateColumns="repeat(7, 1fr)" gap={2}>
-          {weekdays.map((day) => (
-            <Text key={day} fontWeight="bold" textAlign="center" fontSize="sm">
-              {day}
-            </Text>
-          ))}
-          {/* Render empty boxes for days before the 1st of the month */}
-          {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-            <Box key={`empty-${i}`} />
-          ))}
-          {sunData.time &&
-            sunData.time.map((day, index) => {
-              const dayDate = new Date(day);
-              const isToday =
-                dayDate.getFullYear() === today.getFullYear() &&
-                dayDate.getMonth() === today.getMonth() &&
-                dayDate.getDate() === today.getDate();
+          <Text>Loading calendar...</Text>
+        </HStack>
+      )}
+      {error && (
+        <Alert status="error" borderRadius="md">
+          <AlertIcon />
+          {error}
+        </Alert>
+      )}
+
+      {!loading && !error && (
+        <>
+          {/* Weekday Headers */}
+          <Grid templateColumns="repeat(7, 1fr)" gap={2} textAlign="center" fontWeight="bold" color="gray.500">
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
+              <Text key={day}>{day}</Text>
+            ))}
+          </Grid>
+
+          <Grid templateColumns={{ base: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(7, 1fr)' }} gap={3}>
+            {calendarGrid.map((day) => {
+              if (day.placeholder) {
+                return <Box key={day.id} />;
+              }
+
+              const isToday = day.date.format('YYYY-MM-DD') === today;
+              const dayLengthPercent = ((day.dayLength - dayLengthMin) / (dayLengthMax - dayLengthMin)) * 100;
+
               return (
                 <VStack
-                  key={day}
-                  p={2}
+                  key={day.id}
                   className="glass"
+                  p={3}
                   borderRadius="lg"
-                  spacing={1}
+                  align="stretch"
+                  spacing={2}
                   border={isToday ? '2px solid' : '1px solid'}
-                  borderColor={isToday ? 'accentPink' : 'transparent'}
+                  borderColor={isToday ? 'purple.300' : 'transparent'}
+                  boxShadow={isToday ? '0 0 15px rgba(123, 97, 255, 0.5)' : 'md'}
                 >
-                  <Text fontWeight="bold" fontSize="md">
-                    {dayDate.getDate()}
+                  <Text fontWeight="bold" fontSize="sm" textAlign="center" color={isToday ? 'purple.300' : 'inherit'}>
+                    {day.date.format('D')}
                   </Text>
-                  <HStack>
-                    <Box as={WiSunrise} size="20px" color="yellow.400" />
-                    <Text fontSize="xs">
-                      {new Date(sunData.sunrise[index]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </Text>
-                  </HStack>
-                  <HStack>
-                    <Box as={WiSunset} size="20px" color="orange.400" />
-                    <Text fontSize="xs">
-                      {new Date(sunData.sunset[index]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </Text>
-                  </HStack>
+                  <Box h="4px" w="100%" borderRadius="full" bg={dayLengthBg} overflow="hidden">
+                    <Box h="100%" w={`${dayLengthPercent}%`} bgGradient="linear(to-r, orange.300, pink.400)" />
+                  </Box>
+                  <VStack spacing={1} align="start" fontSize="xs">
+                    <HStack>
+                      <Icon as={WiSunrise} boxSize={5} color="orange.300" />
+                      <Text>{day.sunrise}</Text>
+                    </HStack>
+                    <HStack>
+                      <Icon as={WiSunset} boxSize={5} color="purple.300" />
+                      <Text>{day.sunset}</Text>
+                    </HStack>
+                  </VStack>
                 </VStack>
               );
             })}
-        </Grid>
+          </Grid>
+        </>
       )}
-    </Box>
+    </VStack>
   );
 }
 
