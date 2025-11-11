@@ -28,12 +28,14 @@ import {
 } from '@chakra-ui/react';
 import { getWeatherDescription, WeatherError } from '../utils/weatherUtils';
 import { RepeatIcon, CalendarIcon, ViewIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
+import { FaHistory } from 'react-icons/fa';
 import AnimatedWeatherIcon from './AnimatedWeatherIcon';
 import { motion, useAnimation } from 'framer-motion';
 import { validateWeatherData } from '../utils/weatherValidation';
 import { getAqiColor } from '../utils/aqiUtils';
 import ForecastItem from './ForecastItem';
 import { generateWeatherSummary, generateActivitySuggestion } from '../utils/aiSummaryUtils';
+import HistoryModal from './HistoryModal';
 import DetailedWeatherModal from './DetailedWeatherModal';
 import SunCalendar from './SunCalendar';
 import WeatherMapModal from './WeatherMapModal';
@@ -203,6 +205,7 @@ function WeatherCard({
   const [activitySuggestion, setActivitySuggestion] = useState(null);
   const { isOpen: isCalendarOpen, onOpen: onCalendarOpen, onClose: onCalendarClose } = useDisclosure();
   const { isOpen: isMapOpen, onOpen: onMapOpen, onClose: onMapClose } = useDisclosure();
+  const { isOpen: isHistoryOpen, onOpen: onHistoryOpen, onClose: onHistoryClose } = useDisclosure();
 
   const [currentTime, setCurrentTime] = useState(new Date());
   const { playSound } = useSound();
@@ -572,6 +575,16 @@ function WeatherCard({
                       aria-label="Open weather map"
                     />
                   </Tooltip>
+                  <Tooltip label="View Weather History" placement="top">
+                    <IconButton
+                      icon={<FaHistory />}
+                      onClick={() => {
+                        playSound('ui-click');
+                        onHistoryOpen();
+                      }}
+                      aria-label="View weather history"
+                    />
+                  </Tooltip>
                 </ButtonGroup>
                 {/* Unit Toggle Buttons */}
                 <ButtonGroup isAttached={!isMobile} size="sm">
@@ -630,6 +643,12 @@ function WeatherCard({
         latitude={latitude}
         longitude={longitude}
         locationName={locationName}
+      />
+      <HistoryModal
+        isOpen={isHistoryOpen}
+        onClose={onHistoryClose}
+        latitude={latitude}
+        longitude={longitude}
       />
     </Box>
   );
