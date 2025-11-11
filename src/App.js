@@ -647,6 +647,32 @@ function AppContent() {
           />
         )}
       </AnimatePresence>
+
+      {/* Footer Section */}
+      <Box
+        as="footer"
+        py={4}
+        px={isMobile ? 2 : 4}
+        mt={6}
+        bg="rgba(0,0,0,0.2)" // Subtle background for contrast
+        color="gray.400"
+        fontSize="xs"
+        textAlign="center"
+        borderRadius="md"
+      >
+        <Text mb={1}>
+          &copy; {new Date().getFullYear()} Skyline Weather Dashboard. All rights reserved.
+        </Text>
+        <Text mb={1}>
+          This application is developed strictly for **educational purposes** and demonstration of modern web technologies.
+        </Text>
+        <Text mb={1}>
+          It contains no commercial elements, advertisements, or user tracking. Weather data is sourced from Open-Meteo.
+        </Text>
+        <Text>
+          Usage is intended for personal learning and exploration of weather data visualization.
+        </Text>
+      </Box>
     </Box>
   );
 }

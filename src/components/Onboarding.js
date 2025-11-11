@@ -35,9 +35,7 @@ const Onboarding = ({ isOpen, onClose, primaryLocation }) => {
             <ModalBody>
               <VStack spacing={4} align="stretch">
                 <Heading size="md">Your Personal Weather Dashboard</Heading>
-                <Text>
-                  To provide you with accurate local weather and time, this app needs to determine your primary
-                  location.
+                <Text>To provide an accurate local weather forecast, time, and astronomical data (like sunrise/sunset times), this app needs to determine your primary location.
                 </Text>
                 <Text fontWeight="bold">
                   Your privacy is important. Your location data is only stored on this device and is never sent to our

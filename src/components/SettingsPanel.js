@@ -29,7 +29,7 @@ import EffectsSettings from './settings/EffectsSettings';
 import DataSettings from './settings/DataSettings';
 import AudioSettings from './settings/AudioSettings';
 import NetworkSettings from './settings/NetworkSettings';
-import AboutSettings from './settings/AboutSettings';
+import AboutSettings from './settings/AboutSettings'; // Ensure this import is correct
 import CustomToast from './CustomToast';
 
 function SettingsPanel({
