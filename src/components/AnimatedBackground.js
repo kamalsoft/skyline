@@ -1,12 +1,16 @@
 // src/components/AnimatedBackground.js
 import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Icon, Tooltip, Text, VStack } from '@chakra-ui/react';
+import { Box, Icon, Tooltip } from '@chakra-ui/react';
 import { WiDaySunny, WiCloud, WiDayCloudy, WiCloudy } from 'react-icons/wi';
 import { motion, useTransform, useMotionValue, AnimatePresence } from 'framer-motion';
 import TwinklingStar from './TwinklingStar';
+
 import ShootingStar from './ShootingStar';
 import { getMoonPhaseInfo } from '../utils/moonUtils';
 import { useSound } from '../contexts/SoundContext';
+
+// Create a motion-enabled version of Chakra's Box component
+const MotionBox = motion(Box);
 
 const RainDrop = ({ left, duration, isAnimationPaused }) => {
   return (
@@ -203,20 +207,6 @@ function AnimatedBackground({
     ]
   );
 
-  // --- Performance Optimization 2: Animate a simple box-shadow instead of drop-shadow filter ---
-  const sunMoonGlow = useTransform(
-    timeOfDay,
-    [0, 0.25, 0.5, 0.75, 1],
-    [
-      '0 0 20px #f0f0f0', // Night
-      '0 0 30px #ff8c00', // Sunrise
-      '0 0 20px #ffff00', // Day
-      '0 0 30px #ff4500', // Sunset
-      '0 0 20px #f0f0f0', // Night
-    ]
-  );
-  const offsetDistance = useTransform(timeOfDay, [0, 1], ['0%', '100%']);
-
   useEffect(() => {
     const updateCycle = () => {
       if (!sunrise || !sunset) {
@@ -279,43 +269,15 @@ function AnimatedBackground({
     }; // Cleanup on unmount
   }, [isDay, playSound, stopSound]);
 
-  // Calculate sun's seasonal path for Uttarayanam and Dakshinayanam
-  const now = new Date();
-  const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
-  const summerSolstice = 172; // Approx. June 21
-  const winterSolstice = 355; // Approx. Dec 21
+  // A fixed tilt for the globe, representing Earth's natural axis.
+  // The seasonal explanation is now in a dedicated component.
+  const orbitalTilt = 23.5;
 
-  const highestSun = -80; // Peak arc for summer
-  const lowestSun = 40; // Peak arc for winter
-
-  let sunPathY;
-  let seasonName;
-
-  if (dayOfYear >= summerSolstice && dayOfYear < winterSolstice) {
-    seasonName = "Dakshinayanam (Sun's Southern Journey)";
-    // Sun moves from highest to lowest
-    const progress = (dayOfYear - summerSolstice) / (winterSolstice - summerSolstice);
-    sunPathY = highestSun + progress * (lowestSun - highestSun);
-  } else {
-    seasonName = "Uttarayanam (Sun's Northern Journey)";
-    // Sun moves from lowest to highest
-    const progress =
-      dayOfYear < summerSolstice
-        ? (dayOfYear + (365 - winterSolstice)) / (365 - winterSolstice + summerSolstice)
-        : (dayOfYear - winterSolstice) / (365 - winterSolstice + summerSolstice);
-    sunPathY = lowestSun + progress * (highestSun - lowestSun);
-  }
-
-  const path = `M -50 120 Q 500 ${sunPathY || 0} 1050 120`;
+  // Motion values for interactive globe dragging
+  const dragX = useMotionValue(0);
+  const rotateZ = useTransform(dragX, [-200, 200], [-360, 360], { clamp: false });
 
   const { icon: MoonIcon, name: moonPhaseName, illumination } = getMoonPhaseInfo();
-
-  // Slower animation by increasing duration based on time of day
-  const animationDuration = useTransform(
-    timeOfDay,
-    [0, 0.25, 0.5, 0.75, 1],
-    [40, 60, 80, 60, 40] // Slower during the day
-  );
 
   if (background.type === 'image' && background.value) {
     return (
@@ -404,54 +366,69 @@ function AnimatedBackground({
             </>
           </>
         )}
-        <svg width="100%" height="300px" viewBox="0 0 1000 200" preserveAspectRatio="xMidYMax slice">
-          <path d={path} fill="none" stroke="none" id="sun-moon-path" />
-        </svg>
-        <motion.div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            offsetPath: `path("${path}")`,
-            offsetDistance,
-            willChange: 'transform', // Hint to the browser
-          }}
-          transition={{
-            duration: animationDuration.get(),
-            repeat: Infinity,
-          }}
-        >
-          <Tooltip label={isDay ? 'Sun' : `${moonPhaseName} (${(illumination * 100).toFixed(0)}%)`} placement="top">
-            <VStack spacing={0}>
-              <motion.div style={{ color: sunMoonColor.get(), willChange: 'transform' }}>
+        {/* New Globe and Orbit Animation */}
+        <Box position="absolute" top="50%" left="50%" transform="translate(-50%, -50%)">
+          <MotionBox
+            drag="x"
+            dragConstraints={{ left: -200, right: 200 }}
+            dragElastic={0.2}
+            style={{ x: dragX }} // Bind the motion value to the component's style
+          >
+            <Tooltip label="Drag to spin the globe" placement="top" hasArrow>
+              <Box cursor="grab" as="div"
+                w="400px"
+                h="400px"
+                position="relative"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+              >
+                {/* The Globe */}
+                <Box
+                  w="150px"
+                  h="150px"
+                  borderRadius="50%"
+                  bg="radial-gradient(circle at 30% 30%, #87CEEB, #1a202c)"
+                  boxShadow="inset 0 0 20px #000, 0 0 30px #1a202c"
+                  zIndex="10"
+                />
+
+                {/* The Sun/Moon's Orbital Path */}
                 <motion.div
-                  style={{ boxShadow: sunMoonGlow.get() }}
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                  style={{
+                    position: 'absolute',
+                    width: '300px',
+                    height: '300px',
+                    borderRadius: '50%',
+                    border: '1px dashed rgba(255, 255, 255, 0.2)',
+                    transformStyle: 'preserve-3d',
+                    rotateX: orbitalTilt, // Tilt of the orbit based on season
+                  }}
                 >
-                  <Icon as={isDay ? WiDaySunny : MoonIcon} w={20} h={20} />
+                  {/* The Sun/Moon Body */}
+                  <motion.div
+                    style={{
+                      // The rotation is now controlled by the drag gesture
+                      rotateZ,
+                      position: 'absolute',
+                      top: '50%',
+                      left: 0,
+                      transform: 'translate(-50%, -50%)',
+                      color: sunMoonColor.get(),
+                      filter: `drop-shadow(0 0 15px ${sunMoonColor.get()})`,
+                    }}
+                  >
+                    <Tooltip label={isDay ? 'Sun' : `${moonPhaseName} (${(illumination * 100).toFixed(0)}%)`} placement="top">
+                      {/* Wrap the Icon in a Box to fix the ref warning */}
+                      <Box>
+                        <Icon as={isDay ? WiDaySunny : MoonIcon} boxSize="40px" />
+                      </Box>
+                    </Tooltip>
+                  </motion.div>
                 </motion.div>
-              </motion.div>
-              <motion.div style={{ color: sunMoonColor.get() }}>
-                <Text fontSize="xs" fontWeight="bold">
-                  {isDay ? 'Sun' : moonPhaseName}
-                </Text>
-              </motion.div>
-            </VStack>
-          </Tooltip>
-        </motion.div>
-        <Box
-          position="absolute"
-          bottom="20px"
-          left="50%"
-          transform="translateX(-50%)"
-          className="glass"
-          p={2}
-          borderRadius="md"
-        >
-          <Text fontSize="sm" fontWeight="bold">
-            {seasonName}
-          </Text>
+              </Box>
+            </Tooltip>
+          </MotionBox>
         </Box>
       </>
     </Box>

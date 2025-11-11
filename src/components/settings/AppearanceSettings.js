@@ -150,6 +150,13 @@ function AppearanceSettings() {
             onChange={(e) => handleDisplaySettingChange('showWeeklyForecast', e.target.checked)}
           />
         </HStack>
+        <HStack justify="space-between">
+          <Text fontWeight="bold">Show Sun's Seasonal Path</Text>
+          <Switch
+            isChecked={displaySettings.showSunPath}
+            onChange={(e) => handleDisplaySettingChange('showSunPath', e.target.checked)}
+          />
+        </HStack>
       </VStack>
     </VStack>
   );

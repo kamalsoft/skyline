@@ -43,6 +43,7 @@ import { FaPlay, FaPause } from 'react-icons/fa';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import AnimatedBackground from './components/AnimatedBackground';
 import WeatherCard from './components/WeatherCard';
+import SeasonalSunPath from './components/SeasonalSunPath';
 import SettingsPanel from './components/SettingsPanel';
 import WorldClockCard from './components/WorldClockCard';
 import SortableWorldClock from './components/SortableWorldClock';
@@ -338,8 +339,21 @@ function AppContent() {
         animationSettings={animationSettings}
         onLightningFlash={handleLightningFlash}
       />
-      <HStack justify="flex-end" mb={4} position="relative" zIndex="10">
-        <motion.div>
+      {/* The header controls are now in a draggable motion.div */}
+      <motion.div
+        drag
+        dragMomentum={false} // Prevents it from sliding after drag
+        style={{
+          position: 'fixed', // Use fixed positioning to float above everything
+          top: '20px',
+          right: '20px',
+          zIndex: 1300, // Ensure it's above background but below modals
+          cursor: 'grab',
+        }}
+        whileDrag={{ cursor: 'grabbing', scale: 1.05 }}
+      >
+        {/* The HStack with the glass effect contains the actual buttons */}
+        <HStack justify="flex-end" position="relative">
           <HStack className="glass" p={2} borderRadius="md">
             <Tooltip label={themePreference === 'auto' ? 'Theme is in Auto mode' : 'Toggle theme'}>
               <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
@@ -390,8 +404,8 @@ function AppContent() {
               </Button>
             </motion.div>
           </HStack>
-        </motion.div>
-      </HStack>
+        </HStack>
+      </motion.div>
 
       {currentLocationStatus === 'loading' && (
         <HStack justify="center" mb={4}>
@@ -540,6 +554,7 @@ function AppContent() {
             <AnimatePresence>
               {primaryLocation && (
                 <motion.div
+                  key="weather-card"
                   layout
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -556,6 +571,9 @@ function AppContent() {
                     appSettings={appSettings}
                   />
                 </motion.div>
+              )}
+              {displaySettings.showSunPath && (
+                <motion.div key="sun-path" layout><SeasonalSunPath /></motion.div>
               )}
             </AnimatePresence>
           </Box>

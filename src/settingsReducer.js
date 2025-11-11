@@ -12,6 +12,7 @@ export const initialState = {
         showWorldClock: true,
         showHourlyForecast: true,
         showWeeklyForecast: true,
+        showSunPath: true,
     },
     animationSettings: {
         showWeatherEffects: true,
