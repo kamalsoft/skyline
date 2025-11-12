@@ -23,6 +23,7 @@
     "howler": "^2.2.4",
     "leaflet": "^1.9.4",
     "lodash": "^4.17.21",
+    "mhah-panchang": "^1.2.0",
     "react": "^19.2.0",
     "react-clock": "^6.0.0",
     "react-dom": "^19.2.0",

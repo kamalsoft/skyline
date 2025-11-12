@@ -84,6 +84,8 @@ function AppearanceSettings() {
           <option value="minimalist">Minimalist</option>
           <option value="ocean">Ocean</option>
           <option value="cyberpunk">Cyberpunk</option>
+          <option value="forest">Forest</option>
+          <option value="sunrise">Sunrise</option>
         </Select>
       </FormControl>
 
@@ -98,6 +100,19 @@ function AppearanceSettings() {
           isChecked={settings.displaySettings.showCelestialEvents}
           onChange={(e) =>
             handleDisplaySettingChange('showCelestialEvents', e.target.checked)
+          }
+          colorScheme="purple"
+        />
+      </FormControl>
+      <FormControl display="flex" alignItems="center">
+        <FormLabel htmlFor="show-panchangam-panel" mb="0">
+          Show Tamil Panchangam Panel
+        </FormLabel>
+        <Switch
+          id="show-panchangam-panel"
+          isChecked={settings.displaySettings.showPanchangamPanel}
+          onChange={(e) =>
+            handleDisplaySettingChange('showPanchangamPanel', e.target.checked)
           }
           colorScheme="purple"
         />

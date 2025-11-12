@@ -48,6 +48,17 @@ const colors = {
         },
         dark: { bg: 'linear-gradient(145deg, #2e8b57, #006400)', shadowLight: '#3baf71', shadowDark: '#004d00', hands: '#f5deb3', numbers: '#f5deb3', secondHand: '#ffd700' },
     },
+    sunrise: {
+        light: {
+            bg: 'linear-gradient(145deg, #ffecd2, #fcb69f)',
+            shadowLight: '#ffffff',
+            shadowDark: '#f8a98a',
+            hands: '#d9534f',
+            numbers: '#d9534f',
+            secondHand: '#f0ad4e',
+        },
+        dark: { bg: 'linear-gradient(145deg, #2c3e50, #4b79a1)', shadowLight: '#5c8bb2', shadowDark: '#1a2a38', hands: '#ffecd2', numbers: '#ffecd2', secondHand: '#fcb69f' },
+    },
 };
 
 const styles = {

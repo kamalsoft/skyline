@@ -13,6 +13,7 @@ export const initialState = {
         showHourlyForecast: true,
         showWeeklyForecast: true,
         showSunPath: true,
+        showPanchangamPanel: false, // New setting for Panchangam Panel
     },
     animationSettings: {
         showWeatherEffects: true,
@@ -32,6 +33,10 @@ export const initialState = {
         autoUpdateCheck: true,
         weatherRefreshInterval: 15,
         enableAiSummary: true,
+    },
+    panelPositions: {
+        panchangam: { x: 0, y: 0 }, // Default position
+        celestial: { x: 0, y: 0 },
     },
 };
 
@@ -93,11 +98,20 @@ export const settingsReducer = (state, action) => {
         case 'SET_APP_SETTINGS':
             return { ...state, appSettings: action.payload };
         case 'RESET_TO_DEFAULTS':
-            // Keep primary location and clocks, but reset everything else
+            // Keep primary location, clocks, and panel positions, but reset everything else
             return {
                 ...initialState,
                 primaryLocation: state.primaryLocation,
                 clocks: state.clocks,
+                panelPositions: state.panelPositions, // Persist panel positions on reset
+            };
+        case 'SET_PANEL_POSITION':
+            return {
+                ...state,
+                panelPositions: {
+                    ...state.panelPositions,
+                    [action.payload.panel]: action.payload.position,
+                },
             };
         case 'LOAD_SETTINGS':
             // Used to load settings from localStorage, merging with defaults

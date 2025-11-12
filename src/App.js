@@ -46,6 +46,7 @@ import AnimatedBackground from './components/AnimatedBackground';
 import WeatherCard from './components/WeatherCard';
 import SeasonalSunPath from './components/SeasonalSunPath';
 import SettingsPanel from './components/SettingsPanel';
+import TamilPanchangamPanel from './components/TamilPanchangamPanel';
 import CelestialEventsPanel from './components/CelestialEventsPanel';
 import WorldClockCard from './components/WorldClockCard';
 import SortableWorldClock from './components/SortableWorldClock';
@@ -331,7 +332,7 @@ function AppContent() {
   const gridTemplateColumns = displaySettings.showWorldClock && !isMobile ? (isSidebarOpen ? '380px 1fr' : '80px 1fr') : '1fr';
 
   return (
-    <Box p={5}>
+    <Box p={4} h="100vh" display="flex" flexDirection="column">
       <AnimatedBackground
         background={background}
         sunrise={dailyForecast?.sunrise?.[0]}
@@ -414,7 +415,9 @@ function AppContent() {
         <Grid
           templateColumns={gridTemplateColumns}
           gap={6}
+          flex="1"
           transition="template-columns 0.3s ease-in-out"
+          overflow="hidden"
         >
           {/* Sidebar Column */}
           {displaySettings.showWorldClock && !isMobile && (
@@ -424,7 +427,7 @@ function AppContent() {
               p={4}
               display="flex"
               flexDirection="column"
-              h="calc(100vh - 120px)"
+              h="100%"
             >
               <HStack justify="space-between" mb={4} flexShrink={0}>
                 {isSidebarOpen && <Heading size="md">World Clocks</Heading>}
@@ -508,7 +511,7 @@ function AppContent() {
           <Box
             overflowY="auto"
             p={2}
-            h="calc(100vh - 120px)"
+            h="100%"
             sx={{
               '&::-webkit-scrollbar': { width: '4px' },
               '&::-webkit-scrollbar-thumb': { bg: 'gray.600', borderRadius: '24px' },
@@ -551,6 +554,15 @@ function AppContent() {
                   transition={{ type: 'spring', stiffness: 200, damping: 25 }}
                 >
                   <CelestialEventsPanel latitude={primaryLocation.latitude} longitude={primaryLocation.longitude} />
+                </motion.div>
+              )}
+              {displaySettings.showPanchangamPanel && (
+                <motion.div
+                  key="panchangam-panel"
+                  layout
+                  transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+                >
+                  <TamilPanchangamPanel primaryLocation={primaryLocation} />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -627,7 +639,7 @@ function AppContent() {
       </AnimatePresence>
 
       {/* Footer Section */}
-      <Box as="footer" mt={4} px={4} py={2}>
+      <Box as="footer" pt={4}>
         <Flex
           className="glass"
           p={{ base: 3, md: 4 }}
