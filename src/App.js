@@ -46,6 +46,7 @@ import AnimatedBackground from './components/AnimatedBackground';
 import WeatherCard from './components/WeatherCard';
 import SeasonalSunPath from './components/SeasonalSunPath';
 import SettingsPanel from './components/SettingsPanel';
+import CelestialEventsPanel from './components/CelestialEventsPanel';
 import WorldClockCard from './components/WorldClockCard';
 import SortableWorldClock from './components/SortableWorldClock';
 import { LogProvider } from './contexts/LogContext';
@@ -542,6 +543,15 @@ function AppContent() {
                   layout
                   transition={{ type: 'spring', stiffness: 200, damping: 25 }}
                 ><SeasonalSunPath /></motion.div>
+              )}
+              {displaySettings.showCelestialEvents && primaryLocation && (
+                <motion.div
+                  key="celestial-events"
+                  layout
+                  transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+                >
+                  <CelestialEventsPanel latitude={primaryLocation.latitude} longitude={primaryLocation.longitude} />
+                </motion.div>
               )}
             </AnimatePresence>
           </Box>

@@ -28,9 +28,7 @@ import {
 } from '@chakra-ui/react';
 import { getWeatherDescription, WeatherError } from '../utils/weatherUtils';
 import { RepeatIcon, CalendarIcon, ViewIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
-import { FaHistory } from 'react-icons/fa';
 import AnimatedWeatherIcon from './AnimatedWeatherIcon';
-import { motion, useAnimation } from 'framer-motion';
 import { validateWeatherData } from '../utils/weatherValidation';
 import { getAqiColor } from '../utils/aqiUtils';
 import ForecastItem from './ForecastItem';
@@ -41,74 +39,43 @@ import SunCalendar from './SunCalendar';
 import WeatherMapModal from './WeatherMapModal';
 import WeatherCardSkeleton from './WeatherCardSkeleton';
 import { useSound } from '../contexts/SoundContext';
+import { motion, useAnimation } from 'framer-motion';
+import { FaHistory } from 'react-icons/fa';
 
 // Extracted and memoized ForecastCarousel to prevent re-creation on every render
 const ForecastCarousel = React.memo(({ children, itemCount }) => {
   const controls = useAnimation();
-  const contentRef = useRef(null);
-  const [contentWidth, setContentWidth] = useState(0);
-  const [currentIndex, setCurrentIndex] = useState(0);
-
   const containerRef = useRef(null);
-  // Determine if the view is mobile to switch behavior
+  const [currentIndex, setCurrentIndex] = useState(0);
   const isMobile = useBreakpointValue({ base: true, md: false });
 
-  const itemWidth = 100; // Approximate width of a ForecastItem
-  const spacing = 16; // Corresponds to spacing={4} in HStack
+  // These values are approximations. For a more robust solution, you could measure the item width.
+  const itemWidth = 110; // From ForecastItem's minW="110px"
+  const spacing = 16; // Corresponds to spacing={4}
 
+  // Animate to the new position when currentIndex changes or on desktop view
   useEffect(() => {
-    if (contentRef.current) {
-      // Calculate the total width of all children
-      const totalWidth = itemCount * (itemWidth + spacing) - spacing;
-      setContentWidth(totalWidth);
+    if (!isMobile) {
+      const containerWidth = containerRef.current?.offsetWidth || 0;
+      const centerOffset = containerWidth / 2 - itemWidth / 2;
+      const targetX = -currentIndex * (itemWidth + spacing) + centerOffset;
+      controls.start({ x: targetX, transition: { type: 'spring', stiffness: 400, damping: 50 } });
     }
-  }, [children, itemCount]);
+  }, [currentIndex, controls, isMobile, itemWidth, spacing]);
 
-  const scrollConstraints = { right: 0, left: -(contentWidth - (containerRef.current?.offsetWidth || 0)) };
-
-  useEffect(() => {
+  // Calculate drag constraints for the desktop carousel
+  const dragConstraints = useMemo(() => {
     const containerWidth = containerRef.current?.offsetWidth || 0;
-    const centerOffset = containerWidth / 2 - itemWidth / 2;
-    const itemAndSpacingWidth = itemWidth + spacing;
-    const targetX = -currentIndex * itemAndSpacingWidth + centerOffset;
+    const contentWidth = itemCount * (itemWidth + spacing) - spacing;
+    return { right: 0, left: -(contentWidth - containerWidth) };
+  }, [itemCount, itemWidth, spacing]);
 
-    controls.start({
-      x: targetX,
-      transition: { type: 'spring', stiffness: 400, damping: 40 },
-    });
-  }, [currentIndex, controls, itemWidth, spacing, contentWidth]);
-
-  const onDragEnd = (event, info) => {
-    const { offset, velocity } = info; // Get offset and velocity from the drag event
-
-    // Predict the final position with velocity
-    const projectedOffset = offset.x + velocity.x * 0.4; // A higher multiplier gives more "flick" power
-
-    const containerWidth = containerRef.current?.offsetWidth || 0;
-    const centerOffset = containerWidth / 2 - itemWidth / 2;
-
-    // Calculate which item to snap to
-    const itemAndSpacingWidth = itemWidth + spacing;
-    // We adjust the projected offset by the center offset to find the correct item
-    const snapIndex = Math.round((-projectedOffset + centerOffset) / itemAndSpacingWidth);
-
-    // Clamp the index to be within bounds
-    const clampedIndex = Math.max(0, Math.min(snapIndex, itemCount - 1));
-
-    setCurrentIndex(clampedIndex);
-  };
-
-  // On mobile, render a natively scrollable container for a better touch experience
   if (isMobile) {
     return (
       <Box
         overflowX="auto"
-        css={{
-          '&::-webkit-scrollbar': {
-            display: 'none', // Hide scrollbar for a cleaner look on WebKit browsers
-          },
-          scrollbarWidth: 'none', // Hide scrollbar for Firefox
-        }}
+        css={{ '&::-webkit-scrollbar': { display: 'none' }, scrollbarWidth: 'none' }}
+        ref={containerRef}
       >
         <HStack spacing={4} pb={2}>
           {children}
@@ -117,66 +84,35 @@ const ForecastCarousel = React.memo(({ children, itemCount }) => {
     );
   }
 
-  // On desktop, use the auto-scrolling animation
-  // with drag-to-scroll functionality
-  const handlePrev = () => {
-    setCurrentIndex((prev) => Math.max(prev - 1, 0));
-  };
+  const handlePrev = () => setCurrentIndex((prev) => Math.max(prev - 1, 0));
+  const handleNext = () => setCurrentIndex((prev) => Math.min(prev + 1, itemCount - 1));
 
-  const handleNext = () => {
-    setCurrentIndex((prev) => Math.min(prev + 1, itemCount - 1));
+  const onDragEnd = (event, info) => {
+    const { offset, velocity } = info;
+    const currentX = controls.get().x; // Get the current animated position
+    const containerWidth = containerRef.current?.offsetWidth || 0;
+    const centerOffset = containerWidth / 2 - itemWidth / 2;
+    const projectedPosition = currentX + offset.x + velocity.x * 0.2; // Predict final position
+    const itemAndSpacingWidth = itemWidth + spacing;
+    const snapIndex = Math.round((-projectedPosition + centerOffset) / itemAndSpacingWidth);
+    const newIndex = Math.max(0, Math.min(snapIndex, itemCount - 1));
+    setCurrentIndex(newIndex);
   };
 
   return (
     <HStack w="full" spacing={2}>
-      <IconButton
-        icon={<ChevronLeftIcon />}
-        onClick={handlePrev}
-        aria-label="Previous forecast item"
-        variant="ghost"
-        isRound
-        isDisabled={currentIndex === 0}
-      />
-      <Box overflowX="hidden" ref={containerRef} cursor="grab" w="full">
-        <motion.div
-          animate={controls}
-          ref={contentRef}
-          drag="x"
-          dragConstraints={scrollConstraints}
-          onDragEnd={onDragEnd}
-          whileTap={{ cursor: 'grabbing' }}
-          style={{ display: 'flex' }}
-        >
+      <IconButton icon={<ChevronLeftIcon />} onClick={handlePrev} aria-label="Previous forecast item" variant="ghost" isRound isDisabled={currentIndex === 0} />
+      <Box overflowX="hidden" w="full" ref={containerRef} cursor="grab">
+        <motion.div drag="x" dragConstraints={dragConstraints} onDragEnd={onDragEnd} animate={controls} whileTap={{ cursor: 'grabbing' }} style={{ display: 'flex' }}>
           <HStack spacing={4} pb={2}>
             {children}
           </HStack>
         </motion.div>
       </Box>
-      <IconButton
-        icon={<ChevronRightIcon />}
-        onClick={handleNext}
-        aria-label="Next forecast item"
-        variant="ghost"
-        isRound
-        isDisabled={currentIndex >= itemCount - 1}
-      />
+      <IconButton icon={<ChevronRightIcon />} onClick={handleNext} aria-label="Next forecast item" variant="ghost" isRound isDisabled={currentIndex >= itemCount - 1} />
     </HStack>
   );
 });
-
-const ResponsiveButtonGroup = ({ children }) => { // Accept children explicitly
-  const isMobile = useBreakpointValue({ base: true, md: false });
-  return (
-    <VStack
-      spacing={isMobile ? 2 : 0}
-      align={isMobile ? 'stretch' : 'flex-end'}
-      w={isMobile ? 'full' : 'auto'}
-    >
-      {/* Render children directly. The children are expected to be ButtonGroup components. */}
-      {children}
-    </VStack>
-  );
-};
 
 function WeatherCard({
   latitude,
@@ -189,6 +125,18 @@ function WeatherCard({
 
   appSettings = {},
 }) {
+  const ResponsiveButtonGroup = ({ children }) => { // Accept children explicitly
+    const isMobile = useBreakpointValue({ base: true, md: false });
+    return (
+      <VStack
+        spacing={isMobile ? 2 : 0}
+        align={isMobile ? 'stretch' : 'flex-end'}
+        w={isMobile ? 'full' : 'auto'}
+      >
+        {children}
+      </VStack>
+    );
+  };
   const [weatherData, setWeatherData] = useState(null);
   // Define isMobile at the top level of the component so it can be used in the JSX below
   const isMobile = useBreakpointValue({ base: true, md: false });

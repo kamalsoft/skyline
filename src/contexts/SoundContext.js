@@ -14,11 +14,13 @@ const soundFiles = {
   // Weather Sounds
   'weather-rain': '/sounds/weather-rain.mp3',
   'weather-thunder1': '/sounds/weather-thunder-1.mp3',
+  'weather-snow': '/sounds/weather-snow.mp3',
   'weather-thunder2': '/sounds/weather-thunder-2.mp3',
 
   // Ambient Sounds
   'ambient-day': '/sounds/ambient-day.mp3',
   'ambient-night': '/sounds/ambient-night.mp3',
+  'ui-globe-drag': '/sounds/ui-globe-drag.mp3',
   'ambient-shooting-star': '/sounds/ambient-shooting-star.mp3',
 };
 
@@ -30,11 +32,11 @@ export const SoundProvider = ({ children }) => {
       return saved
         ? JSON.parse(saved)
         : {
-            masterEnabled: true,
-            weatherVolume: 0.5,
-            uiVolume: 0.7,
-            ambientVolume: 0.3,
-          };
+          masterEnabled: true,
+          weatherVolume: 0.5,
+          uiVolume: 0.7,
+          ambientVolume: 0.3,
+        };
     } catch (e) {
       return { masterEnabled: true, weatherVolume: 0.5, uiVolume: 0.7, ambientVolume: 0.3 };
     }
@@ -43,7 +45,7 @@ export const SoundProvider = ({ children }) => {
   useEffect(() => {
     const loadedSounds = {};
     Object.keys(soundFiles).forEach((key) => {
-      const isLoop = ['rain', 'day', 'night'].includes(key);
+      const isLoop = ['rain', 'day', 'night', 'snow', 'drag'].some(s => key.includes(s));
       loadedSounds[key] = new Howl({
         src: [soundFiles[key]],
         loop: isLoop,
@@ -64,6 +66,7 @@ export const SoundProvider = ({ children }) => {
     // Update volumes of currently playing sounds
     if (sounds['weather-rain'] && sounds['weather-rain'].playing())
       sounds['weather-rain'].volume(settings.weatherVolume);
+    if (sounds['weather-snow'] && sounds['weather-snow'].playing()) sounds['weather-snow'].volume(settings.weatherVolume);
     if (sounds['ambient-day'] && sounds['ambient-day'].playing()) sounds['ambient-day'].volume(settings.ambientVolume);
     if (sounds['ambient-night'] && sounds['ambient-night'].playing())
       sounds['ambient-night'].volume(settings.ambientVolume);

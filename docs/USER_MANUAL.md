@@ -54,6 +54,7 @@ Click the **Settings** button on the bottom-left of the screen to open the main 
   - **Animated:** A dynamic background that reflects the current weather and time of day.
   - **Dynamic Image:** A beautiful, high-quality image that changes daily.
   - **Solid Color:** A simple, clean background.
+- **Layout:** Toggle visibility for components like the World Clock, Sun Path, and the new Celestial Events panel.
 
 ### Effects
 

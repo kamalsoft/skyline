@@ -37,10 +37,25 @@ const colors = {
         light: { bg: 'linear-gradient(145deg, #e0e0e0, #f5f5f5)', shadowLight: '#ffffff', shadowDark: '#c7c7c7', hands: '#00ffff', numbers: '#ff00ff', secondHand: '#ffff00', numberFontFamily: "'Orbitron', sans-serif" },
         dark: { bg: 'linear-gradient(145deg, #0d0221, #241e4e)', shadowLight: '#3a307b', shadowDark: '#000000', hands: '#00ffff', numbers: '#ff00ff', secondHand: '#ffff00', numberFontFamily: "'Orbitron', sans-serif" },
     },
+    forest: {
+        light: {
+            bg: 'linear-gradient(145deg, #90ee90, #3cb371)',
+            shadowLight: '#c1ffc1',
+            shadowDark: '#78c978',
+            hands: '#5c4033',
+            numbers: '#5c4033',
+            secondHand: '#ff4500'
+        },
+        dark: { bg: 'linear-gradient(145deg, #2e8b57, #006400)', shadowLight: '#3baf71', shadowDark: '#004d00', hands: '#f5deb3', numbers: '#f5deb3', secondHand: '#ffd700' },
+    },
 };
 
 const styles = {
     global: (props) => ({
+        // Keyframes should be defined at the global level, as a sibling to other global styles
+        '@keyframes shine': {
+            'to': { transform: 'translateX(100%)' },
+        },
         '.glass': {
             // Base styles for the glass effect
             bg: props.colorMode === 'dark' ? 'rgba(20, 15, 40, 0.5)' : 'rgba(255, 255, 255, 0.3)',
@@ -72,12 +87,6 @@ const styles = {
             _hover: {
                 boxShadow: 'xl',
                 transform: 'translateY(-2px) scale(1.01)',
-            },
-        },
-        // Keyframes should be defined at the global level, as a sibling to other global styles
-        '@keyframes shine': {
-            'to': {
-                transform: 'translateX(100%)',
             },
         },
     }),

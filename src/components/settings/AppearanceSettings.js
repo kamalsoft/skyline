@@ -1,172 +1,141 @@
 // src/components/settings/AppearanceSettings.js
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import {
   VStack,
-  HStack,
-  Heading,
   FormControl,
   FormLabel,
-  RadioGroup,
-  Radio,
-  Input,
-  Button,
   Switch,
-  Text,
-  IconButton,
+  Select,
+  Heading,
   Divider,
-  useColorMode,
+  ButtonGroup,
+  Button,
+  HStack,
 } from '@chakra-ui/react';
-import { FaMoon, FaSun } from 'react-icons/fa';
-import { useSound } from '../../contexts/SoundContext';
 import { useSettings } from '../../contexts/SettingsContext';
 
 function AppearanceSettings() {
   const { settings, dispatch } = useSettings();
-  const { themePreference, background, clockTheme, timeFormat, displaySettings } = settings;
-  const { colorMode, toggleColorMode } = useColorMode();
-  const [bgUrl, setBgUrl] = useState(background.type === 'image' ? background.value : '');
-  const { playSound } = useSound();
 
-  const ThemeIcon = useMemo(() => (colorMode === 'light' ? FaMoon : FaSun), [colorMode]);
+  const handleDisplaySettingChange = (settingName, value) => {
+    dispatch({
+      type: 'SET_DISPLAY_SETTING',
+      payload: { settingName, value },
+    });
+  };
 
-  const handleDisplaySettingChange = (key, value) => {
-    dispatch({ type: 'SET_DISPLAY_SETTINGS', payload: { ...displaySettings, [key]: value } });
+  const handleThemePreferenceChange = (value) => {
+    dispatch({ type: 'SET_THEME_PREFERENCE', payload: value });
+  };
+
+  const handleClockThemeChange = (value) => {
+    dispatch({ type: 'SET_CLOCK_THEME', payload: value });
+  };
+
+  const handleTimeFormatChange = (value) => {
+    dispatch({ type: 'SET_TIME_FORMAT', payload: value });
   };
 
   return (
     <VStack spacing={6} align="stretch">
-      {/* --- Theme Section --- */}
-      <VStack className="glass" p={4} borderRadius="lg" align="stretch" spacing={4}>
-        <Heading size="sm">Theme</Heading>
-        <HStack justify="space-between">
-          <Text fontWeight="bold">Toggle Light/Dark Mode</Text>
-          <IconButton icon={<ThemeIcon />} onClick={toggleColorMode} aria-label="Toggle theme" />
-        </HStack>
-        <Divider />
-        <FormControl>
-          <FormLabel>Automatic Theme</FormLabel>
-          <RadioGroup
-            onChange={(val) => {
-              playSound('ui-click');
-              dispatch({ type: 'SET_THEME_PREFERENCE', payload: val });
-            }}
-            value={themePreference}
-          >
-            <VStack align="start">
-              <Radio value="light">Always Light</Radio>
-              <Radio value="dark">Always Dark</Radio>
-              <Radio value="auto">Auto (Day/Night)</Radio>
-            </VStack>
-          </RadioGroup>
-          <Text fontSize="xs" color="gray.500" mt={2}>
-            'Auto' mode switches the theme based on your primary clock's sunrise and sunset times.
-          </Text>
-        </FormControl>
-      </VStack>
+      <Heading size="md">Theme & Layout</Heading>
 
-      {/* --- Background Section --- */}
-      <VStack className="glass" p={4} borderRadius="lg" align="stretch" spacing={4}>
-        <Heading size="sm">Background</Heading>
-        <RadioGroup
-          onChange={(type) => {
-            playSound('ui-click');
-            dispatch({ type: 'SET_BACKGROUND', payload: { type, value: type === 'image' ? bgUrl : '' } });
-          }}
-          value={background.type}
+      <FormControl display="flex" alignItems="center">
+        <FormLabel htmlFor="theme-preference" mb="0">
+          Application Theme
+        </FormLabel>
+        <Select
+          id="theme-preference"
+          value={settings.themePreference}
+          onChange={(e) => handleThemePreferenceChange(e.target.value)}
+          maxW="150px"
         >
-          <VStack align="start">
-            <Radio value="dynamic">Dynamic Gradient</Radio>
-            <Radio value="image">Custom Image (URL)</Radio>
-          </VStack>
-        </RadioGroup>
-        {background.type === 'image' && (
-          <HStack mt={2}>
-            <Input placeholder="https://example.com/image.jpg" value={bgUrl} onChange={(e) => setBgUrl(e.target.value)} />
-            <Button
-              onClick={() => {
-                playSound('ui-click');
-                dispatch({ type: 'SET_BACKGROUND', payload: { type: 'image', value: bgUrl } });
-              }}
-            >
-              Apply
-            </Button>
-          </HStack>
-        )}
-      </VStack>
+          <option value="auto">Auto</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </Select>
+      </FormControl>
 
-      {/* --- Clocks & Time Section --- */}
-      <VStack className="glass" p={4} borderRadius="lg" align="stretch" spacing={4}>
-        <Heading size="sm">Clocks & Time</Heading>
-        <FormControl>
-          <FormLabel>Analog Clock Style</FormLabel>
-          <RadioGroup
-            onChange={(val) => {
-              playSound('ui-click');
-              dispatch({ type: 'SET_CLOCK_THEME', payload: val });
-            }}
-            value={clockTheme}
-          >
-            <HStack spacing={5} wrap="wrap">
-              <Radio value="metallic">Copper</Radio>
-              <Radio value="minimalist">Minimalist</Radio>
-              <Radio value="ocean">Ocean</Radio>
-              <Radio value="cyberpunk">Cyberpunk</Radio>
-            </HStack>
-          </RadioGroup>
-        </FormControl>
-        <Divider />
-        <FormControl>
-          <FormLabel>Time Format</FormLabel>
-          <RadioGroup
-            onChange={(val) => {
-              playSound('ui-click');
-              dispatch({ type: 'SET_TIME_FORMAT', payload: val });
-            }}
-            value={timeFormat}
-          >
-            <HStack spacing={5}>
-              <Radio value="12h">12-Hour</Radio>
-              <Radio value="24h">24-Hour</Radio>
-            </HStack>
-          </RadioGroup>
-        </FormControl>
-      </VStack>
+      <FormControl as={HStack} justify="space-between">
+        <FormLabel htmlFor="time-format" mb="0">
+          Time Format
+        </FormLabel>
+        <ButtonGroup id="time-format" size="sm" isAttached>
+          <Button onClick={() => handleTimeFormatChange('12h')} isActive={settings.timeFormat === '12h'}>
+            12-Hour
+          </Button>
+          <Button onClick={() => handleTimeFormatChange('24h')} isActive={settings.timeFormat === '24h'}>
+            24-Hour
+          </Button>
+        </ButtonGroup>
+      </FormControl>
 
-      {/* --- Layout Section --- */}
-      <VStack className="glass" p={4} borderRadius="lg" align="stretch" spacing={4}>
-        <Heading size="sm">Layout</Heading>
-        <HStack justify="space-between">
-          <Text fontWeight="bold">Show World Clock Sidebar</Text>
-          <Switch
-            isChecked={displaySettings.showWorldClock}
-            onChange={(e) => handleDisplaySettingChange('showWorldClock', e.target.checked)}
-          />
-        </HStack>
-        <Divider />
-        <HStack justify="space-between">
-          <Text fontWeight="bold">Show Hourly Forecast</Text>
-          <Switch
-            isChecked={displaySettings.showHourlyForecast}
-            onChange={(e) => handleDisplaySettingChange('showHourlyForecast', e.target.checked)}
-          />
-        </HStack>
-        <Divider />
-        <HStack justify="space-between">
-          <Text fontWeight="bold">Show Weekly Forecast</Text>
-          <Switch
-            isChecked={displaySettings.showWeeklyForecast}
-            onChange={(e) => handleDisplaySettingChange('showWeeklyForecast', e.target.checked)}
-          />
-        </HStack>
-        <Divider />
-        <HStack justify="space-between">
-          <Text fontWeight="bold">Show Sun's Seasonal Path</Text>
-          <Switch
-            isChecked={displaySettings.showSunPath}
-            onChange={(e) => handleDisplaySettingChange('showSunPath', e.target.checked)}
-          />
-        </HStack>
-      </VStack>
+      <FormControl as={HStack} justify="space-between">
+        <FormLabel htmlFor="clock-theme" mb="0">
+          Analog Clock Theme
+        </FormLabel>
+        <Select
+          id="clock-theme"
+          value={settings.clockTheme}
+          onChange={(e) => handleClockThemeChange(e.target.value)}
+          maxW="150px"
+        >
+          <option value="metallic">Metallic</option>
+          <option value="minimalist">Minimalist</option>
+          <option value="ocean">Ocean</option>
+          <option value="cyberpunk">Cyberpunk</option>
+        </Select>
+      </FormControl>
+
+      <Divider />
+      <Heading size="sm">Layout Components</Heading>
+      <FormControl display="flex" alignItems="center">
+        <FormLabel htmlFor="show-celestial-events" mb="0">
+          Show Celestial Events Panel
+        </FormLabel>
+        <Switch
+          id="show-celestial-events"
+          isChecked={settings.displaySettings.showCelestialEvents}
+          onChange={(e) =>
+            handleDisplaySettingChange('showCelestialEvents', e.target.checked)
+          }
+          colorScheme="purple"
+        />
+      </FormControl>
+      <FormControl display="flex" alignItems="center">
+        <FormLabel htmlFor="show-hourly-forecast" mb="0">
+          Show Hourly Forecast
+        </FormLabel>
+        <Switch
+          id="show-hourly-forecast"
+          isChecked={settings.displaySettings.showHourlyForecast}
+          onChange={(e) =>
+            handleDisplaySettingChange('showHourlyForecast', e.target.checked)
+          }
+        />
+      </FormControl>
+      <FormControl display="flex" alignItems="center">
+        <FormLabel htmlFor="show-weekly-forecast" mb="0">
+          Show Weekly Forecast
+        </FormLabel>
+        <Switch
+          id="show-weekly-forecast"
+          isChecked={settings.displaySettings.showWeeklyForecast}
+          onChange={(e) =>
+            handleDisplaySettingChange('showWeeklyForecast', e.target.checked)
+          }
+        />
+      </FormControl>
+      <FormControl display="flex" alignItems="center">
+        <FormLabel htmlFor="show-sun-path" mb="0">
+          Show Earth Orbit Panel
+        </FormLabel>
+        <Switch
+          id="show-sun-path"
+          isChecked={settings.displaySettings.showSunPath}
+          onChange={(e) => handleDisplaySettingChange('showSunPath', e.target.checked)}
+        />
+      </FormControl>
     </VStack>
   );
 }

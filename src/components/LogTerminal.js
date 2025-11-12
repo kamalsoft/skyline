@@ -123,6 +123,8 @@ function LogTerminal() {
         display="flex"
         flexDirection="column"
         overflow="hidden"
+        role="log"
+        aria-live="polite"
       >
         <Box
           p={2}

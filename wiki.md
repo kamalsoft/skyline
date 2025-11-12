@@ -57,6 +57,8 @@ The application is built on a robust and scalable architecture, featuring a cent
 - **Interactive Globe:** An interactive 3D globe that visualizes the sun/moon's daily orbit, which can be spun by the user.
 - **Earth's Orbit Diagram:** A dedicated panel that provides a beautiful and educational animated illustration of the Earth's elliptical orbit, showing the seasons and key astronomical points like solstices and equinoxes.
 
+- **Celestial Events Panel:** A draggable panel showing upcoming ISS passes and meteor showers for the user's location.
+
 ---
 
 ## Future Roadmap

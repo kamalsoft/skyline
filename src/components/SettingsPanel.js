@@ -22,12 +22,13 @@ import {
   CloseIcon,
 } from '@chakra-ui/icons';
 import { motion, useDragControls } from 'framer-motion';
-import { FaPalette, FaMagic, FaVolumeUp, FaMapMarkerAlt, FaDatabase, FaInfoCircle, FaWifi } from 'react-icons/fa';
+import { FaPalette, FaMagic, FaVolumeUp, FaMapMarkerAlt, FaDatabase, FaInfoCircle, FaWifi, FaBell } from 'react-icons/fa';
 import GeneralSettings from './settings/GeneralSettings';
 import AppearanceSettings from './settings/AppearanceSettings';
 import EffectsSettings from './settings/EffectsSettings';
 import DataSettings from './settings/DataSettings';
 import AudioSettings from './settings/AudioSettings';
+import NotificationSettings from './settings/NotificationSettings';
 import NetworkSettings from './settings/NetworkSettings';
 import AboutSettings from './settings/AboutSettings'; // Ensure this import is correct
 import CustomToast from './CustomToast';
@@ -170,6 +171,11 @@ function SettingsPanel({
                 <Icon as={FaVolumeUp} mr={2} /> Audio
               </Tab>
             </Tooltip>
+            <Tooltip label="Notification Settings" placement="right" hasArrow>
+              <Tab id="tab-notifications">
+                <Icon as={FaBell} mr={2} /> Notifications
+              </Tab>
+            </Tooltip>
             <Tooltip label="Network Settings" placement="right" hasArrow>
               <Tab id="tab-network">
                 <Icon as={FaWifi} mr={2} /> Network
@@ -219,6 +225,9 @@ function SettingsPanel({
               {/* AudioSettings already uses its own context, so no changes needed */}
               <AudioSettings />
             </TabPanel>
+            <TabPanel role="tabpanel" aria-labelledby="tab-notifications">
+              <NotificationSettings />
+            </TabPanel>
             <TabPanel role="tabpanel" aria-labelledby="tab-network">
               <NetworkSettings />
             </TabPanel>
@@ -245,7 +254,7 @@ function SettingsPanel({
             height: '20px',
             cursor: 'nwse-resize',
           }}
-          aria-label="Resize panel"
+          aria-label="Resize panel handle"
         />
       </VStack>
 

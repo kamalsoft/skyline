@@ -24,6 +24,10 @@ export const initialState = {
         uiVolume: 0.7,
         ambientVolume: 0.3,
     },
+    notificationSettings: {
+        enablePushNotifications: false,
+        alertForRain: true,
+    },
     appSettings: {
         autoUpdateCheck: true,
         weatherRefreshInterval: 15,
@@ -68,8 +72,24 @@ export const settingsReducer = (state, action) => {
             return { ...state, displaySettings: action.payload };
         case 'SET_ANIMATION_SETTINGS':
             return { ...state, animationSettings: action.payload };
+        case 'SET_DISPLAY_SETTING': // Generic action to update a single display setting
+            return {
+                ...state,
+                displaySettings: {
+                    ...state.displaySettings,
+                    [action.payload.settingName]: action.payload.value,
+                },
+            };
         case 'SET_SOUND_SETTINGS':
             return { ...state, soundSettings: action.payload };
+        case 'SET_NOTIFICATION_SETTING':
+            return {
+                ...state,
+                notificationSettings: {
+                    ...state.notificationSettings,
+                    [action.payload.settingName]: action.payload.value,
+                },
+            };
         case 'SET_APP_SETTINGS':
             return { ...state, appSettings: action.payload };
         case 'RESET_TO_DEFAULTS':

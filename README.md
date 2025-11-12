@@ -15,6 +15,7 @@
 - **Immersive Soundscapes:** Optional ambient sounds for day, night, and weather effects create a fully immersive experience.
 - **Modern "Glassmorphism" UI:** A clean, beautiful interface that is a pleasure to use.
 - **Accessible:** Full keyboard navigation and screen reader support ensure the app is usable by everyone.
+  - **Celestial Events:** Track upcoming ISS passes and meteor showers from a draggable panel.
 
 ## 🌟 Unique Value Proposition
 
