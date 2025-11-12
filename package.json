@@ -15,7 +15,10 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.13.2",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
     "dayjs": "^1.11.19",
+    "express": "^5.1.0",
     "framer-motion": "^6.5.1",
     "howler": "^2.2.4",
     "leaflet": "^1.9.4",
@@ -28,6 +31,7 @@
     "react-leaflet": "^5.0.0",
     "react-scripts": "5.0.1",
     "recharts": "^3.4.1",
+    "web-push": "^3.6.7",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
