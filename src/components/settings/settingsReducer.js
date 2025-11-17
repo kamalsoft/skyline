@@ -37,8 +37,20 @@ export const settingsReducer = (state, action) => {
         case 'SET_ANIMATION_SETTINGS':
             return { ...state, animationSettings: action.payload };
 
+        case 'SET_ANIMATION_SETTING':
+            return {
+                ...state,
+                animationSettings: { ...state.animationSettings, [action.payload.settingName]: action.payload.value },
+            };
+
         case 'SET_APP_SETTINGS':
             return { ...state, appSettings: action.payload };
+
+        case 'SET_APP_SETTING':
+            return {
+                ...state,
+                appSettings: { ...state.appSettings, [action.payload.settingName]: action.payload.value },
+            };
 
         case 'RESET_TO_DEFAULTS':
             // This action should reset settings to their initial state, but preserve clocks.

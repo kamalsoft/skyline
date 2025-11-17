@@ -52,10 +52,11 @@ import WorldClockCard from './components/WorldClockCard';
 import SortableWorldClock from './components/SortableWorldClock';
 import { LogProvider } from './contexts/LogContext';
 import { useAppUI } from './useAppUI';
+import SplitGrid from 'react-split-grid';
 import LogTerminal from './components/LogTerminal';
 import { generateWeatherAlerts } from './utils/alertUtils';
 import { SoundProvider, useSound } from './contexts/SoundContext';
-import { SettingsProvider, useSettings } from './contexts/SettingsContext';
+import { useSettings } from './contexts/SettingsContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 import 'leaflet/dist/leaflet.css';
@@ -77,6 +78,13 @@ function AppContent() {
   const [dailyForecast, setDailyForecast] = useState(null);
 
   // Centralized function to set the primary location and update the clocks list
+  const handleSplitDrag = (direction, newFractions) => {
+    const newGridTemplate = newFractions.map(f => `${f}fr`).join(' ');
+    dispatch({
+      type: 'SET_APP_SETTING',
+      payload: { settingName: 'mainSidebarSplit', value: newGridTemplate },
+    });
+  };
   const setPrimaryLocationAndUpdateClocks = useCallback(
     (locationData) => {
       dispatch({ type: 'SET_PRIMARY_LOCATION', payload: locationData });
@@ -560,11 +568,37 @@ function AppContent() {
                     case 'horizontal':
                       return (
                         <HStack spacing={4} align="stretch" h="100%">
-                          {panels.map((panel) => React.cloneElement(panel, { minW: '400px' }))}
+                          {panels.map((panel) =>
+                            React.cloneElement(panel, { minW: '400px' })
+                          )}
                         </HStack>
                       );
                     default: // 'grid'
-                      return <Grid templateColumns="repeat(auto-fit, minmax(400px, 1fr))" gap={4}>{panels}</Grid>;
+                      return (
+                        <Grid
+                          templateColumns="repeat(auto-fit, minmax(400px, 1fr))"
+                          gap={4}
+                        >
+                          {panels}
+                        </Grid>
+                      );
+                    case 'main-sidebar': {
+                      const mainPanel = panels.find((p) => p.key === 'weather-card');
+                      const sidePanels = panels.filter(
+                        (p) => p.key !== 'weather-card'
+                      );
+                      return (
+                        <SplitGrid onDrag={handleSplitDrag}>
+                          {({ getGridProps, getGutterProps }) => (
+                            <Grid templateColumns={settings.appSettings.mainSidebarSplit} gap={0} {...getGridProps()}>
+                              <Box>{mainPanel}</Box>
+                              <Box cursor="col-resize" {...getGutterProps('column', 1)} />
+                              <VStack spacing={4}>{sidePanels}</VStack>
+                            </Grid>
+                          )}
+                        </SplitGrid>
+                      );
+                    }
                   }
                 })()}
               </motion.div>
@@ -683,15 +717,12 @@ function AppContent() {
 
 function App() {
   return (
-    <LogProvider> {/* LogProvider is typically at the top */}
-      <SettingsProvider> {/* SettingsProvider should wrap the main app content */}
-        <SoundProvider> {/* SoundProvider also needs to wrap the app content */}
-          <ErrorBoundary>
-            <AppContent />
-
-          </ErrorBoundary>
-        </SoundProvider>
-      </SettingsProvider>
+    <LogProvider>
+      <SoundProvider>
+        <ErrorBoundary>
+          <AppContent />
+        </ErrorBoundary>
+      </SoundProvider>
     </LogProvider>
   );
 }

@@ -51,6 +51,20 @@ function AppearanceSettings() {
     dispatch({ type: 'SET_BACKGROUND', payload: { value: value } });
   };
 
+  const handleAnimationSettingChange = (settingName, value) => {
+    dispatch({
+      type: 'SET_ANIMATION_SETTING',
+      payload: { settingName, value },
+    });
+  };
+
+  const handleResetSidebar = () => {
+    dispatch({
+      type: 'SET_APP_SETTING',
+      payload: { settingName: 'mainSidebarSplit', value: '2fr 10px 1fr' },
+    });
+  };
+
   return (
     <VStack spacing={6} align="stretch">
       <Heading size="md">Theme & Layout</Heading>
@@ -84,6 +98,33 @@ function AppearanceSettings() {
           <option value="grid">Grid</option>
           <option value="vertical">Vertical Stack</option>
           <option value="horizontal">Horizontal Stack</option>
+          <option value="main-sidebar">Main with Sidebar</option>
+        </Select>
+      </FormControl>
+
+      {settings.layoutPreference === 'main-sidebar' && (
+        <HStack justify="flex-end">
+          <Button size="xs" variant="outline" onClick={handleResetSidebar}>
+            Reset Sidebar Position
+          </Button>
+        </HStack>
+      )}
+
+
+
+      <FormControl display="flex" alignItems="center">
+        <FormLabel htmlFor="gradient-speed" mb="0">
+          Glass Effect Speed
+        </FormLabel>
+        <Select
+          id="gradient-speed"
+          value={settings.animationSettings.gradientSpeed || 'normal'}
+          onChange={(e) => handleAnimationSettingChange('gradientSpeed', e.target.value)}
+          maxW="150px"
+        >
+          <option value="slow">Slow</option>
+          <option value="normal">Normal</option>
+          <option value="fast">Fast</option>
         </Select>
       </FormControl>
 

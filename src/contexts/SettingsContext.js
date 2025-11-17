@@ -32,10 +32,12 @@ const getInitialState = () => {
         animationSettings: {
             showWeatherEffects: true,
             showAmbientEffects: true,
+            gradientSpeed: 'normal', // Add this line
         },
         appSettings: {
             autoUpdateCheck: true,
             developerMode: false,
+            mainSidebarSplit: '2fr 10px 1fr',
         },
     };
 

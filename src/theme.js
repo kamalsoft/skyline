@@ -63,6 +63,12 @@ const colors = {
 
 const styles = {
     global: (props) => ({
+        ':root': {
+            // Define CSS variables for animation speed
+            '--shine-duration-slow': '6s',
+            '--shine-duration-normal': '3s',
+            '--shine-duration-fast': '1.5s',
+        },
         // Keyframes should be defined at the global level, as a sibling to other global styles
         '@keyframes shine': {
             'to': { transform: 'translateX(100%)' },
@@ -91,7 +97,7 @@ const styles = {
                 bg: `linear-gradient(120deg, transparent, ${props.colorMode === 'dark' ? 'rgba(123, 97, 255, 0.5)' : 'rgba(123, 97, 255, 1)'}, transparent)`,
                 mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
                 maskComposite: 'exclude',
-                animation: 'shine 3s linear infinite',
+                animation: `shine var(--shine-duration-${props.theme.settings.animationSettings.gradientSpeed || 'normal'}) linear infinite`,
             },
 
             // Subtle hover effect for interactivity
