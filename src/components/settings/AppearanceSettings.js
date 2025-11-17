@@ -151,6 +151,16 @@ function AppearanceSettings() {
           onChange={(e) => handleDisplaySettingChange('showSunPath', e.target.checked)}
         />
       </FormControl>
+      <FormControl display="flex" alignItems="center">
+        <FormLabel htmlFor="show-world-clock" mb="0">
+          Show World Clock
+        </FormLabel>
+        <Switch
+          id="show-world-clock"
+          isChecked={settings.displaySettings.showWorldClock}
+          onChange={(e) => handleDisplaySettingChange('showWorldClock', e.target.checked)}
+        />
+      </FormControl>
     </VStack>
   );
 }
