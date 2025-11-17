@@ -11,6 +11,9 @@ import {
   ButtonGroup,
   Button,
   HStack,
+  RadioGroup,
+  Input,
+  Radio,
 } from '@chakra-ui/react';
 import { useSettings } from '../../contexts/SettingsContext';
 
@@ -36,6 +39,18 @@ function AppearanceSettings() {
     dispatch({ type: 'SET_TIME_FORMAT', payload: value });
   };
 
+  const handleLayoutPreferenceChange = (value) => {
+    dispatch({ type: 'SET_LAYOUT_PREFERENCE', payload: value });
+  };
+
+  const handleBackgroundTypeChange = (value) => {
+    dispatch({ type: 'SET_BACKGROUND', payload: { type: value } });
+  };
+
+  const handleBackgroundImageChange = (value) => {
+    dispatch({ type: 'SET_BACKGROUND', payload: { value: value } });
+  };
+
   return (
     <VStack spacing={6} align="stretch">
       <Heading size="md">Theme & Layout</Heading>
@@ -55,6 +70,23 @@ function AppearanceSettings() {
           <option value="dark">Dark</option>
         </Select>
       </FormControl>
+
+      <FormControl display="flex" alignItems="center">
+        <FormLabel htmlFor="layout-preference" mb="0">
+          Panel Layout
+        </FormLabel>
+        <Select
+          id="layout-preference"
+          value={settings.layoutPreference || 'grid'}
+          onChange={(e) => handleLayoutPreferenceChange(e.target.value)}
+          maxW="150px"
+        >
+          <option value="grid">Grid</option>
+          <option value="vertical">Vertical Stack</option>
+          <option value="horizontal">Horizontal Stack</option>
+        </Select>
+      </FormControl>
+
 
       <FormControl as={HStack} justify="space-between">
         <FormLabel htmlFor="time-format" mb="0">
@@ -88,6 +120,31 @@ function AppearanceSettings() {
           <option value="sunrise">Sunrise</option>
         </Select>
       </FormControl>
+
+      <Divider />
+
+      <Heading size="md">Background</Heading>
+      <FormControl as="fieldset">
+        <FormLabel as="legend">Background Type</FormLabel>
+        <RadioGroup onChange={handleBackgroundTypeChange} value={settings.background.type}>
+          <HStack spacing="24px">
+            <Radio value="gradient">Animated Gradient</Radio>
+            <Radio value="image">Custom Image</Radio>
+          </HStack>
+        </RadioGroup>
+      </FormControl>
+
+      {settings.background.type === 'image' && (
+        <FormControl>
+          <FormLabel htmlFor="background-image-url">Background Image URL</FormLabel>
+          <Input
+            id="background-image-url"
+            placeholder="https://your-image-url.com/background.jpg"
+            value={settings.background.value}
+            onChange={(e) => handleBackgroundImageChange(e.target.value)}
+          />
+        </FormControl>
+      )}
 
       <Divider />
       <Heading size="sm">Layout Components</Heading>

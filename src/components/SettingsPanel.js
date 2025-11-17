@@ -22,7 +22,7 @@ import {
   CloseIcon,
 } from '@chakra-ui/icons';
 import { motion, useDragControls } from 'framer-motion';
-import { FaPalette, FaMagic, FaVolumeUp, FaMapMarkerAlt, FaDatabase, FaInfoCircle, FaWifi, FaBell } from 'react-icons/fa';
+import { FaPalette, FaMagic, FaVolumeUp, FaMapMarkerAlt, FaDatabase, FaInfoCircle, FaWifi, FaBell, FaSync } from 'react-icons/fa';
 import GeneralSettings from './settings/GeneralSettings';
 import AppearanceSettings from './settings/AppearanceSettings';
 import EffectsSettings from './settings/EffectsSettings';
@@ -123,6 +123,10 @@ function SettingsPanel({
               Settings
             </Heading>
             <HStack>
+              <Tooltip label="Refresh" placement="bottom">
+                <IconButton icon={<FaSync />} size="sm" variant="ghost" onClick={() => window.location.reload()} aria-label="Refresh application" />
+              </Tooltip>
+
               <IconButton icon={<CloseIcon />} size="sm" variant="ghost" onClick={onClose} aria-label="Close settings" />
             </HStack>
           </HStack>

@@ -20,6 +20,7 @@ function AnimatedBackground({
   animationSettings,
   onLightningFlash,
 }) {
+  // const background = background || { type: 'gradient', value: '' };
   const timeOfDay = useMotionValue(0); // 0 = midnight, 0.5 = noon, 1 = midnight
   const { playSound, stopSound } = useSound();
   const dragX = useMotionValue(0);

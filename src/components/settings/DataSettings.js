@@ -59,7 +59,7 @@ function DataSettings({ onClearCache, onToggleLogger }) {
           Clearing the cache will remove all your saved clocks and settings, resetting the application to its initial
           state. This is the only way to change your primary location.
         </Text>
-        <Button colorScheme="red" onClick={onResetAlertOpen}>
+        <Button colorScheme="red" onClick={onResetAlertOpen} isLoading={isClearing}>
           Clear Cache & Reset App
         </Button>
       </Box>
@@ -77,7 +77,7 @@ function DataSettings({ onClearCache, onToggleLogger }) {
               be undone.
             </AlertDialogBody>
             <AlertDialogFooter>
-              <Button onClick={onResetAlertClose}>Cancel</Button>
+              <Button onClick={onResetAlertClose} isDisabled={isClearing}>Cancel</Button>
               <Button colorScheme="red" onClick={handleClearAndReset} ml={3} isLoading={isClearing}>
                 Clear & Reset
               </Button>

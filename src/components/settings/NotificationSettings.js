@@ -9,7 +9,8 @@ import {
     FormLabel,
     Switch,
     HStack,
-    useToast
+    useToast,
+    Spinner
 } from '@chakra-ui/react';
 import { useSettings } from '../../contexts/SettingsContext';
 import { subscribeUserToPush } from '../../utils/pushNotifications';
@@ -57,11 +58,17 @@ function NotificationSettings() {
     return (
         <VStack spacing={6} align="stretch">
             <Heading size="md">Weather Alerts</Heading>
-            <FormControl as={HStack} justify="space-between" p={3} borderWidth="1px" borderRadius="md" isDisabled={permissionStatus === 'denied'}>
-                <FormLabel htmlFor="enable-push-notifications" mb="0">
-                    Enable Push Notifications
-                </FormLabel>
-                <Switch id="enable-push-notifications" isChecked={settings.notificationSettings.enablePushNotifications} onChange={(e) => handleSettingChange('enablePushNotifications', e.target.checked)} isLoading={isSubscribing} />
+            <FormControl as={HStack} justify="space-between" p={3} borderWidth="1px" borderRadius="md">
+                <FormLabel htmlFor="enable-push-notifications" mb="0">Enable Push Notifications</FormLabel>
+                <HStack>
+                    {isSubscribing && <Spinner size="sm" />}
+                    <Switch
+                        id="enable-push-notifications"
+                        isChecked={settings.notificationSettings.enablePushNotifications}
+                        onChange={(e) => handleSettingChange('enablePushNotifications', e.target.checked)}
+                        isDisabled={isSubscribing || permissionStatus === 'denied'}
+                    />
+                </HStack>
             </FormControl>
             <Alert status="info" borderRadius="md">
                 <AlertIcon />

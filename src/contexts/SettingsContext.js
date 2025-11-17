@@ -1,43 +1,72 @@
 // src/contexts/SettingsContext.js
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { settingsReducer, initialState } from '../settingsReducer';
+import { settingsReducer } from '../components/settings/settingsReducer';
 
 const SettingsContext = createContext();
 
-const APP_SETTINGS_KEY = 'skyline-app-settings';
+const getInitialState = () => {
+    const savedSettings = localStorage.getItem('skyline-settings');
+    const defaultState = {
+        themePreference: 'auto',
+        layoutPreference: 'grid',
+        timeFormat: '12h',
+        clockTheme: 'metallic',
+        displaySettings: {
+            showCelestialEvents: true,
+            showPanchangamPanel: false,
+            showHourlyForecast: true,
+            showWeeklyForecast: true,
+            showSunPath: true,
+            showWorldClock: true,
+        },
+        notificationSettings: {
+            enablePushNotifications: false,
+        },
+        clocks: [],
+        primaryLocation: null,
+        panelPositions: {},
+        background: {
+            type: 'gradient',
+            value: '',
+        },
+        animationSettings: {
+            showWeatherEffects: true,
+            showAmbientEffects: true,
+        },
+        appSettings: {
+            autoUpdateCheck: true,
+            developerMode: false,
+        },
+    };
+
+    try {
+        if (savedSettings) {
+            const parsedSettings = JSON.parse(savedSettings);
+            // Ensure parsed settings is an object before spreading
+            if (parsedSettings && typeof parsedSettings === 'object') {
+                return { ...defaultState, ...parsedSettings };
+            }
+        }
+        return defaultState;
+    } catch (error) {
+        console.error("Failed to parse settings from localStorage", error);
+        return defaultState;
+    }
+};
 
 export const SettingsProvider = ({ children }) => {
-    // Initialize state from localStorage or use initial state
-    const [state, dispatch] = useReducer(settingsReducer, initialState, (init) => {
-        try {
-            const storedState = localStorage.getItem(APP_SETTINGS_KEY);
-            if (storedState) {
-                // Merge stored state with initial state to ensure all keys are present
-                const parsedState = JSON.parse(storedState);
-                return { ...init, ...parsedState };
-            }
-        } catch (error) {
-            console.error('Could not parse settings from localStorage', error);
-        }
-        return init;
-    });
+    const [settings, dispatch] = useReducer(settingsReducer, getInitialState());
 
-    // Persist state to localStorage whenever it changes
     useEffect(() => {
-        try {
-            localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(state));
-        } catch (error) {
-            console.error('Could not save settings to localStorage', error);
-        }
-    }, [state]);
+        // Save settings to localStorage whenever they change
+        localStorage.setItem('skyline-settings', JSON.stringify(settings));
+    }, [settings]);
 
-    return <SettingsContext.Provider value={{ settings: state, dispatch }}>{children}</SettingsContext.Provider>;
+    return (
+        <SettingsContext.Provider value={{ settings, dispatch }}>
+            {children}
+        </SettingsContext.Provider>
+    );
 };
 
-export const useSettings = () => {
-    const context = useContext(SettingsContext);
-    if (context === undefined) {
-        throw new Error('useSettings must be used within a SettingsProvider');
-    }
-    return context;
-};
+export const useSettings = () => useContext(SettingsContext);

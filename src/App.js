@@ -518,53 +518,56 @@ function AppContent() {
               scrollbarWidth: 'thin',
             }}
           >
-            <AnimatePresence>
-              {primaryLocation && (
-                <motion.div
-                  key="weather-card"
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-                >
-                  <WeatherCard
-                    latitude={primaryLocation.latitude}
-                    longitude={primaryLocation.longitude}
-                    onForecastFetch={handleForecastFetch}
-                    locationName={primaryLocation.location}
-                    onWeatherFetch={handleWeatherFetch}
-                    timeFormat={timeFormat}
-                    displaySettings={displaySettings}
-                    appSettings={appSettings}
-                  />
-                </motion.div>
-              )}
-              {displaySettings.showSunPath && (
-                <motion.div
-                  key="sun-path"
-                  layout
-                  transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-                ><SeasonalSunPath /></motion.div>
-              )}
-              {displaySettings.showCelestialEvents && primaryLocation && (
-                <motion.div
-                  key="celestial-events"
-                  layout
-                  transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-                >
-                  <CelestialEventsPanel latitude={primaryLocation.latitude} longitude={primaryLocation.longitude} />
-                </motion.div>
-              )}
-              {displaySettings.showPanchangamPanel && (
-                <motion.div
-                  key="panchangam-panel"
-                  layout
-                  transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-                >
-                  <TamilPanchangamPanel primaryLocation={primaryLocation} />
-                </motion.div>
-              )}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={settings.layoutPreference}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                style={{ height: '100%' }}
+              >
+                {(() => {
+                  const panels = [];
+                  if (primaryLocation) {
+                    panels.push(
+                      <WeatherCard
+                        key="weather-card"
+                        latitude={primaryLocation.latitude}
+                        longitude={primaryLocation.longitude}
+                        onForecastFetch={handleForecastFetch}
+                        locationName={primaryLocation.location}
+                        onWeatherFetch={handleWeatherFetch}
+                        timeFormat={timeFormat}
+                        displaySettings={displaySettings}
+                        appSettings={appSettings}
+                      />
+                    );
+                  }
+                  if (displaySettings.showSunPath) {
+                    panels.push(<SeasonalSunPath key="sun-path" />);
+                  }
+                  if (displaySettings.showCelestialEvents && primaryLocation) {
+                    panels.push(<CelestialEventsPanel key="celestial-events" latitude={primaryLocation.latitude} longitude={primaryLocation.longitude} />);
+                  }
+                  if (displaySettings.showPanchangamPanel) {
+                    panels.push(<TamilPanchangamPanel key="panchangam-panel" primaryLocation={primaryLocation} />);
+                  }
+
+                  switch (settings.layoutPreference) {
+                    case 'vertical':
+                      return <VStack spacing={4}>{panels}</VStack>;
+                    case 'horizontal':
+                      return (
+                        <HStack spacing={4} align="stretch" h="100%">
+                          {panels.map((panel) => React.cloneElement(panel, { minW: '400px' }))}
+                        </HStack>
+                      );
+                    default: // 'grid'
+                      return <Grid templateColumns="repeat(auto-fit, minmax(400px, 1fr))" gap={4}>{panels}</Grid>;
+                  }
+                })()}
+              </motion.div>
             </AnimatePresence>
           </Box>
         </Grid>
@@ -685,6 +688,7 @@ function App() {
         <SoundProvider> {/* SoundProvider also needs to wrap the app content */}
           <ErrorBoundary>
             <AppContent />
+
           </ErrorBoundary>
         </SoundProvider>
       </SettingsProvider>
