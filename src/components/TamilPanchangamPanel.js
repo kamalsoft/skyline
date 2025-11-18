@@ -1,14 +1,12 @@
 // src/components/TamilPanchangamPanel.js
 import React, { useState, useEffect } from 'react';
-import { Heading, Text, VStack, Divider } from '@chakra-ui/react';
-import GlassCard from './GlassCard';
-import { motion } from 'framer-motion';
+import { Heading, Text, VStack, Divider, Box } from '@chakra-ui/react';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import PropTypes from 'prop-types';
 import PanchangamSkeleton from './skeletons/PanchangamSkeleton';
 import { MhahPanchang } from 'mhah-panchang';
-import { useSettings } from '../contexts/SettingsContext';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -84,8 +82,7 @@ function calculateYamagandam(sunrise, sunset, date) {
     return `${formatTime(startMs)} - ${formatTime(endMs)}`;
 }
 
-function TamilPanchangamPanel({ primaryLocation }) {
-    const { settings, dispatch } = useSettings();
+function TamilPanchangamPanel({ primaryLocation, className }) {
     const [data, setData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [currentTime, setCurrentTime] = useState('');
@@ -129,32 +126,26 @@ function TamilPanchangamPanel({ primaryLocation }) {
     }
 
     return (
-        <motion.div
-            drag
-            dragMomentum={false}
-            onDragEnd={(event, info) => {
-                dispatch({ type: 'SET_PANEL_POSITION', payload: { panel: 'panchangam', position: { x: info.point.x, y: info.point.y } } });
-            }}
-            initial={settings.panelPositions.panchangam}
-            style={{ position: 'fixed', width: '300px', zIndex: 1300 }}
-            whileDrag={{ scale: 1.02, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)' }}
-        >
-            <GlassCard p={4} borderRadius="xl" w="full" cursor="grab">
-                <Heading size="md" mb={4}>Tamil Panchangam</Heading>
-                {data ? (
-                    <VStack align="stretch" spacing={3}>
-                        <Text><b>{dayjs().tz(primaryLocation.timeZone).format('MMMM D, YYYY')}</b></Text>
-                        <Text fontWeight="bold" fontSize="lg">{currentTime}</Text>
-                        <Divider />
-                        <Text><b>Tithi:</b> {data.Tithi.name}</Text>
-                        <Text><b>Nakshatra:</b> {data.Nakshatra.name}</Text>
-                        <Text><b>Rahu Kalam:</b> {rahuKalam}</Text>
-                        <Text><b>Yamagandam:</b> {yamagandam}</Text>
-                    </VStack>
-                ) : <Text>Could not load Panchangam data.</Text>}
-            </GlassCard>
-        </motion.div>
+        <Box className={`glass ${className}`} p={4} borderRadius="xl">
+            <Heading size="md" mb={4}>Tamil Panchangam</Heading>
+            {data ? (
+                <VStack align="stretch" spacing={3}>
+                    <Text><b>{dayjs().tz(primaryLocation.timeZone).format('MMMM D, YYYY')}</b></Text>
+                    <Text fontWeight="bold" fontSize="lg">{currentTime}</Text>
+                    <Divider />
+                    <Text><b>Tithi:</b> {data.Tithi.name}</Text>
+                    <Text><b>Nakshatra:</b> {data.Nakshatra.name}</Text>
+                    <Text><b>Rahu Kalam:</b> {rahuKalam}</Text>
+                    <Text><b>Yamagandam:</b> {yamagandam}</Text>
+                </VStack>
+            ) : <Text>Could not load Panchangam data.</Text>}
+        </Box>
     );
 }
+
+TamilPanchangamPanel.propTypes = {
+    primaryLocation: PropTypes.object.isRequired,
+    className: PropTypes.string,
+};
 
 export default TamilPanchangamPanel;

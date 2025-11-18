@@ -1,5 +1,5 @@
 // src/components/WeatherCard.js
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import {
   useBreakpointValue,
   Box,
@@ -7,40 +7,26 @@ import {
   Text,
   VStack,
   HStack,
-  Grid,
+
   useDisclosure,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
-  Button,
-  ButtonGroup,
-  Badge,
-  IconButton,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalCloseButton,
-  ModalBody,
-  Spinner,
-  Tooltip,
+  Alert, AlertIcon, AlertTitle, AlertDescription, Button,
+  IconButton, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody,
 } from '@chakra-ui/react';
+import PropTypes from 'prop-types';
 import { getWeatherDescription, WeatherError } from '../utils/weatherUtils';
-import { RepeatIcon, CalendarIcon, ViewIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
-import AnimatedWeatherIcon from './AnimatedWeatherIcon';
+import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import { validateWeatherData } from '../utils/weatherValidation';
-import { getAqiColor } from '../utils/aqiUtils';
 import ForecastItem from './ForecastItem';
-import { generateWeatherSummary, generateActivitySuggestion } from '../utils/aiSummaryUtils';
 import HistoryModal from './HistoryModal';
 import DetailedWeatherModal from './DetailedWeatherModal';
 import SunCalendar from './SunCalendar';
 import WeatherMapModal from './WeatherMapModal';
 import WeatherCardSkeleton from './WeatherCardSkeleton';
-import { useSound } from '../contexts/SoundContext';
 import { motion, useAnimation } from 'framer-motion';
-import { FaHistory } from 'react-icons/fa';
+import WeatherCardHeader from './WeatherCardHeader'; // Assuming file is moved to src/components
+import AISummary from './AISummary'; // Assuming file is moved to src/components
+import CurrentWeather from './CurrentWeather'; // Assuming file is moved to src/components
+import WeatherActions from './WeatherActions'; // Assuming file is moved to src/components
 
 // Extracted and memoized ForecastCarousel to prevent re-creation on every render
 const ForecastCarousel = React.memo(({ children, itemCount }) => {
@@ -122,24 +108,10 @@ function WeatherCard({
   locationName,
   timeFormat,
   displaySettings,
-
+  className,
   appSettings = {},
 }) {
-  const ResponsiveButtonGroup = ({ children }) => { // Accept children explicitly
-    const isMobile = useBreakpointValue({ base: true, md: false });
-    return (
-      <VStack
-        spacing={isMobile ? 2 : 0}
-        align={isMobile ? 'stretch' : 'flex-end'}
-        w={isMobile ? 'full' : 'auto'}
-      >
-        {children}
-      </VStack>
-    );
-  };
   const [weatherData, setWeatherData] = useState(null);
-  // Define isMobile at the top level of the component so it can be used in the JSX below
-  const isMobile = useBreakpointValue({ base: true, md: false });
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -148,15 +120,11 @@ function WeatherCard({
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedForecast, setSelectedForecast] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
-  const [aiSummary, setAiSummary] = useState('');
-  const [activitySuggestion, setActivitySuggestion] = useState(null);
   const { isOpen: isCalendarOpen, onOpen: onCalendarOpen, onClose: onCalendarClose } = useDisclosure();
   const { isOpen: isMapOpen, onOpen: onMapOpen, onClose: onMapClose } = useDisclosure();
   const { isOpen: isHistoryOpen, onOpen: onHistoryOpen, onClose: onHistoryClose } = useDisclosure();
 
   const [currentTime, setCurrentTime] = useState(new Date());
-  const { playSound } = useSound();
 
   // Create a ref to hold the latest weatherData without causing re-renders
   const weatherDataRef = useRef(weatherData);
@@ -246,6 +214,13 @@ function WeatherCard({
     [unit]
   );
 
+  // Memoize derived data to avoid re-calculating on every render
+  const currentHourIndex = useMemo(() => {
+    if (!weatherData?.hourly)
+      return -1;
+    return weatherData.hourly.time.findIndex((time) => new Date(time) >= currentTime);
+  }, [weatherData, currentTime]);
+
   const handleForecastClick = useCallback(
     (type, index) => {
       let details;
@@ -276,7 +251,6 @@ function WeatherCard({
             day: 'numeric',
           }),
           temperature: `${displayTemp(dayData.temperature_2m_min[index], true)} / ${displayTemp(dayData.temperature_2m_max[index], true)}`,
-          // Manually map properties to avoid circular references
           weather_code: dayData.weather_code[index],
           sunrise: dayData.sunrise[index],
           sunset: dayData.sunset[index],
@@ -290,18 +264,6 @@ function WeatherCard({
     },
     [weatherData, displayTemp, timeFormat, onOpen]
   );
-
-  // Memoize derived data to avoid re-calculating on every render
-  const { currentHourIndex, currentApparentTemperature, currentHumidity } = useMemo(() => {
-    if (!weatherData?.hourly)
-      return { currentHourIndex: -1, currentApparentTemperature: undefined, currentHumidity: undefined };
-    const index = weatherData.hourly.time.findIndex((time) => new Date(time) >= currentTime);
-    return {
-      currentHourIndex: index,
-      currentApparentTemperature: index !== -1 ? weatherData.hourly.apparent_temperature[index] : undefined,
-      currentHumidity: index !== -1 ? weatherData.hourly.relative_humidity_2m[index] : undefined,
-    };
-  }, [weatherData, currentTime]);
 
   // Memoize forecast items to prevent re-mapping on every render
   const hourlyForecastItems = useMemo(() => {
@@ -345,26 +307,6 @@ function WeatherCard({
     });
   }, [weatherData, handleForecastClick, displayTemp]);
 
-  // Memoize the AI summary generation to prevent re-running on every render
-  useEffect(() => {
-    if (appSettings.enableAiSummary && weatherData) {
-      console.info('[WeatherCard] AI summary is enabled. Generating...');
-      setIsGeneratingSummary(true);
-      // Simulate AI generation delay to avoid blocking the main thread
-      const timer = setTimeout(() => {
-        setAiSummary(generateWeatherSummary(weatherData));
-        setActivitySuggestion(generateActivitySuggestion(weatherData));
-        setIsGeneratingSummary(false);
-      }, 500);
-      return () => clearTimeout(timer);
-    } else {
-      setAiSummary('');
-      setActivitySuggestion(null);
-    }
-  }, [weatherData, appSettings.enableAiSummary]);
-
-
-
   if (isLoading) {
     return <WeatherCardSkeleton />;
   }
@@ -406,147 +348,20 @@ function WeatherCard({
 
   return (
     <Box className="glass" p={4} borderRadius="xl">
-      <VStack justify="center" mb={4}>
-        <Heading as="h3" size="lg" noOfLines={1} title={locationName}>
-          {locationName}
-        </Heading>
-        {lastUpdated && (
-          <Text fontSize="xs" color="gray.500">
-            Updated: {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </Text>
-        )}
+      <WeatherCardHeader locationName={locationName} lastUpdated={lastUpdated} />
+      <VStack spacing={4} align="stretch">
         <Text>{getWeatherDescription(current.weathercode)}</Text>
-        {appSettings.enableAiSummary && (
-          <>
-            {isGeneratingSummary ? (
-              <HStack className="glass" p={3} borderRadius="md" w="full" justify="center">
-                <Spinner size="xs" />
-                <Text fontSize="sm" fontStyle="italic">
-                  Generating AI weather brief...
-                </Text>
-              </HStack>
-            ) : (
-              aiSummary && <Box className="glass" p={3} borderRadius="md" w="full">
-                <Text fontSize="sm" fontStyle="italic">{aiSummary}</Text>
-              </Box>
-            )}
-            {activitySuggestion && !isGeneratingSummary && (
-              <Box className="glass" p={3} borderRadius="md" w="full">
-                <HStack>
-                  <Box as={activitySuggestion.icon} size="20px" color="accentPink" />
-                  <Text fontSize="sm" fontWeight="bold">
-                    Suggestion:{' '}
-                    <Text as="span" fontWeight="normal">
-                      {activitySuggestion.text}
-                    </Text>
-                  </Text>
-                </HStack>
-              </Box>
-            )}
-          </>
-        )}
-      </VStack>
-      <VStack spacing={6} align="stretch">
-        {/* Current Weather */}
-        <Box position="relative">
-          {isRefreshing && (
-            <Box
-              position="absolute"
-              top="0"
-              left="0"
-              right="0"
-              bottom="0"
-              bg="blackAlpha.600"
-              zIndex="1"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              borderRadius="xl"
-            >
-              <VStack>
-                <Spinner color="white" />
-                <Text color="white" fontSize="sm">Refreshing...</Text>
-              </VStack>
-            </Box>
-          )}
-          <Box className="glass" p={4} borderRadius="xl">
-            <Grid templateColumns={{ base: '1fr', lg: 'auto 1fr' }} gap={{ base: 4, md: 6 }} alignItems="center">
-              <HStack spacing={4} justify="center">
-                <AnimatedWeatherIcon weatherCode={current.weathercode} w={24} h={24} />
-                <Text fontSize="6xl" fontWeight="bold">
-                  {displayTemp(current.temperature, false)}
-                </Text>
-                <VStack align={{ base: 'center', md: 'stretch' }} justify="center" spacing={1}>
-                  {currentApparentTemperature !== undefined && (
-                    <Text>Feels like: {displayTemp(currentApparentTemperature, false)}</Text>
-                  )}
-                  {currentHumidity !== undefined && <Text>Humidity: {currentHumidity}%</Text>}
-                  <Text>Wind: {current.windspeed} km/h</Text>
-                  {airQuality?.us_aqi && (
-                    <Text>
-                      AQI: <Badge colorScheme={getAqiColor(airQuality.us_aqi)}>{airQuality.us_aqi}</Badge>
-                    </Text>
-                  )}
-                </VStack>
-              </HStack>
-              <ResponsiveButtonGroup> {/* This wrapper handles the VStack and responsive alignment */}
-                {/* Action Buttons */}
-                <ButtonGroup isAttached={!isMobile} size="sm" variant="outline">
-                  <Tooltip label="Refresh weather" placement="top">
-                    <IconButton
-                      icon={<RepeatIcon />}
-                      onClick={() => {
-                        playSound('ui-click');
-                        fetchWeather();
-                      }}
-                      isLoading={isLoading}
-                      aria-label="Refresh weather"
-                    />
-                  </Tooltip>
-                  <Tooltip label="Open Sunrise/Sunset Calendar" placement="top">
-                    <IconButton
-                      icon={<CalendarIcon />}
-                      onClick={() => {
-                        playSound('ui-click');
-                        onCalendarOpen();
-                      }}
-                      aria-label="Open sunrise/sunset calendar"
-                    />
-                  </Tooltip>
-                  <Tooltip label="Open Weather Map" placement="top">
-                    <IconButton
-                      icon={<ViewIcon />}
-                      onClick={() => {
-                        playSound('ui-click');
-                        onMapOpen();
-                      }}
-                      aria-label="Open weather map"
-                    />
-                  </Tooltip>
-                  <Tooltip label="View Weather History" placement="top">
-                    <IconButton
-                      icon={<FaHistory />}
-                      onClick={() => {
-                        playSound('ui-click');
-                        onHistoryOpen();
-                      }}
-                      aria-label="View weather history"
-                    />
-                  </Tooltip>
-                </ButtonGroup>
-                {/* Unit Toggle Buttons */}
-                <ButtonGroup isAttached={!isMobile} size="sm">
-                  <Button onClick={() => { playSound('ui-click'); setUnit('C'); }} isActive={unit === 'C'}>
-                    °C
-                  </Button>
-                  <Button onClick={() => { playSound('ui-click'); setUnit('F'); }} isActive={unit === 'F'}>
-                    °F
-                  </Button>
-                </ButtonGroup>
-              </ResponsiveButtonGroup>
-            </Grid>
-          </Box>
-        </Box>
+        <AISummary weatherData={weatherData} isEnabled={appSettings.enableAiSummary} />
+        <CurrentWeather current={current} hourly={weatherData.hourly} airQuality={airQuality} displayTemp={displayTemp} />
+        <WeatherActions
+          onRefresh={fetchWeather}
+          onCalendarOpen={onCalendarOpen}
+          onMapOpen={onMapOpen}
+          onHistoryOpen={onHistoryOpen}
+          unit={unit}
+          onUnitChange={setUnit}
+          isLoading={isRefreshing}
+        />
 
         {/* Hourly Forecast */}
         {displaySettings.showHourlyForecast && (
@@ -602,4 +417,21 @@ function WeatherCard({
   );
 }
 
-export default React.memo(WeatherCard);
+WeatherCard.propTypes = {
+  latitude: PropTypes.number.isRequired,
+  longitude: PropTypes.number.isRequired,
+  onForecastFetch: PropTypes.func.isRequired,
+  onWeatherFetch: PropTypes.func.isRequired,
+  locationName: PropTypes.string.isRequired,
+  timeFormat: PropTypes.string.isRequired,
+  displaySettings: PropTypes.object.isRequired,
+  className: PropTypes.string,
+  appSettings: PropTypes.object,
+};
+
+WeatherCard.defaultProps = {
+  className: '',
+  appSettings: {},
+};
+
+export default memo(WeatherCard);

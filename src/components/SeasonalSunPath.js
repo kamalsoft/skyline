@@ -5,7 +5,15 @@ import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { FaGlobeAmericas } from 'react-icons/fa';
 import { WiDaySunny } from 'react-icons/wi'; // Using sun icon for the sun
 
-function SeasonalSunPath() {
+/**
+ * A component that visually represents the Earth's elliptical orbit around the Sun,
+ * indicating the current season for the Northern Hemisphere. It includes an animated
+ * diagram showing the Earth's position and provides textual explanations for the seasons.
+ *
+ * @param {object} props - The component's properties.
+ * @param {string} props.className - Additional CSS classes to apply to the component.
+ */
+function SeasonalSunPath({ className }) {
     const now = new Date();
     const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
 
@@ -70,7 +78,7 @@ function SeasonalSunPath() {
     );
 
     return (
-        <Box className="glass" p={6} borderRadius="xl" mt={6}>
+        <Box className={`glass ${className}`} p={6} borderRadius="xl" mt={6}>
             <VStack spacing={4} align="stretch">
                 <Heading as="h4" size="md" textAlign="center">
                     Earth's Orbit & The Seasons

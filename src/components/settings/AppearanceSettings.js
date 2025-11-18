@@ -14,11 +14,14 @@ import {
   RadioGroup,
   Input,
   Radio,
+  Box,
 } from '@chakra-ui/react';
 import { useSettings } from '../../contexts/SettingsContext';
+import { useTheme } from '@chakra-ui/react';
 
 function AppearanceSettings() {
   const { settings, dispatch } = useSettings();
+  const theme = useTheme();
 
   const handleDisplaySettingChange = (settingName, value) => {
     dispatch({
@@ -49,6 +52,16 @@ function AppearanceSettings() {
 
   const handleBackgroundImageChange = (value) => {
     dispatch({ type: 'SET_BACKGROUND', payload: { value: value } });
+  };
+
+  const handleGradientThemeChange = (value) => {
+    if (value === 'random') {
+      const gradientKeys = Object.keys(theme.colors.gradients);
+      const randomTheme = gradientKeys[Math.floor(Math.random() * gradientKeys.length)];
+      dispatch({ type: 'SET_BACKGROUND', payload: { gradientTheme: randomTheme } });
+    } else {
+      dispatch({ type: 'SET_BACKGROUND', payload: { gradientTheme: value } });
+    }
   };
 
   const handleAnimationSettingChange = (settingName, value) => {
@@ -175,6 +188,38 @@ function AppearanceSettings() {
         </RadioGroup>
       </FormControl>
 
+      {settings.background.type === 'gradient' && (
+        <HStack align="flex-end" spacing={4}>
+          <FormControl>
+            <FormLabel htmlFor="gradient-theme">Gradient Theme</FormLabel>
+            <Select
+              id="gradient-theme"
+              value={settings.background.gradientTheme || 'default'}
+              onChange={(e) => handleGradientThemeChange(e.target.value)}
+              maxW="200px"
+            >
+              <option value="default">Default</option>
+              <option value="ocean">Ocean</option>
+              <option value="sunset">Sunset</option>
+              <option value="desert">Desert</option>
+              <option value="aurora">Aurora</option>
+              <option value="cosmic">Cosmic</option>
+              <option value="random">Random</option>
+            </Select>
+          </FormControl>
+          <Box
+            w="40px"
+            h="40px"
+            borderRadius="md"
+            border="2px solid"
+            borderColor="whiteAlpha.400"
+            bgGradient={`linear(to-br, ${theme.colors.gradients[settings.background.gradientTheme]?.day || theme.colors.gradients.default.day.split(', ')[1]}, ${theme.colors.gradients[settings.background.gradientTheme]?.night || theme.colors.gradients.default.night.split(', ')[1]})`}
+            title={`${settings.background.gradientTheme} theme preview`}
+            transition="background 0.3s ease"
+          />
+        </HStack>
+      )}
+
       {settings.background.type === 'image' && (
         <FormControl>
           <FormLabel htmlFor="background-image-url">Background Image URL</FormLabel>
@@ -257,6 +302,18 @@ function AppearanceSettings() {
           id="show-world-clock"
           isChecked={settings.displaySettings.showWorldClock}
           onChange={(e) => handleDisplaySettingChange('showWorldClock', e.target.checked)}
+        />
+      </FormControl>
+      <FormControl display="flex" alignItems="center">
+        <FormLabel htmlFor="show-new-panel" mb="0">
+          Show New Panel
+        </FormLabel>
+        <Switch
+          id="show-new-panel"
+          isChecked={settings.displaySettings.showNewPanel}
+          onChange={(e) =>
+            handleDisplaySettingChange('showNewPanel', e.target.checked)
+          }
         />
       </FormControl>
     </VStack>

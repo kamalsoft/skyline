@@ -19,7 +19,7 @@ import {
   useBreakpointValue,
 } from '@chakra-ui/react';
 import {
-  CloseIcon,
+  CloseIcon, QuestionOutlineIcon,
 } from '@chakra-ui/icons';
 import { motion, useDragControls } from 'framer-motion';
 import { FaPalette, FaMagic, FaVolumeUp, FaMapMarkerAlt, FaDatabase, FaInfoCircle, FaWifi, FaBell, FaSync } from 'react-icons/fa';
@@ -36,6 +36,7 @@ import CustomToast from './CustomToast';
 function SettingsPanel({
   onClearCache = () => console.warn('[SettingsPanel] onClearCache prop was not provided.'),
   onClose,
+  onStartTour,
   onUpdateFound,
   isUpdateAvailable,
   isAnimationPaused,
@@ -123,6 +124,9 @@ function SettingsPanel({
               Settings
             </Heading>
             <HStack>
+              <Tooltip label="Start Tour" placement="bottom">
+                <IconButton icon={<QuestionOutlineIcon />} size="sm" variant="ghost" onClick={onStartTour} aria-label="Start onboarding tour" />
+              </Tooltip>
               <Tooltip label="Refresh" placement="bottom">
                 <IconButton icon={<FaSync />} size="sm" variant="ghost" onClick={() => window.location.reload()} aria-label="Refresh application" />
               </Tooltip>

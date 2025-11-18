@@ -4,6 +4,10 @@ import { settingsReducer } from '../components/settings/settingsReducer';
 
 const SettingsContext = createContext();
 
+/**
+ * Retrieves the initial settings state, either from localStorage or by using
+ * a default configuration. This ensures that user preferences are persisted.
+ */
 const getInitialState = () => {
     const savedSettings = localStorage.getItem('skyline-settings');
     const defaultState = {
@@ -18,6 +22,7 @@ const getInitialState = () => {
             showWeeklyForecast: true,
             showSunPath: true,
             showWorldClock: true,
+            showNewPanel: true, // Add setting for the new panel
         },
         notificationSettings: {
             enablePushNotifications: false,
@@ -28,6 +33,7 @@ const getInitialState = () => {
         background: {
             type: 'gradient',
             value: '',
+            gradientTheme: 'default',
         },
         animationSettings: {
             showWeatherEffects: true,
@@ -56,6 +62,11 @@ const getInitialState = () => {
     }
 };
 
+/**
+ * Provides application-wide settings management.
+ * It uses a reducer to handle state changes and persists the settings
+ * to localStorage automatically.
+ */
 export const SettingsProvider = ({ children }) => {
     const [settings, dispatch] = useReducer(settingsReducer, getInitialState());
 
@@ -71,4 +82,7 @@ export const SettingsProvider = ({ children }) => {
     );
 };
 
+/**
+ * A custom hook to easily access the settings context (state and dispatch function).
+ */
 export const useSettings = () => useContext(SettingsContext);

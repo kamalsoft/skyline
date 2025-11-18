@@ -59,6 +59,44 @@ const colors = {
         },
         dark: { bg: 'linear-gradient(145deg, #2c3e50, #4b79a1)', shadowLight: '#5c8bb2', shadowDark: '#1a2a38', hands: '#ffecd2', numbers: '#ffecd2', secondHand: '#fcb69f' },
     },
+    gradients: {
+        default: {
+            night: 'linear-gradient(to bottom, #0c0e2b, #1a202c)',
+            dawn: 'linear-gradient(to bottom, #2c3e50, #fd5e53)',
+            day: 'linear-gradient(to bottom, #4A90E2, #87CEEB)',
+            dusk: 'linear-gradient(to bottom, #ff7e5f, #2c3e50)',
+        },
+        ocean: {
+            night: 'linear-gradient(to bottom, #09203f, #537895)',
+            dawn: 'linear-gradient(to bottom, #2B32B2, #1488CC)',
+            day: 'linear-gradient(to bottom, #2980B9, #6DD5FA, #FFFFFF)',
+            dusk: 'linear-gradient(to bottom, #00467F, #A5CC82)',
+        },
+        sunset: {
+            night: 'linear-gradient(to bottom, #232526, #414345)',
+            dawn: 'linear-gradient(to bottom, #ff7e5f, #feb47b)',
+            day: 'linear-gradient(to bottom, #fceabb, #f8b500)',
+            dusk: 'linear-gradient(to bottom, #c33764, #1d2671)',
+        },
+        desert: {
+            night: 'linear-gradient(to bottom, #202028, #39384D)',
+            dawn: 'linear-gradient(to bottom, #EDC09F, #FFDAB9)',
+            day: 'linear-gradient(to bottom, #FAD6A5, #F5A623)',
+            dusk: 'linear-gradient(to bottom, #8A2387, #E94057, #F27121)',
+        },
+        aurora: {
+            night: 'linear-gradient(to bottom, #0f0c29, #302b63, #24243e)',
+            dawn: 'linear-gradient(to bottom, #7474BF, #348AC7)',
+            day: 'linear-gradient(to bottom, #89f7fe, #66a6ff)',
+            dusk: 'linear-gradient(to bottom, #4e54c8, #8f94fb)',
+        },
+        cosmic: {
+            night: 'linear-gradient(to bottom, #000000, #434343)',
+            dawn: 'linear-gradient(to bottom, #3E5151, #DECBA4)',
+            day: 'linear-gradient(to bottom, #1c92d2, #f2fcfe)',
+            dusk: 'linear-gradient(to bottom, #23074d, #cc5333)',
+        },
+    },
 };
 
 const styles = {

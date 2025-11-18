@@ -1,6 +1,6 @@
 // src/components/AnimatedBackground.js
 import React, { useEffect } from 'react';
-import { Box } from '@chakra-ui/react';
+import { Box, useTheme } from '@chakra-ui/react';
 import { motion, useTransform, useMotionValue } from 'framer-motion';
 import { getMoonPhaseInfo } from '../utils/moonUtils';
 import { useSound } from '../contexts/SoundContext';
@@ -20,10 +20,13 @@ function AnimatedBackground({
   animationSettings,
   onLightningFlash,
 }) {
-  // const background = background || { type: 'gradient', value: '' };
   const timeOfDay = useMotionValue(0); // 0 = midnight, 0.5 = noon, 1 = midnight
   const { playSound, stopSound } = useSound();
   const dragX = useMotionValue(0);
+  const theme = useTheme();
+
+  const selectedGradient = theme.colors.gradients[background.gradientTheme] || theme.colors.gradients.default;
+
 
 
   // --- Performance Optimization 1: Animate opacity of solid layers instead of gradients ---
@@ -158,10 +161,10 @@ function AnimatedBackground({
   return (
     <Box position="fixed" top="0" left="0" right="0" bottom="0" zIndex="-1" overflow="hidden" isolation="isolate">
       {/* Render solid layers and animate their opacity */}
-      <BackgroundLayer opacity={nightOpacity} gradient="linear-gradient(to bottom, #0c0e2b, #1a202c)" />
-      <BackgroundLayer opacity={dawnOpacity} gradient="linear-gradient(to bottom, #2c3e50, #fd5e53)" />
-      <BackgroundLayer opacity={dayOpacity} gradient="linear-gradient(to bottom, #4A90E2, #87CEEB)" />
-      <BackgroundLayer opacity={duskOpacity} gradient="linear-gradient(to bottom, #ff7e5f, #2c3e50)" />
+      <BackgroundLayer opacity={nightOpacity} gradient={selectedGradient.night} />
+      <BackgroundLayer opacity={dawnOpacity} gradient={selectedGradient.dawn} />
+      <BackgroundLayer opacity={dayOpacity} gradient={selectedGradient.day} />
+      <BackgroundLayer opacity={duskOpacity} gradient={selectedGradient.dusk} />
 
       {/* Only render dynamic elements if not using a custom background */}
       <Box position="absolute" top="0" left="0" right="0" bottom="0" zIndex="1">
