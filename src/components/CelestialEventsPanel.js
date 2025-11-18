@@ -1,7 +1,6 @@
 // src/components/CelestialEventsPanel.js
 import React, { useState, useEffect } from 'react';
 import { Box, Heading, Text, VStack, Tabs, TabList, TabPanels, Tab, TabPanel, Spinner, HStack, Icon } from '@chakra-ui/react';
-import GlassCard from './GlassCard';
 import { FaSatellite, FaMeteor } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
@@ -25,7 +24,7 @@ async function fetchCelestialData(latitude, longitude) {
     };
 }
 
-function CelestialEventsPanel({ latitude, longitude }) {
+function CelestialEventsPanel({ latitude, longitude, appSettings = {} }) {
     const [data, setData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -47,7 +46,7 @@ function CelestialEventsPanel({ latitude, longitude }) {
             style={{ position: 'fixed', top: '150px', left: '50px', width: '380px', zIndex: 1300 }}
             whileDrag={{ scale: 1.02, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)' }}
         >
-            <GlassCard p={4} borderRadius="xl" w="full" cursor="grab">
+            <Box p={4} borderRadius="xl" w="full" cursor="grab" className={`themed-panel ${appSettings.uiEffect}`}>
                 <Heading size="md" mb={4}>Celestial Events</Heading>
                 {isLoading ? (
                     <HStack justify="center" minH="150px">
@@ -84,7 +83,7 @@ function CelestialEventsPanel({ latitude, longitude }) {
                         </TabPanels>
                     </Tabs>
                 )}
-            </GlassCard>
+            </Box>
         </motion.div>
     );
 }

@@ -31,17 +31,17 @@ function AISummary({ weatherData, isEnabled }) {
     return (
         <>
             {isGenerating ? (
-                <HStack className="glass" p={3} borderRadius="md" w="full" justify="center">
+                <HStack p={3} borderRadius="md" w="full" justify="center">
                     <Spinner size="xs" />
                     <Text fontSize="sm" fontStyle="italic">Generating AI weather brief...</Text>
                 </HStack>
             ) : (
-                summary && <Box className="glass" p={3} borderRadius="md" w="full">
+                summary && <Box p={3} borderRadius="md" w="full">
                     <Text fontSize="sm" fontStyle="italic">{summary}</Text>
                 </Box>
             )}
             {suggestion && !isGenerating && (
-                <Box className="glass" p={3} borderRadius="md" w="full">
+                <Box p={3} borderRadius="md" w="full">
                     <HStack>
                         <Box as={suggestion.icon} size="20px" color="accentPink" />
                         <Text fontSize="sm" fontWeight="bold">Suggestion:{' '}<Text as="span" fontWeight="normal">{suggestion.text}</Text></Text>

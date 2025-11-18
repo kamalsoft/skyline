@@ -49,11 +49,12 @@ import SeasonalSunPath from './components/SeasonalSunPath';
 import SettingsPanel from './components/SettingsPanel';
 import TamilPanchangamPanel from './components/TamilPanchangamPanel';
 import NewPanel from './components/NewPanel'; // Import the new panel
+import NewPanelSkeleton from './components/NewPanelSkeleton'; // Import the skeleton
 import CelestialEventsPanel from './components/CelestialEventsPanel';
 import WorldClockCard from './components/WorldClockCard';
 import SortableWorldClock from './components/SortableWorldClock';
 import { LogProvider } from './contexts/LogContext';
-import { useAppUI } from './useAppUI';
+import { useAppUI } from './components/AppUIContext';
 import SplitGrid from 'react-split-grid';
 import LogTerminal from './components/LogTerminal';
 import { FaBolt, FaCloud } from 'react-icons/fa';
@@ -74,15 +75,17 @@ import axios from 'axios'; // For reverse geocoding
 function AppContent() {
   const { settings, dispatch } = useSettings();
 
-  const { clocks, primaryLocation, displaySettings, timeFormat, clockTheme, background, animationSettings, themePreference, appSettings } = settings;
+  const { clocks, primaryLocation, displaySettings, timeFormat, animationSettings, themeId, appSettings } = settings;
   const { isOpen: isDrawerOpen, onOpen: onDrawerOpen, onClose: onDrawerClose } = useDisclosure();
 
   const { playSound } = useSound();
-  const { setColorMode } = useColorMode();
+  //const { setColorMode } = useColorMode();
+  useColorMode();
   const { showSettingsPanel, setShowSettingsPanel, showLogTerminal, isSidebarOpen, setIsSidebarOpen, isAnimationPaused } = useAppUI();
   const [activeDragItem, setActiveDragItem] = useState(null);
   const [runTour, setRunTour] = useState(() => !localStorage.getItem('hasCompletedOnboarding'));
 
+  const [isNewPanelLoading, setIsNewPanelLoading] = useState(true); // State for the new panel's loading status
   const handleTourEnd = () => {
     localStorage.setItem('hasCompletedOnboarding', 'true');
     setRunTour(false);
@@ -113,30 +116,9 @@ function AppContent() {
   );
 
   useEffect(() => {
-    const applyTheme = () => {
-      if (themePreference === 'auto') {
-        if (dailyForecast?.sunrise?.[0] && dailyForecast?.sunset?.[0]) {
-          const now = new Date().getTime();
-          const sunriseTime = new Date(dailyForecast.sunrise[0]).getTime();
-          const sunsetTime = new Date(dailyForecast.sunset[0]).getTime();
-          const isDay = now >= sunriseTime && now < sunsetTime;
-          setColorMode(isDay ? 'light' : 'dark');
-        } else {
-          setColorMode('dark'); // Default to dark if sun times are not available
-        }
-      } else {
-        setColorMode(themePreference);
-      }
-    };
-
-    applyTheme();
-    // Check every minute if in auto mode
-    const intervalId = setInterval(() => {
-      if (themePreference === 'auto') applyTheme();
-    }, 60000);
-
-    return () => clearInterval(intervalId);
-  }, [themePreference, dailyForecast, setColorMode]);
+    const timer = setTimeout(() => setIsNewPanelLoading(false), 2000); // Simulate a 2-second load time
+    return () => clearTimeout(timer);
+  }, []);
 
   const [weatherAlerts, setWeatherAlerts] = useState([]);
 
@@ -356,12 +338,14 @@ function AppContent() {
 
   return (
     <OnboardingTour run={runTour} onTourEnd={handleTourEnd}>
-      <Box p={4} h="100vh" display="flex" flexDirection="column">
+      <Box p={4} h="100vh" display="flex" flexDirection="column" className={`theme-${themeId}`}>
         <AnimatedBackground
-          background={background}
           sunrise={dailyForecast?.sunrise?.[0]}
           sunset={dailyForecast?.sunset?.[0]}
-          weatherCode={primaryLocation ? clocks.find((c) => c.id === primaryLocation.id)?.weatherCode : null}
+          weatherCode={
+            primaryLocation ? clocks.find((c) => c.id === primaryLocation.id)?.weatherCode : null
+          }
+          background={settings.background}
           isAnimationPaused={isAnimationPaused}
           animationSettings={animationSettings}
           onLightningFlash={handleLightningFlash}
@@ -375,7 +359,7 @@ function AppContent() {
                   onClick={onDrawerOpen}
                   icon={<ChevronRightIcon />}
                   aria-label="Show world clocks"
-                  className="glass"
+                  className="themed-panel"
                 />
               </Tooltip>
             </motion.div>
@@ -390,7 +374,7 @@ function AppContent() {
               isRound
               size="lg"
               colorScheme="purple"
-              className="glass"
+              className="themed-panel settings-button"
               onClick={() => setShowSettingsPanel(true)}
               aria-label="Open Settings"
               boxShadow="lg"
@@ -408,7 +392,7 @@ function AppContent() {
         {
           currentLocationStatus === 'error' && (
             <Alert status="error" borderRadius="md" className="glass" my={4}>
-              <AlertIcon />
+              <AlertIcon />_
               <Box flex="1">
                 <AlertTitle>Location Error</AlertTitle>
                 <AlertDescription display="block">{currentLocationError}</AlertDescription>
@@ -453,7 +437,7 @@ function AppContent() {
             {/* Sidebar Column */}
             {displaySettings.showWorldClock && !isMobile && (
               <Box
-                className="glass"
+                className={`themed-panel`}
                 borderRadius="xl"
                 p={4}
                 display="flex"
@@ -512,10 +496,10 @@ function AppContent() {
                             >
                               <SortableWorldClock
                                 clock={clock}
-                                clockTheme={clockTheme}
                                 timeFormat={timeFormat}
                                 isSidebarOpen={isSidebarOpen}
                                 appSettings={appSettings}
+                                primaryClock={primaryLocation}
                               />
                             </motion.div>
                           ))}
@@ -526,10 +510,10 @@ function AppContent() {
                           <WorldClockCard
                             clock={activeDragItem}
                             isDragging
-                            clockTheme={clockTheme}
                             timeFormat={timeFormat}
                             isSidebarOpen={isSidebarOpen}
                             appSettings={appSettings}
+                            primaryClock={primaryLocation}
                           />
                         ) : null}
                       </DragOverlay>
@@ -578,17 +562,21 @@ function AppContent() {
                       );
                     }
                     if (displaySettings.showSunPath) {
-                      panels.push(<SeasonalSunPath key="sun-path" className="seasonal-sun-path" />);
+                      panels.push(<SeasonalSunPath key="sun-path" className={`seasonal-sun-path`} appSettings={appSettings} />);
                     }
                     if (displaySettings.showCelestialEvents && primaryLocation) {
-                      panels.push(<CelestialEventsPanel key="celestial-events" latitude={primaryLocation.latitude} longitude={primaryLocation.longitude} />);
+                      panels.push(<CelestialEventsPanel key="celestial-events" latitude={primaryLocation.latitude} longitude={primaryLocation.longitude} appSettings={appSettings} />);
                     }
                     if (displaySettings.showPanchangamPanel) {
-                      panels.push(<TamilPanchangamPanel key="panchangam-panel" primaryLocation={primaryLocation} />);
+                      panels.push(<TamilPanchangamPanel key="panchangam-panel" primaryLocation={primaryLocation} appSettings={appSettings} />);
                     }
                     // Add your new panel to the list
                     if (displaySettings.showNewPanel) {
-                      panels.push(<NewPanel key="new-panel" className="new-panel" />);
+                      if (isNewPanelLoading) {
+                        panels.push(<NewPanelSkeleton key="new-panel-skeleton" />);
+                      } else {
+                        panels.push(<NewPanel key="new-panel" className={`new-panel`} appSettings={appSettings} />);
+                      }
                     }
 
                     switch (settings.layoutPreference) {
@@ -639,7 +627,7 @@ function AppContent() {
         {/* World Clock Drawer for Mobile */}
         <Drawer isOpen={isDrawerOpen} placement="left" onClose={onDrawerClose} size="sm">
           <DrawerOverlay />
-          <DrawerContent className="glass">
+          <DrawerContent className={`themed-panel`}>
             <DrawerCloseButton />
             <DrawerHeader>World Clocks</DrawerHeader>
             <DrawerBody
@@ -679,15 +667,13 @@ function AppContent() {
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.9 }}
                         >
-                          <SortableWorldClock clock={clock} clockTheme={clockTheme} timeFormat={timeFormat} isSidebarOpen={true} appSettings={appSettings} />
+                          <SortableWorldClock clock={clock} timeFormat={timeFormat} isSidebarOpen={true} appSettings={appSettings} primaryClock={primaryLocation} />
                         </motion.div>
                       ))}
                     </AnimatePresence>
                   </VStack>
                   <DragOverlay>
-                    {activeDragItem ? (
-                      <WorldClockCard clock={activeDragItem} isDragging clockTheme={clockTheme} timeFormat={timeFormat} isSidebarOpen={true} appSettings={appSettings} />
-                    ) : null}
+                    {activeDragItem ? <WorldClockCard clock={activeDragItem} isDragging timeFormat={timeFormat} isSidebarOpen={true} appSettings={appSettings} primaryClock={primaryLocation} /> : null}
                   </DragOverlay>
                 </SortableContext>
               </DndContext>
@@ -708,7 +694,7 @@ function AppContent() {
         {/* Footer Section */}
         <Box as="footer" pt={4}>
           <Flex
-            className="glass"
+            className={`themed-panel`}
             p={{ base: 3, md: 4 }}
             borderRadius="xl"
             direction={{ base: 'column', md: 'row' }}

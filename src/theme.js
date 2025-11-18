@@ -2,8 +2,8 @@
 import { extendTheme } from '@chakra-ui/react';
 
 const fonts = {
-    heading: "'Poppins', sans-serif",
-    body: "'Poppins', sans-serif",
+    heading: `"Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
+    body: `"Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
 };
 
 const config = {
@@ -11,6 +11,50 @@ const config = {
     useSystemColorMode: false,
 };
 
+const themes = {
+    midnight: {
+        name: 'Midnight',
+        description: 'A dark, sleek theme with a subtle animated gradient.',
+        background: { type: 'gradient', gradientTheme: 'default' },
+        panelStyle: 'glassmorphism',
+    },
+    aurora: {
+        name: 'Aurora',
+        description: 'A soft, shifting gradient that mimics the northern lights.',
+        background: { type: 'gradient', gradientTheme: 'aurora' },
+        panelStyle: 'aurora',
+    },
+    ocean: {
+        name: 'Ocean',
+        description: 'A cool, refreshing theme inspired by the sea.',
+        background: { type: 'gradient', gradientTheme: 'ocean' },
+        panelStyle: 'glassmorphism',
+    },
+    sunset: {
+        name: 'Sunset',
+        description: 'A warm, vibrant theme that captures the colors of a sunset.',
+        background: { type: 'gradient', gradientTheme: 'sunset' },
+        panelStyle: 'glassmorphism',
+    },
+    epaper: {
+        name: 'E-Paper',
+        description: 'A high-contrast, low-glare style mimicking an e-ink display.',
+        background: { type: 'solid', value: '#F5F5F5' },
+        panelStyle: 'epaper',
+    },
+    brutalism: {
+        name: 'Brutalism',
+        description: 'A raw, high-contrast style with sharp edges and bold shadows.',
+        background: { type: 'solid', value: 'yellow.200' },
+        panelStyle: 'brutalism',
+    },
+    minimal: {
+        name: 'Minimal',
+        description: 'A flat, simple style with no extra effects for a clean look.',
+        background: { type: 'solid', value: 'gray.100' },
+        panelStyle: 'none',
+    },
+};
 const colors = {
     // New Vibrant Purple Palette
     primaryPurple: '#7B61FF',
@@ -47,6 +91,17 @@ const colors = {
             secondHand: '#ff4500'
         },
         dark: { bg: 'linear-gradient(145deg, #2e8b57, #006400)', shadowLight: '#3baf71', shadowDark: '#004d00', hands: '#f5deb3', numbers: '#f5deb3', secondHand: '#ffd700' },
+    },
+    sunset: {
+        light: {
+            bg: 'linear-gradient(145deg, #ffb75e, #ed8f03)',
+            shadowLight: '#ffc77e',
+            shadowDark: '#d47a00',
+            hands: '#ffffff',
+            numbers: '#ffffff',
+            secondHand: '#ff4500',
+        },
+        dark: { bg: 'linear-gradient(145deg, #4b0082, #8a2be2)', shadowLight: '#6a00b8', shadowDark: '#2c004c', hands: '#ffb75e', numbers: '#ffb75e', secondHand: '#ff6347' },
     },
     sunrise: {
         light: {
@@ -111,7 +166,12 @@ const styles = {
         '@keyframes shine': {
             'to': { transform: 'translateX(100%)' },
         },
-        '.glass': {
+        '@keyframes liquid': {
+            '0%, 100%': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' },
+            '50%': { borderRadius: '30% 60% 70% 40% / 50% 60% 30% 70%' },
+        },
+        '@keyframes aurora': { '0%': { backgroundPosition: '0% 50%' }, '50%': { backgroundPosition: '100% 50%' }, '100%': { backgroundPosition: '0% 50%' } },
+        '.themed-panel': (props) => ({
             // Base styles for the glass effect
             bg: props.colorMode === 'dark' ? 'rgba(20, 15, 40, 0.5)' : 'rgba(255, 255, 255, 0.3)',
             backdropFilter: 'blur(20px)',
@@ -135,7 +195,7 @@ const styles = {
                 bg: `linear-gradient(120deg, transparent, ${props.colorMode === 'dark' ? 'rgba(123, 97, 255, 0.5)' : 'rgba(123, 97, 255, 1)'}, transparent)`,
                 mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
                 maskComposite: 'exclude',
-                animation: `shine var(--shine-duration-${props.theme.settings.animationSettings.gradientSpeed || 'normal'}) linear infinite`,
+                animation: `shine var(--shine-duration-${props.theme?.settings?.animationSettings?.gradientSpeed || 'normal'}) linear infinite`,
             },
 
             // Subtle hover effect for interactivity
@@ -143,7 +203,90 @@ const styles = {
                 boxShadow: 'xl',
                 transform: 'translateY(-2px) scale(1.01)',
             },
-        },
+        }),
+        // --- New UI Effect Styles ---
+        '.effect-preview.glassmorphism, .themed-panel.glassmorphism': (props) => ({
+            bg: props.colorMode === 'dark' ? 'rgba(20, 15, 40, 0.5)' : 'rgba(255, 255, 255, 0.3)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid',
+            borderColor: props.colorMode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+        }),
+        '.effect-preview.neumorphism, .themed-panel.neumorphism': (props) => ({
+            bg: props.colorMode === 'dark' ? '#2c313a' : '#e0e5ec',
+            borderRadius: 'xl',
+            boxShadow: props.colorMode === 'dark'
+                ? '7px 7px 14px #23272e, -7px -7px 14px #353b46'
+                : '7px 7px 14px #a3b1c6, -7px -7px 14px #ffffff',
+        }),
+        '.effect-preview.claymorphism, .themed-panel.claymorphism': (props) => ({
+            bg: props.colorMode === 'dark' ? '#3a3f4c' : '#f2f2f2',
+            borderRadius: '30px',
+            boxShadow: `inset 4px 4px 8px ${props.colorMode === 'dark' ? '#2c313a' : '#d9d9d9'}, inset -4px -4px 8px ${props.colorMode === 'dark' ? '#484d59' : '#ffffff'}`,
+        }),
+        '.effect-preview.skeuomorphism, .themed-panel.skeuomorphism': (props) => ({
+            bg: props.colorMode === 'dark' ? '#383838' : '#d8d8d8',
+            border: '1px solid',
+            borderColor: props.colorMode === 'dark' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)',
+            borderRadius: 'xl',
+            boxShadow: `inset 0 1px 1px ${props.colorMode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}, 0 2px 4px rgba(0,0,0,0.3)`,
+            backgroundImage: props.colorMode === 'dark'
+                ? 'linear-gradient(rgba(255,255,255,0.05), rgba(0,0,0,0.05))'
+                : 'linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.2))',
+        }),
+        '.effect-preview.liquid, .themed-panel.liquid': (props) => ({
+            bg: props.colorMode === 'dark' ? 'purple.800' : 'purple.200',
+            filter: 'blur(5px)',
+            animation: 'liquid 8s ease-in-out infinite',
+            transition: 'border-radius 2s ease-in-out',
+        }),
+        '.effect-preview.retro-pixelation, .themed-panel.retro-pixelation': (props) => ({
+            bg: props.colorMode === 'dark' ? '#3d3d3d' : '#e0e0e0',
+            border: '4px solid',
+            borderColor: props.colorMode === 'dark' ? 'black' : 'black',
+            boxShadow: `8px 8px 0px ${props.colorMode === 'dark' ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.2)'}`,
+            borderRadius: '0px',
+        }),
+        '.effect-preview.aurora, .themed-panel.aurora': (props) => ({
+            bgGradient: props.colorMode === 'dark'
+                ? 'linear-gradient(125deg, #0f0c29, #302b63, #24243e, #7474BF, #348AC7)'
+                : 'linear-gradient(125deg, #e0c3fc, #8ec5fc, #fceabb, #ff8c8c)',
+            backgroundSize: '400% 400%',
+            animation: 'aurora 15s ease infinite',
+            border: 'none',
+        }),
+        '.effect-preview.brutalism, .themed-panel.brutalism': (props) => ({
+            bg: props.colorMode === 'dark' ? 'yellow.400' : 'yellow.300',
+            border: '3px solid black',
+            borderRadius: '0',
+            boxShadow: '8px 8px 0px black',
+        }),
+        '.effect-preview.epaper, .themed-panel.epaper': (props) => ({
+            bg: props.colorMode === 'dark' ? '#D3D3D3' : '#F5F5F5',
+            color: 'black',
+            border: '2px solid black',
+            borderRadius: 'sm',
+            boxShadow: 'none',
+            '.effect-preview.epaper &, .chakra-ui-dark .themed-panel.epaper': {
+                bg: '#333333',
+                color: 'white',
+            },
+        }),
+        '.effect-preview.none, .themed-panel.none': (props) => ({
+            bg: props.colorMode === 'dark' ? 'gray.700' : 'gray.100',
+            border: '1px solid',
+            borderColor: props.colorMode === 'dark' ? 'gray.600' : 'gray.200',
+        }),
+        // Style for the settings panel to make it more readable
+        '.settings-panel': (props) => ({
+            bg: props.colorMode === 'dark' ? 'rgba(26, 32, 44, 0.95)' : 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(15px)',
+            boxShadow: '2xl',
+        }),
+        '.settings-panel-midnight': (props) => ({
+            bg: props.colorMode === 'dark' ? 'rgba(10, 10, 25, 0.9)' : 'rgba(230, 230, 250, 0.9)',
+            backdropFilter: 'blur(25px)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+        }),
     }),
 };
 
@@ -200,6 +343,13 @@ const components = {
     },
 };
 
-const theme = extendTheme({ config, fonts, colors, styles, components });
+const theme = extendTheme({
+    config,
+    fonts,
+    colors,
+    styles,
+    themes,
+    components,
+});
 
 export default theme;

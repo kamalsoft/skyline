@@ -1,67 +1,28 @@
 // src/components/settings/AppearanceSettings.js
 import React from 'react';
 import {
-  VStack,
   FormControl,
   FormLabel,
-  Switch,
   Select,
   Heading,
   Divider,
-  ButtonGroup,
-  Button,
-  HStack,
-  RadioGroup,
-  Input,
-  Radio,
+  SimpleGrid,
   Box,
+  Text,
+  Icon,
+  VStack,
+  Switch,
 } from '@chakra-ui/react';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useTheme } from '@chakra-ui/react';
+import { FaCheckCircle } from 'react-icons/fa';
 
 function AppearanceSettings() {
   const { settings, dispatch } = useSettings();
   const theme = useTheme();
 
-  const handleDisplaySettingChange = (settingName, value) => {
-    dispatch({
-      type: 'SET_DISPLAY_SETTING',
-      payload: { settingName, value },
-    });
-  };
-
-  const handleThemePreferenceChange = (value) => {
-    dispatch({ type: 'SET_THEME_PREFERENCE', payload: value });
-  };
-
-  const handleClockThemeChange = (value) => {
-    dispatch({ type: 'SET_CLOCK_THEME', payload: value });
-  };
-
-  const handleTimeFormatChange = (value) => {
-    dispatch({ type: 'SET_TIME_FORMAT', payload: value });
-  };
-
-  const handleLayoutPreferenceChange = (value) => {
-    dispatch({ type: 'SET_LAYOUT_PREFERENCE', payload: value });
-  };
-
-  const handleBackgroundTypeChange = (value) => {
-    dispatch({ type: 'SET_BACKGROUND', payload: { type: value } });
-  };
-
-  const handleBackgroundImageChange = (value) => {
-    dispatch({ type: 'SET_BACKGROUND', payload: { value: value } });
-  };
-
-  const handleGradientThemeChange = (value) => {
-    if (value === 'random') {
-      const gradientKeys = Object.keys(theme.colors.gradients);
-      const randomTheme = gradientKeys[Math.floor(Math.random() * gradientKeys.length)];
-      dispatch({ type: 'SET_BACKGROUND', payload: { gradientTheme: randomTheme } });
-    } else {
-      dispatch({ type: 'SET_BACKGROUND', payload: { gradientTheme: value } });
-    }
+  const handleThemeChange = (themeId) => {
+    dispatch({ type: 'SET_THEME', payload: themeId });
   };
 
   const handleAnimationSettingChange = (settingName, value) => {
@@ -71,62 +32,50 @@ function AppearanceSettings() {
     });
   };
 
-  const handleResetSidebar = () => {
+  const handleDisplaySettingChange = (settingName, value) => {
     dispatch({
-      type: 'SET_APP_SETTING',
-      payload: { settingName: 'mainSidebarSplit', value: '2fr 10px 1fr' },
+      type: 'SET_DISPLAY_SETTING',
+      payload: { settingName, value },
     });
   };
 
   return (
     <VStack spacing={6} align="stretch">
-      <Heading size="md">Theme & Layout</Heading>
+      <Heading size="md">Theme Selection</Heading>
+      <Text fontSize="sm" color="gray.400">Select a theme to change the application's background and panel appearance.</Text>
+
+      <SimpleGrid columns={{ base: 2, md: 3 }} spacing={4}>
+        {Object.entries(theme.themes).map(([themeId, themeData]) => (
+          <Box
+            key={themeId}
+            p={4}
+            borderRadius="lg"
+            borderWidth="2px"
+            borderColor={settings.themeId === themeId ? 'purple.400' : 'transparent'}
+            cursor="pointer"
+            onClick={() => handleThemeChange(themeId)}
+            bg="whiteAlpha.200"
+            transition="all 0.2s ease"
+            position="relative"
+            _hover={{ transform: 'scale(1.05)', shadow: 'md' }}
+          >
+            {settings.themeId === themeId && (
+              <Icon as={FaCheckCircle} color="purple.400" position="absolute" top={2} right={2} />
+            )}
+            <Heading size="sm">{themeData.name}</Heading>
+            <Text fontSize="xs" mt={1} noOfLines={2}>
+              {themeData.description}
+            </Text>
+          </Box>
+        ))}
+      </SimpleGrid>
+
+      <Divider />
+
+      <Heading size="md">Animation & Effects</Heading>
 
       <FormControl display="flex" alignItems="center">
-        <FormLabel htmlFor="theme-preference" mb="0">
-          Application Theme
-        </FormLabel>
-        <Select
-          id="theme-preference"
-          value={settings.themePreference}
-          onChange={(e) => handleThemePreferenceChange(e.target.value)}
-          maxW="150px"
-        >
-          <option value="auto">Auto</option>
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-        </Select>
-      </FormControl>
-
-      <FormControl display="flex" alignItems="center">
-        <FormLabel htmlFor="layout-preference" mb="0">
-          Panel Layout
-        </FormLabel>
-        <Select
-          id="layout-preference"
-          value={settings.layoutPreference || 'grid'}
-          onChange={(e) => handleLayoutPreferenceChange(e.target.value)}
-          maxW="150px"
-        >
-          <option value="grid">Grid</option>
-          <option value="vertical">Vertical Stack</option>
-          <option value="horizontal">Horizontal Stack</option>
-          <option value="main-sidebar">Main with Sidebar</option>
-        </Select>
-      </FormControl>
-
-      {settings.layoutPreference === 'main-sidebar' && (
-        <HStack justify="flex-end">
-          <Button size="xs" variant="outline" onClick={handleResetSidebar}>
-            Reset Sidebar Position
-          </Button>
-        </HStack>
-      )}
-
-
-
-      <FormControl display="flex" alignItems="center">
-        <FormLabel htmlFor="gradient-speed" mb="0">
+        <FormLabel htmlFor="gradient-speed" mb="0" flex="1">
           Glass Effect Speed
         </FormLabel>
         <Select
@@ -141,96 +90,27 @@ function AppearanceSettings() {
         </Select>
       </FormControl>
 
-
-      <FormControl as={HStack} justify="space-between">
-        <FormLabel htmlFor="time-format" mb="0">
-          Time Format
+      <FormControl display="flex" alignItems="center">
+        <FormLabel htmlFor="show-weather-effects" mb="0" flex="1">
+          Show Weather Effects (Rain, Snow, etc.)
         </FormLabel>
-        <ButtonGroup id="time-format" size="sm" isAttached>
-          <Button onClick={() => handleTimeFormatChange('12h')} isActive={settings.timeFormat === '12h'}>
-            12-Hour
-          </Button>
-          <Button onClick={() => handleTimeFormatChange('24h')} isActive={settings.timeFormat === '24h'}>
-            24-Hour
-          </Button>
-        </ButtonGroup>
+        <Switch
+          id="show-weather-effects"
+          isChecked={settings.animationSettings.showWeatherEffects}
+          onChange={(e) => handleAnimationSettingChange('showWeatherEffects', e.target.checked)}
+        />
       </FormControl>
 
-      <FormControl as={HStack} justify="space-between">
-        <FormLabel htmlFor="clock-theme" mb="0">
-          Analog Clock Theme
+      <FormControl display="flex" alignItems="center">
+        <FormLabel htmlFor="show-ambient-effects" mb="0" flex="1">
+          Show Ambient Effects (Stars, Aurora)
         </FormLabel>
-        <Select
-          id="clock-theme"
-          value={settings.clockTheme}
-          onChange={(e) => handleClockThemeChange(e.target.value)}
-          maxW="150px"
-        >
-          <option value="metallic">Metallic</option>
-          <option value="minimalist">Minimalist</option>
-          <option value="ocean">Ocean</option>
-          <option value="cyberpunk">Cyberpunk</option>
-          <option value="forest">Forest</option>
-          <option value="sunrise">Sunrise</option>
-        </Select>
+        <Switch
+          id="show-ambient-effects"
+          isChecked={settings.animationSettings.showAmbientEffects}
+          onChange={(e) => handleAnimationSettingChange('showAmbientEffects', e.target.checked)}
+        />
       </FormControl>
-
-      <Divider />
-
-      <Heading size="md">Background</Heading>
-      <FormControl as="fieldset">
-        <FormLabel as="legend">Background Type</FormLabel>
-        <RadioGroup onChange={handleBackgroundTypeChange} value={settings.background.type}>
-          <HStack spacing="24px">
-            <Radio value="gradient">Animated Gradient</Radio>
-            <Radio value="image">Custom Image</Radio>
-          </HStack>
-        </RadioGroup>
-      </FormControl>
-
-      {settings.background.type === 'gradient' && (
-        <HStack align="flex-end" spacing={4}>
-          <FormControl>
-            <FormLabel htmlFor="gradient-theme">Gradient Theme</FormLabel>
-            <Select
-              id="gradient-theme"
-              value={settings.background.gradientTheme || 'default'}
-              onChange={(e) => handleGradientThemeChange(e.target.value)}
-              maxW="200px"
-            >
-              <option value="default">Default</option>
-              <option value="ocean">Ocean</option>
-              <option value="sunset">Sunset</option>
-              <option value="desert">Desert</option>
-              <option value="aurora">Aurora</option>
-              <option value="cosmic">Cosmic</option>
-              <option value="random">Random</option>
-            </Select>
-          </FormControl>
-          <Box
-            w="40px"
-            h="40px"
-            borderRadius="md"
-            border="2px solid"
-            borderColor="whiteAlpha.400"
-            bgGradient={`linear(to-br, ${theme.colors.gradients[settings.background.gradientTheme]?.day || theme.colors.gradients.default.day.split(', ')[1]}, ${theme.colors.gradients[settings.background.gradientTheme]?.night || theme.colors.gradients.default.night.split(', ')[1]})`}
-            title={`${settings.background.gradientTheme} theme preview`}
-            transition="background 0.3s ease"
-          />
-        </HStack>
-      )}
-
-      {settings.background.type === 'image' && (
-        <FormControl>
-          <FormLabel htmlFor="background-image-url">Background Image URL</FormLabel>
-          <Input
-            id="background-image-url"
-            placeholder="https://your-image-url.com/background.jpg"
-            value={settings.background.value}
-            onChange={(e) => handleBackgroundImageChange(e.target.value)}
-          />
-        </FormControl>
-      )}
 
       <Divider />
       <Heading size="sm">Layout Components</Heading>

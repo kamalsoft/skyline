@@ -11,7 +11,7 @@ function CurrentWeather({ current, hourly, airQuality, displayTemp }) {
     const currentHumidity = currentHourIndex !== -1 ? hourly.relative_humidity_2m[currentHourIndex] : undefined;
 
     return (
-        <Box className="glass" p={4} borderRadius="xl">
+        <Box p={4} borderRadius="xl">
             <Grid templateColumns={{ base: '1fr', lg: 'auto 1fr' }} gap={{ base: 4, md: 6 }} alignItems="center">
                 <HStack spacing={4} justify="center">
                     <AnimatedWeatherIcon weatherCode={current.weathercode} w={24} h={24} />

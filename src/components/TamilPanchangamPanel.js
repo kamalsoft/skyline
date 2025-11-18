@@ -82,7 +82,7 @@ function calculateYamagandam(sunrise, sunset, date) {
     return `${formatTime(startMs)} - ${formatTime(endMs)}`;
 }
 
-function TamilPanchangamPanel({ primaryLocation, className }) {
+function TamilPanchangamPanel({ primaryLocation, className, appSettings = {} }) {
     const [data, setData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [currentTime, setCurrentTime] = useState('');
@@ -126,7 +126,7 @@ function TamilPanchangamPanel({ primaryLocation, className }) {
     }
 
     return (
-        <Box className={`glass ${className}`} p={4} borderRadius="xl">
+        <Box className={`themed-panel ${appSettings.uiEffect} ${className}`} p={4} borderRadius="xl">
             <Heading size="md" mb={4}>Tamil Panchangam</Heading>
             {data ? (
                 <VStack align="stretch" spacing={3}>
@@ -146,6 +146,7 @@ function TamilPanchangamPanel({ primaryLocation, className }) {
 TamilPanchangamPanel.propTypes = {
     primaryLocation: PropTypes.object.isRequired,
     className: PropTypes.string,
+    appSettings: PropTypes.object,
 };
 
 export default TamilPanchangamPanel;

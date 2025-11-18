@@ -13,7 +13,7 @@ import { WiDaySunny } from 'react-icons/wi'; // Using sun icon for the sun
  * @param {object} props - The component's properties.
  * @param {string} props.className - Additional CSS classes to apply to the component.
  */
-function SeasonalSunPath({ className }) {
+function SeasonalSunPath({ className, appSettings = {} }) {
     const now = new Date();
     const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
 
@@ -78,7 +78,7 @@ function SeasonalSunPath({ className }) {
     );
 
     return (
-        <Box className={`glass ${className}`} p={6} borderRadius="xl" mt={6}>
+        <Box className={`themed-panel ${appSettings.uiEffect} ${className}`} p={6} borderRadius="xl" mt={6}>
             <VStack spacing={4} align="stretch">
                 <Heading as="h4" size="md" textAlign="center">
                     Earth's Orbit & The Seasons

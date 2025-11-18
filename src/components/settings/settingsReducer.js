@@ -1,18 +1,23 @@
 // src/reducers/settingsReducer.js
 
 import { v4 as uuidv4 } from 'uuid';
+import theme from '../../theme';
 /**
  * An example reducer for managing application settings.
  * This demonstrates how to handle the SET_LAYOUT_PREFERENCE action.
  */
 export const settingsReducer = (state, action) => {
     switch (action.type) {
-        case 'SET_THEME_PREFERENCE':
+        case 'SET_THEME': {
+            const selectedTheme = theme.themes[action.payload];
+            if (selectedTheme) {
+                return { ...state, themeId: action.payload, background: selectedTheme.background, appSettings: { ...state.appSettings, uiEffect: selectedTheme.panelStyle } };
+            }
             return {
                 ...state,
-                themePreference: action.payload,
+                themeId: action.payload,
             };
-
+        }
         case 'SET_LAYOUT_PREFERENCE':
             console.log('[Settings] Action: SET_LAYOUT_PREFERENCE, Payload:', action.payload);
             const newState = {

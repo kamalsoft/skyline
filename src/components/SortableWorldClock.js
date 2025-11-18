@@ -9,7 +9,7 @@ import WorldClockCard from './WorldClockCard';
  * This component acts as a wrapper around the WorldClockCard to make it sortable.
  * It uses the useSortable hook from dnd-kit to handle drag and drop states.
  */
-function SortableWorldClock({ clock, clockTheme, timeFormat, isSidebarOpen, appSettings }) {
+function SortableWorldClock({ clock, timeFormat, isSidebarOpen, appSettings, primaryClock }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: String(clock.id),
   });
@@ -37,10 +37,10 @@ function SortableWorldClock({ clock, clockTheme, timeFormat, isSidebarOpen, appS
       <WorldClockCard
         clock={clock}
         isDragging={isDragging}
-        clockTheme={clockTheme}
         timeFormat={timeFormat}
         isSidebarOpen={isSidebarOpen}
         appSettings={appSettings}
+        primaryClock={primaryClock}
       />
     </motion.div>
   );

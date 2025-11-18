@@ -1,21 +1,21 @@
 // src/components/WeatherCard.js
 import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import {
-  useBreakpointValue,
   Box,
   Heading,
   Text,
   VStack,
   HStack,
-
   useDisclosure,
   Alert, AlertIcon, AlertTitle, AlertDescription, Button,
   IconButton, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody,
+  useBreakpointValue,
 } from '@chakra-ui/react';
 import PropTypes from 'prop-types';
-import { getWeatherDescription, WeatherError } from '../utils/weatherUtils';
+import { getWeatherDescription } from '../utils/weatherUtils';
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
-import { validateWeatherData } from '../utils/weatherValidation';
+import { useWeather } from '../hooks/useWeather';
+
 import ForecastItem from './ForecastItem';
 import HistoryModal from './HistoryModal';
 import DetailedWeatherModal from './DetailedWeatherModal';
@@ -23,10 +23,10 @@ import SunCalendar from './SunCalendar';
 import WeatherMapModal from './WeatherMapModal';
 import WeatherCardSkeleton from './WeatherCardSkeleton';
 import { motion, useAnimation } from 'framer-motion';
-import WeatherCardHeader from './WeatherCardHeader'; // Assuming file is moved to src/components
-import AISummary from './AISummary'; // Assuming file is moved to src/components
-import CurrentWeather from './CurrentWeather'; // Assuming file is moved to src/components
-import WeatherActions from './WeatherActions'; // Assuming file is moved to src/components
+import WeatherCardHeader from './WeatherCardHeader';
+import AISummary from './AISummary';
+import CurrentWeather from './CurrentWeather';
+import WeatherActions from './WeatherActions';
 
 // Extracted and memoized ForecastCarousel to prevent re-creation on every render
 const ForecastCarousel = React.memo(({ children, itemCount }) => {
@@ -111,85 +111,29 @@ function WeatherCard({
   className,
   appSettings = {},
 }) {
-  const [weatherData, setWeatherData] = useState(null);
+  const {
+    weatherData,
+    isLoading,
+    error,
+    isRefreshing,
+    lastUpdated,
+    fetchWeather,
+  } = useWeather({
+    latitude,
+    longitude,
+    appSettings,
+    locationName,
+    onForecastFetch,
+    onWeatherFetch,
+  });
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [unit, setUnit] = useState('C'); // 'C' for Celsius, 'F' for Fahrenheit
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedForecast, setSelectedForecast] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(null);
   const { isOpen: isCalendarOpen, onOpen: onCalendarOpen, onClose: onCalendarClose } = useDisclosure();
   const { isOpen: isMapOpen, onOpen: onMapOpen, onClose: onMapClose } = useDisclosure();
   const { isOpen: isHistoryOpen, onOpen: onHistoryOpen, onClose: onHistoryClose } = useDisclosure();
-
   const [currentTime, setCurrentTime] = useState(new Date());
-
-  // Create a ref to hold the latest weatherData without causing re-renders
-  const weatherDataRef = useRef(weatherData);
-  useEffect(() => {
-    weatherDataRef.current = weatherData;
-  }, [weatherData]);
-
-  const fetchWeather = useCallback(async () => {
-    if (weatherDataRef.current) {
-      setIsRefreshing(true);
-    }
-    console.info(`[WeatherCard] Starting weather fetch for ${locationName} (${latitude}, ${longitude})`);
-    setError(null);
-    try {
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_direction_10m,wind_speed_10m,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,wind_direction_10m_dominant&forecast_days=14&timezone=auto&current_weather=true&air_quality_index=us_aqi`;
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        // Fetch API does not throw for HTTP errors, so we have to check the status and throw manually.
-        throw new WeatherError(`Server error: ${response.status} ${response.statusText}. Please try again later.`, 'SERVER_ERROR');
-      }
-
-      const data = await response.json();
-
-      // Validate the detailed structure of the API response
-      const { isValid, error } = validateWeatherData(data);
-      if (!isValid) {
-        throw new WeatherError(error, 'VALIDATION_ERROR');
-      }
-      setWeatherData(data);
-
-      setLastUpdated(new Date()); // Set the last updated time
-      if (onForecastFetch) {
-        onForecastFetch(data.daily);
-      }
-      if (onWeatherFetch) {
-        onWeatherFetch(data.current_weather);
-      }
-      console.log('[WeatherCard] Weather fetch successful.');
-    } catch (err) {
-      console.error('[WeatherCard] Detailed weather fetch error:', err);
-      if (err instanceof WeatherError) {
-        setError(err);
-      } else if (err instanceof TypeError) {
-        // This is often a network error with fetch
-        setError(new WeatherError('Network error. Please check your connection and try again.', 'NETWORK_ERROR'));
-      } else {
-        setError(new WeatherError('An unexpected error occurred while fetching weather data.', 'UNKNOWN_ERROR'));
-      }
-    } finally {
-      // This runs regardless of success or error
-      setIsRefreshing(false); // Always turn off the refreshing indicator
-      setIsLoading(false); // We can safely set this to false
-    }
-  }, [latitude, longitude, locationName, onForecastFetch, onWeatherFetch]);
-
-  useEffect(() => {
-    fetchWeather();
-
-    const refreshIntervalMinutes = appSettings?.weatherRefreshInterval || 10;
-    const refreshIntervalMs = refreshIntervalMinutes * 60 * 1000;
-    const refreshInterval = setInterval(fetchWeather, refreshIntervalMs);
-
-    return () => clearInterval(refreshInterval); // Cleanup the interval on component unmount
-  }, [fetchWeather, latitude, longitude, appSettings.weatherRefreshInterval]); // Rerun this effect if the fetchWeather function changes (e.g., location changes)
 
   // Effect to update the current time every minute to keep the forecast in sync
   useEffect(() => {
@@ -307,6 +251,8 @@ function WeatherCard({
     });
   }, [weatherData, handleForecastClick, displayTemp]);
 
+
+
   if (isLoading) {
     return <WeatherCardSkeleton />;
   }
@@ -316,7 +262,7 @@ function WeatherCard({
       <Alert
         status="error"
         variant="subtle"
-        flexDirection="column"
+        flexDirection="column" _
         alignItems="center"
         justifyContent="center"
         textAlign="center"
@@ -347,7 +293,7 @@ function WeatherCard({
   const { current_weather: current, air_quality: airQuality } = weatherData;
 
   return (
-    <Box className="glass" p={4} borderRadius="xl">
+    <Box className={`themed-panel ${appSettings.uiEffect} ${className}`} p={4} borderRadius="xl">
       <WeatherCardHeader locationName={locationName} lastUpdated={lastUpdated} />
       <VStack spacing={4} align="stretch">
         <Text>{getWeatherDescription(current.weathercode)}</Text>

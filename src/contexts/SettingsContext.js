@@ -11,7 +11,7 @@ const SettingsContext = createContext();
 const getInitialState = () => {
     const savedSettings = localStorage.getItem('skyline-settings');
     const defaultState = {
-        themePreference: 'auto',
+        themeId: 'midnight', // New unified theme setting
         layoutPreference: 'grid',
         timeFormat: '12h',
         clockTheme: 'metallic',
@@ -24,21 +24,16 @@ const getInitialState = () => {
             showWorldClock: true,
             showNewPanel: true, // Add setting for the new panel
         },
+        background: { type: 'gradient', gradientTheme: 'default' },
         notificationSettings: {
             enablePushNotifications: false,
         },
         clocks: [],
         primaryLocation: null,
-        panelPositions: {},
-        background: {
-            type: 'gradient',
-            value: '',
-            gradientTheme: 'default',
-        },
         animationSettings: {
             showWeatherEffects: true,
             showAmbientEffects: true,
-            gradientSpeed: 'normal', // Add this line
+            gradientSpeed: 'normal',
         },
         appSettings: {
             autoUpdateCheck: true,

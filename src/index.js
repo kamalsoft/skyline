@@ -7,6 +7,7 @@ import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import reportWebVitals from './reportWebVitals';
 import baseTheme from './theme'; // Import the base theme
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
+import { AppUIProvider } from './components/AppUIContext';
 
 const ThemedApp = () => {
   const { settings } = useSettings();
@@ -22,9 +23,11 @@ const ThemedApp = () => {
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <SettingsProvider>
-    <ThemedApp />
-  </SettingsProvider>
+  <AppUIProvider>
+    <SettingsProvider>
+      <ThemedApp />
+    </SettingsProvider>
+  </AppUIProvider>
 );
 
 // If you want your app to work offline and load faster, you can change

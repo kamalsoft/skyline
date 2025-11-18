@@ -22,10 +22,9 @@ import {
   CloseIcon, QuestionOutlineIcon,
 } from '@chakra-ui/icons';
 import { motion, useDragControls } from 'framer-motion';
-import { FaPalette, FaMagic, FaVolumeUp, FaMapMarkerAlt, FaDatabase, FaInfoCircle, FaWifi, FaBell, FaSync } from 'react-icons/fa';
+import { FaPalette, FaVolumeUp, FaMapMarkerAlt, FaDatabase, FaInfoCircle, FaWifi, FaBell, FaSync } from 'react-icons/fa';
 import GeneralSettings from './settings/GeneralSettings';
 import AppearanceSettings from './settings/AppearanceSettings';
-import EffectsSettings from './settings/EffectsSettings';
 import DataSettings from './settings/DataSettings';
 import AudioSettings from './settings/AudioSettings';
 import NotificationSettings from './settings/NotificationSettings';
@@ -111,7 +110,7 @@ function SettingsPanel({
       }}
       aria-label="Settings Panel"
     >
-      <VStack spacing={4} align="stretch" className="glass" p={4} borderRadius={{ base: 0, md: 'xl' }} h="100%" boxShadow="2xl">
+      <VStack spacing={4} align="stretch" className="glass settings-panel" p={4} borderRadius={{ base: 0, md: 'xl' }} h="100%" boxShadow="2xl">
         <Box
           cursor={!isMobile ? 'move' : 'default'}
           onPointerDown={(e) => !isMobile && dragControls.start(e, { snapToCursor: false })}
@@ -159,14 +158,9 @@ function SettingsPanel({
                 <Icon as={FaMapMarkerAlt} mr={2} /> General
               </Tab>
             </Tooltip>
-            <Tooltip label="Appearance Settings" placement="right" hasArrow>
+            <Tooltip label="Theme & Appearance" placement="right" hasArrow>
               <Tab id="tab-appearance">
                 <Icon as={FaPalette} mr={2} /> Appearance
-              </Tab>
-            </Tooltip>
-            <Tooltip label="Animation & Effects Settings" placement="right" hasArrow>
-              <Tab id="tab-effects">
-                <Icon as={FaMagic} mr={2} /> Effects
               </Tab>
             </Tooltip>
             <Tooltip label="Data & Privacy Settings" placement="right" hasArrow>
@@ -219,12 +213,6 @@ function SettingsPanel({
             </TabPanel>
             <TabPanel role="tabpanel" aria-labelledby="tab-appearance">
               <AppearanceSettings />
-            </TabPanel>
-            <TabPanel role="tabpanel" aria-labelledby="tab-effects">
-              <EffectsSettings
-                isAnimationPaused={isAnimationPaused}
-                onToggleAnimation={onToggleAnimation}
-              />
             </TabPanel>
             <TabPanel role="tabpanel" aria-labelledby="tab-data">
               <DataSettings onClearCache={handleClearCache} onToggleLogger={onToggleLogger} />
