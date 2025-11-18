@@ -1,6 +1,6 @@
 // src/components/DigitalClock.js
 import React from 'react';
-import { Text, VStack, HStack } from '@chakra-ui/react';
+import { Text, HStack } from '@chakra-ui/react';
 
 function DigitalClock({ time, timeFormat }) {
   if (!time) {
