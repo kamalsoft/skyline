@@ -1,9 +1,9 @@
 // src/theme.js
 import { extendTheme } from '@chakra-ui/react';
 
-const fonts = {
-    heading: `"Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
-    body: `"Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
+export const fontOptions = {
+    poppins: `"Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
+    orbitron: `"Orbitron", sans-serif`,
 };
 
 const config = {
@@ -47,6 +47,18 @@ const themes = {
         description: 'A raw, high-contrast style with sharp edges and bold shadows.',
         background: { type: 'solid', value: 'yellow.200' },
         panelStyle: 'brutalism',
+    },
+    desert: {
+        name: 'Desert',
+        description: 'Warm tones of a desert landscape under the sun and moon.',
+        background: { type: 'gradient', gradientTheme: 'desert' },
+        panelStyle: 'glassmorphism',
+    },
+    cosmic: {
+        name: 'Cosmic',
+        description: 'Deep space colors with a touch of cosmic dust.',
+        background: { type: 'gradient', gradientTheme: 'cosmic' },
+        panelStyle: 'glassmorphism',
     },
     minimal: {
         name: 'Minimal',
@@ -178,6 +190,8 @@ const styles = {
             boxShadow: 'lg',
             position: 'relative',
             overflow: 'hidden',
+            // Ensure text is bright by default for better contrast on dark/gradient themes
+            color: props.colorMode === 'dark' ? 'whiteAlpha.900' : 'gray.800',
             border: '1px solid',
             borderColor: props.colorMode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
             transition: 'all 0.3s ease-in-out',
@@ -266,6 +280,8 @@ const styles = {
             border: '2px solid black',
             borderRadius: 'sm',
             boxShadow: 'none',
+            // Ensure text inside is always black for readability
+            '*': { color: 'black !important' },
             '.effect-preview.epaper &, .chakra-ui-dark .themed-panel.epaper': {
                 bg: '#333333',
                 color: 'white',
@@ -345,7 +361,10 @@ const components = {
 
 const theme = extendTheme({
     config,
-    fonts,
+    fonts: {
+        heading: fontOptions.poppins,
+        body: fontOptions.poppins,
+    },
     colors,
     styles,
     themes,

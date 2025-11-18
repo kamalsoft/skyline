@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Heading, Text, VStack, Tabs, TabList, TabPanels, Tab, TabPanel, Spinner, HStack, Icon } from '@chakra-ui/react';
 import { FaSatellite, FaMeteor } from 'react-icons/fa';
-import { motion } from 'framer-motion';
 
 // Mock function to simulate fetching data from an astronomy API.
 // In a real application, you would replace this with a call to a real API.
@@ -40,51 +39,44 @@ function CelestialEventsPanel({ latitude, longitude, appSettings = {} }) {
     }, [latitude, longitude]);
 
     return (
-        <motion.div
-            drag
-            dragMomentum={false}
-            style={{ position: 'fixed', top: '150px', left: '50px', width: '380px', zIndex: 1300 }}
-            whileDrag={{ scale: 1.02, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)' }}
-        >
-            <Box p={4} borderRadius="xl" w="full" cursor="grab" className={`themed-panel ${appSettings.uiEffect}`}>
-                <Heading size="md" mb={4}>Celestial Events</Heading>
-                {isLoading ? (
-                    <HStack justify="center" minH="150px">
-                        <Spinner />
-                        <Text>Loading celestial events...</Text>
-                    </HStack>
-                ) : (
-                    <Tabs variant="soft-rounded" colorScheme="purple">
-                        <TabList>
-                            <Tab><Icon as={FaSatellite} mr={2} /> ISS Passes</Tab>
-                            <Tab><Icon as={FaMeteor} mr={2} /> Meteors</Tab>
-                        </TabList>
-                        <TabPanels>
-                            <TabPanel>
-                                <VStack align="stretch" spacing={3}>
-                                    {data.issPasses.map(pass => (
-                                        <Box key={pass.time}>
-                                            <Text fontWeight="bold">{new Date(pass.time).toLocaleString()}</Text>
-                                            <Text fontSize="sm" color="whiteAlpha.800">Duration: {pass.duration}, Path: {pass.direction}</Text>
-                                        </Box>
-                                    ))}
-                                </VStack>
-                            </TabPanel>
-                            <TabPanel>
-                                <VStack align="stretch" spacing={3}>
-                                    {data.meteorShowers.map(shower => (
-                                        <Box key={shower.name}>
-                                            <Text fontWeight="bold">{shower.name}</Text>
-                                            <Text fontSize="sm" color="whiteAlpha.800">Peak: {shower.peak}, Rate: {shower.rate}</Text>
-                                        </Box>
-                                    ))}
-                                </VStack>
-                            </TabPanel>
-                        </TabPanels>
-                    </Tabs>
-                )}
-            </Box>
-        </motion.div>
+        <Box p={4} borderRadius="xl" w="full" className={`themed-panel ${appSettings.uiEffect}`}>
+            <Heading size="md" mb={4}>Celestial Events</Heading>
+            {isLoading ? (
+                <HStack justify="center" minH="150px">
+                    <Spinner />
+                    <Text>Loading celestial events...</Text>
+                </HStack>
+            ) : (
+                <Tabs variant="soft-rounded" colorScheme="purple">
+                    <TabList>
+                        <Tab><Icon as={FaSatellite} mr={2} /> ISS Passes</Tab>
+                        <Tab><Icon as={FaMeteor} mr={2} /> Meteors</Tab>
+                    </TabList>
+                    <TabPanels>
+                        <TabPanel>
+                            <VStack align="stretch" spacing={3}>
+                                {data.issPasses.map(pass => (
+                                    <Box key={pass.time}>
+                                        <Text fontWeight="bold">{new Date(pass.time).toLocaleString()}</Text>
+                                        <Text fontSize="sm" color="whiteAlpha.800">Duration: {pass.duration}, Path: {pass.direction}</Text>
+                                    </Box>
+                                ))}
+                            </VStack>
+                        </TabPanel>
+                        <TabPanel>
+                            <VStack align="stretch" spacing={3}>
+                                {data.meteorShowers.map(shower => (
+                                    <Box key={shower.name}>
+                                        <Text fontWeight="bold">{shower.name}</Text>
+                                        <Text fontSize="sm" color="whiteAlpha.800">Peak: {shower.peak}, Rate: {shower.rate}</Text>
+                                    </Box>
+                                ))}
+                            </VStack>
+                        </TabPanel>
+                    </TabPanels>
+                </Tabs>
+            )}
+        </Box>
     );
 }
 

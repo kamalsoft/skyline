@@ -13,6 +13,7 @@ const getInitialState = () => {
     const defaultState = {
         themeId: 'midnight', // New unified theme setting
         layoutPreference: 'grid',
+        font: 'poppins',
         timeFormat: '12h',
         clockTheme: 'metallic',
         displaySettings: {

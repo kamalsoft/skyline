@@ -4,98 +4,36 @@ import {
   VStack,
   Heading,
   Text,
-  Button,
-  Divider,
-  Grid,
-  Tag,
   Link,
+  Button,
+  Icon,
 } from '@chakra-ui/react';
-import { motion } from 'framer-motion';
+import { FaGithub, FaLinkedin } from 'react-icons/fa';
 
 function AboutSettings({ onUpdateFound }) {
-  const appVersion = process.env.REACT_APP_VERSION || '1.2.0'; // Fallback to package.json version
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      {/* This component now uses the global .glass style for consistency */}
-      <VStack spacing={6} align="stretch" p={6} className="glass" borderRadius="xl">
-        <VStack spacing={2} align="center">
-          <Heading size="lg">
-            Skyline Weather
-          </Heading>
-          <Tag colorScheme="purple" size="sm" variant="subtle">
-            Version {appVersion}
-          </Tag>
-        </VStack>
-
-        <Text textAlign="center">
-          A modern, visually-rich dashboard for exploring weather and astronomical data.
-        </Text>
-
-        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-          <Button
-            onClick={onUpdateFound}
-            variant="outline"
-            w="full"
-            sx={{
-              border: '2px solid',
-              borderColor: 'purple.300',
-              color: 'purple.300',
-              _hover: {
-                bg: 'purple.500',
-                color: 'white',
-                borderColor: 'purple.500',
-              },
-            }}
-          >
-            Check for Updates
-          </Button>
-        </motion.div>
-
-        <Divider borderColor="whiteAlpha.300" />
-
-        <Heading as="h3" size="md">
-          Credits & Acknowledgements
-        </Heading>
-
-        {/* Use a Grid for a cleaner, more organized layout */}
-        <Grid templateColumns={{ base: '1fr', md: '150px 1fr' }} gap={{ base: 2, md: 4 }} alignItems="start">
-          <Text fontWeight="bold" color="purple.300" textAlign={{ base: 'left', md: 'right' }}>
-            Ideas and Concept:
-          </Text>
-          <Text>Kamalesh</Text>
-
-          <Text fontWeight="bold" color="purple.300" textAlign={{ base: 'left', md: 'right' }}>
-            Data Sources:
-          </Text>
-          <VStack align="start" spacing={1}>
-            <Text>
-              Weather and astronomical data provided by{' '}
-              <Link href="https://open-meteo.com/" isExternal color="teal.300">
-                Open-Meteo
-              </Link>
-              .
-            </Text>
-            <Text>
-              Geocoding services provided by{' '}
-              <Link href="https://www.bigdatacloud.com/" isExternal color="teal.300">
-                BigDataCloud
-              </Link>
-              .
-            </Text>
-          </VStack>
-
-          <Text fontWeight="bold" color="purple.300" textAlign={{ base: 'left', md: 'right' }}>
-            Built With:
-          </Text>
-          <Text>React, Chakra UI, Framer Motion, Recharts, and other open-source libraries.</Text>
-        </Grid>
-      </VStack>
-    </motion.div>
+    <VStack spacing={6} align="stretch">
+      <Heading size="md">About Skyline</Heading>
+      <Text>
+        Skyline is a modern weather dashboard designed to provide a beautiful
+        and intuitive experience.
+      </Text>
+      <Text>
+        This project is open source. Feel free to explore the code on{' '}
+        <Link href="https://github.com/your-repo" isExternal color="purple.300">
+          GitHub <Icon as={FaGithub} mx="2px" />
+        </Link>
+        .
+      </Text>
+      <Heading size="sm">Credits</Heading>
+      <Text>
+        Concept and development by{' '}
+        <Link href="https://www.linkedin.com/in/kamalesh-k-9a5b3b1b/" isExternal color="purple.300">
+          Kamalesh K <Icon as={FaLinkedin} mx="2px" />
+        </Link>
+      </Text>
+      <Button onClick={onUpdateFound}>Check for Updates</Button>
+    </VStack>
   );
 }
 

@@ -1,10 +1,9 @@
 // src/components/TamilPanchangamPanel.js
 import React, { useState, useEffect } from 'react';
 import { Heading, Text, VStack, Divider, Box } from '@chakra-ui/react';
-import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
+import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
-import PropTypes from 'prop-types';
 import PanchangamSkeleton from './skeletons/PanchangamSkeleton';
 import { MhahPanchang } from 'mhah-panchang';
 
@@ -126,15 +125,17 @@ function TamilPanchangamPanel({ primaryLocation, className, appSettings = {} }) 
     }
 
     return (
-        <Box className={`themed-panel ${appSettings.uiEffect} ${className}`} p={4} borderRadius="xl">
-            <Heading size="md" mb={4}>Tamil Panchangam</Heading>
+        <Box className={`themed-panel ${appSettings.uiEffect} ${className}`} p={4} borderRadius="xl" w="full">
+            <Heading size="md" mb={4}>
+                Tamil Panchangam
+            </Heading>
             {data ? (
                 <VStack align="stretch" spacing={3}>
                     <Text><b>{dayjs().tz(primaryLocation.timeZone).format('MMMM D, YYYY')}</b></Text>
                     <Text fontWeight="bold" fontSize="lg">{currentTime}</Text>
                     <Divider />
-                    <Text><b>Tithi:</b> {data.Tithi.name}</Text>
-                    <Text><b>Nakshatra:</b> {data.Nakshatra.name}</Text>
+                    <Text><b>Tithi:</b> {data.Tithi?.name}</Text>
+                    <Text><b>Nakshatra:</b> {data.Nakshatra?.name}</Text>
                     <Text><b>Rahu Kalam:</b> {rahuKalam}</Text>
                     <Text><b>Yamagandam:</b> {yamagandam}</Text>
                 </VStack>
@@ -142,11 +143,5 @@ function TamilPanchangamPanel({ primaryLocation, className, appSettings = {} }) 
         </Box>
     );
 }
-
-TamilPanchangamPanel.propTypes = {
-    primaryLocation: PropTypes.object.isRequired,
-    className: PropTypes.string,
-    appSettings: PropTypes.object,
-};
 
 export default TamilPanchangamPanel;

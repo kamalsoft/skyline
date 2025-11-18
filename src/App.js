@@ -82,8 +82,7 @@ function AppContent() {
   //const { setColorMode } = useColorMode();
   useColorMode();
   const { showSettingsPanel, setShowSettingsPanel, showLogTerminal, isSidebarOpen, setIsSidebarOpen, isAnimationPaused } = useAppUI();
-  const [activeDragItem, setActiveDragItem] = useState(null);
-  const [runTour, setRunTour] = useState(() => !localStorage.getItem('hasCompletedOnboarding'));
+  const [activeDragItem, setActiveDragItem] = useState(null); const [runTour, setRunTour] = useState(() => localStorage.getItem('hasCompletedOnboarding') !== 'true');
 
   const [isNewPanelLoading, setIsNewPanelLoading] = useState(true); // State for the new panel's loading status
   const handleTourEnd = () => {

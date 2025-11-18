@@ -18,6 +18,9 @@ export const settingsReducer = (state, action) => {
                 themeId: action.payload,
             };
         }
+        case 'SET_FONT': {
+            return { ...state, font: action.payload };
+        }
         case 'SET_LAYOUT_PREFERENCE':
             console.log('[Settings] Action: SET_LAYOUT_PREFERENCE, Payload:', action.payload);
             const newState = {

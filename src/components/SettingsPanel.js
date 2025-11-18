@@ -22,15 +22,17 @@ import {
   CloseIcon, QuestionOutlineIcon,
 } from '@chakra-ui/icons';
 import { motion, useDragControls } from 'framer-motion';
-import { FaPalette, FaVolumeUp, FaMapMarkerAlt, FaDatabase, FaInfoCircle, FaWifi, FaBell, FaSync } from 'react-icons/fa';
-import GeneralSettings from './settings/GeneralSettings';
+import { FaPalette, FaVolumeUp, FaMapMarkerAlt, FaDatabase, FaInfoCircle, FaWifi, FaBell, FaSync, FaPaintBrush } from 'react-icons/fa';
+import GeneralSettings from './settings/GeneralSettings'; // This import is correct
 import AppearanceSettings from './settings/AppearanceSettings';
+import { useSettings } from '../contexts/SettingsContext';
 import DataSettings from './settings/DataSettings';
 import AudioSettings from './settings/AudioSettings';
 import NotificationSettings from './settings/NotificationSettings';
 import NetworkSettings from './settings/NetworkSettings';
-import AboutSettings from './settings/AboutSettings'; // Ensure this import is correct
+import AboutSettings from './settings/AboutSettings';
 import CustomToast from './CustomToast';
+import UIEffectsSettings from './settings/UIEffectsSettings';
 
 function SettingsPanel({
   onClearCache = () => console.warn('[SettingsPanel] onClearCache prop was not provided.'),
@@ -45,6 +47,7 @@ function SettingsPanel({
   const [size, setSize] = useState({ width: 700, height: 700 });
   const dragControls = useDragControls();
   const [activeTab, setActiveTab] = useState(0);
+  const { settings } = useSettings();
   const toast = useToast();
   const panelRef = useRef(null);
 
@@ -110,7 +113,7 @@ function SettingsPanel({
       }}
       aria-label="Settings Panel"
     >
-      <VStack spacing={4} align="stretch" className="glass settings-panel" p={4} borderRadius={{ base: 0, md: 'xl' }} h="100%" boxShadow="2xl">
+      <VStack spacing={4} align="stretch" className={`themed-panel ${settings.appSettings.uiEffect}`} p={4} borderRadius={{ base: 0, md: 'xl' }} h="100%" boxShadow="2xl">
         <Box
           cursor={!isMobile ? 'move' : 'default'}
           onPointerDown={(e) => !isMobile && dragControls.start(e, { snapToCursor: false })}
@@ -163,6 +166,11 @@ function SettingsPanel({
                 <Icon as={FaPalette} mr={2} /> Appearance
               </Tab>
             </Tooltip>
+            <Tooltip label="UI Effects" placement="right" hasArrow>
+              <Tab id="tab-ui-effects">
+                <Icon as={FaPaintBrush} mr={2} /> UI Effects
+              </Tab>
+            </Tooltip>
             <Tooltip label="Data & Privacy Settings" placement="right" hasArrow>
               <Tab id="tab-data">
                 <Icon as={FaDatabase} mr={2} /> Data
@@ -213,6 +221,9 @@ function SettingsPanel({
             </TabPanel>
             <TabPanel role="tabpanel" aria-labelledby="tab-appearance">
               <AppearanceSettings />
+            </TabPanel>
+            <TabPanel role="tabpanel" aria-labelledby="tab-ui-effects">
+              <UIEffectsSettings />
             </TabPanel>
             <TabPanel role="tabpanel" aria-labelledby="tab-data">
               <DataSettings onClearCache={handleClearCache} onToggleLogger={onToggleLogger} />

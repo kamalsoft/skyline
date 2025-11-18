@@ -15,7 +15,7 @@ import {
 } from '@chakra-ui/react';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useTheme } from '@chakra-ui/react';
-import { FaCheckCircle } from 'react-icons/fa';
+import { FaCheckCircle, FaFont } from 'react-icons/fa';
 
 function AppearanceSettings() {
   const { settings, dispatch } = useSettings();
@@ -23,6 +23,10 @@ function AppearanceSettings() {
 
   const handleThemeChange = (themeId) => {
     dispatch({ type: 'SET_THEME', payload: themeId });
+  };
+
+  const handleFontChange = (font) => {
+    dispatch({ type: 'SET_FONT', payload: font });
   };
 
   const handleAnimationSettingChange = (settingName, value) => {
@@ -51,7 +55,7 @@ function AppearanceSettings() {
             p={4}
             borderRadius="lg"
             borderWidth="2px"
-            borderColor={settings.themeId === themeId ? 'purple.400' : 'transparent'}
+            borderColor={settings.themeId === themeId ? 'purple.400' : 'whiteAlpha.400'}
             cursor="pointer"
             onClick={() => handleThemeChange(themeId)}
             bg="whiteAlpha.200"
@@ -59,6 +63,15 @@ function AppearanceSettings() {
             position="relative"
             _hover={{ transform: 'scale(1.05)', shadow: 'md' }}
           >
+            <Box
+              w="full"
+              h="40px"
+              mb={2}
+              borderRadius="md"
+              bgGradient={`linear(to-br, ${theme.colors.gradients[themeData.background.gradientTheme]?.day || theme.colors.gradients.default.day.split(', ')[1]}, ${theme.colors.gradients[themeData.background.gradientTheme]?.night || theme.colors.gradients.default.night.split(', ')[1]})`}
+              border="1px solid"
+              borderColor="whiteAlpha.300"
+            />
             {settings.themeId === themeId && (
               <Icon as={FaCheckCircle} color="purple.400" position="absolute" top={2} right={2} />
             )}
@@ -69,6 +82,22 @@ function AppearanceSettings() {
           </Box>
         ))}
       </SimpleGrid>
+
+      <Divider />
+
+      <Heading size="md">Typography</Heading>
+      <FormControl display="flex" alignItems="center">
+        <FormLabel htmlFor="font-selection" mb="0" flex="1">
+          <VStack>
+            <Icon as={FaFont} />
+            <Text>Application Font</Text>
+          </VStack>
+        </FormLabel>
+        <Select id="font-selection" value={settings.font} onChange={(e) => handleFontChange(e.target.value)} maxW="200px">
+          <option value="poppins">Poppins</option>
+          <option value="orbitron">Orbitron</option>
+        </Select>
+      </FormControl>
 
       <Divider />
 
